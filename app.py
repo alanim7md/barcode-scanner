@@ -3,6 +3,7 @@ import sqlite3
 from datetime import datetime
 import io
 import csv
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.secret_key = "secret123"
@@ -75,7 +76,8 @@ def init_db():
     # Seed default admin user if database is completely empty
     c.execute("SELECT COUNT(*) FROM users")
     if c.fetchone()[0] == 0:
-        c.execute("INSERT INTO users (username, password, role) VALUES ('admin', 'admin123', 'admin')")
+        c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", 
+                  ('admin', generate_password_hash('admin123'), 'admin'))
 
     # ----- CREATE INDEXES FOR EXTREME SPEED -----
     # These make searching, grouping, and sorting instantly fast even with millions of rows
@@ -83,6 +85,12 @@ def init_db():
     c.execute("CREATE INDEX IF NOT EXISTS idx_scans_user_session ON scans(user, session_name)")
     c.execute("CREATE INDEX IF NOT EXISTS idx_scans_branch_session ON scans(branch, session_name)")
     c.execute("CREATE INDEX IF NOT EXISTS idx_scans_timestamp ON scans(timestamp)")
+    
+    # Unique constraint to prevent duplicate offline syncs
+    try:
+        c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_scans_unique_sync ON scans(barcode, timestamp, user, session_name)")
+    except sqlite3.OperationalError:
+        pass
 
     conn.commit()
     conn.close()
@@ -98,14 +106,28 @@ def login():
 
         conn = get_db()
         c = conn.cursor()
-        c.execute("SELECT role FROM users WHERE username=? AND password=?", (u,p))
+        c.execute("SELECT role, password FROM users WHERE username=?", (u,))
         row = c.fetchone()
-        conn.close()
 
         if row:
-            session["user"] = u
-            session["role"] = row[0]
-            return redirect("/")
+            db_role, db_password = row[0], row[1]
+            
+            # Check if password matches (either hashed or legacy plain text)
+            is_valid = check_password_hash(db_password, p) if db_password.startswith(('scrypt:', 'pbkdf2:')) else db_password == p
+            
+            if is_valid:
+                session["user"] = u
+                session["role"] = db_role
+                
+                # Auto-upgrade plain text to hashed
+                if not db_password.startswith(('scrypt:', 'pbkdf2:')):
+                    c.execute("UPDATE users SET password=? WHERE username=?", (generate_password_hash(p), u))
+                    conn.commit()
+                    
+                conn.close()
+                return redirect("/")
+                
+        conn.close()
         return redirect("/login?error=1")
 
     return render_template("login.html")
@@ -169,7 +191,7 @@ def sync():
     conn = get_db()
     c = conn.cursor()
     c.executemany("""
-        INSERT INTO scans (barcode, timestamp, user, branch, session_name)
+        INSERT OR IGNORE INTO scans (barcode, timestamp, user, branch, session_name)
         VALUES (?, ?, ?, ?, ?)
     """, rows)
     conn.commit()
@@ -470,7 +492,16 @@ def admin_delete_entries():
     c = conn.cursor()
     c.execute("SELECT password FROM users WHERE username=?", (session.get("user"),))
     row = c.fetchone()
-    if not row or row[0] != password:
+    
+    # Check hashed or plain text password
+    if not row:
+        conn.close()
+        return jsonify({"error": "Invalid password"}), 401
+        
+    db_password = row[0]
+    is_valid = check_password_hash(db_password, password) if db_password.startswith(('scrypt:', 'pbkdf2:')) else db_password == password
+    
+    if not is_valid:
         conn.close()
         return jsonify({"error": "Invalid password"}), 401
         
@@ -498,7 +529,7 @@ def add_user():
     c = conn.cursor()
     try:
         c.execute("INSERT INTO users (username,password,role) VALUES (?,?,?)",
-                  (request.json["username"], request.json["password"], request.json["role"]))
+                  (request.json["username"], generate_password_hash(request.json["password"]), request.json["role"]))
     except sqlite3.IntegrityError:
         return "exists"
     conn.commit()
@@ -520,7 +551,7 @@ def user_password():
     if session.get("role") != "admin": return "forbidden"
     conn = get_db()
     c = conn.cursor()
-    c.execute("UPDATE users SET password=? WHERE username=?", (request.json["password"], request.json["username"]))
+    c.execute("UPDATE users SET password=? WHERE username=?", (generate_password_hash(request.json["password"]), request.json["username"]))
     conn.commit()
     conn.close()
     return "ok"
