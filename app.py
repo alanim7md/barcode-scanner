@@ -72,6 +72,11 @@ def init_db():
         )
     """)
 
+    # Seed default admin user if database is completely empty
+    c.execute("SELECT COUNT(*) FROM users")
+    if c.fetchone()[0] == 0:
+        c.execute("INSERT INTO users (username, password, role) VALUES ('admin', 'admin123', 'admin')")
+
     conn.commit()
     conn.close()
 
