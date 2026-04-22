@@ -197,9 +197,25 @@ def damaged():
     insert_scans_bulk(request.json["barcode"], int(request.json.get("qty", 1)), is_damaged=True)
     return jsonify({"status":"ok"})
 
-@app.route("/flag", methods=["POST"])
-def flag():
-    insert_scans_bulk(request.json["barcode"], int(request.json.get("qty", 1)), is_flagged=True)
+@app.route("/flag_item", methods=["POST"])
+def flag_item():
+    barcode = request.json["barcode"]
+    session_name = request.json.get("session_name")
+    branch = request.json.get("branch")
+    user = session.get("user")
+    
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM scans WHERE barcode=? AND session_name=? AND user=?", (barcode + "__FLAGGED", session_name, user))
+    is_flagged = c.fetchone()[0] > 0
+    
+    if is_flagged:
+        c.execute("DELETE FROM scans WHERE barcode=? AND session_name=? AND user=?", (barcode + "__FLAGGED", session_name, user))
+    else:
+        c.execute("INSERT INTO scans (barcode, timestamp, user, branch, session_name) VALUES (?, ?, ?, ?, ?)", 
+                 (barcode + "__FLAGGED", datetime.now().strftime("%Y-%m-%d %H:%M:%S"), user, branch, session_name))
+    conn.commit()
+    conn.close()
     return jsonify({"status":"ok"})
 
 @app.route("/sync", methods=["POST"])

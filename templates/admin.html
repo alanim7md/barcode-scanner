@@ -217,7 +217,7 @@ function renderScans() {
         filtered.forEach(row => {
             htmlStr += `<tr>
                 <td><input type="checkbox" class="row-checkbox" data-barcode="${row.barcode}"></td>
-                <td>${row.barcode}</td><td>${row.users||''}</td><td>${row.good}</td><td style="color:#ef4444">${row.damaged}</td><td style="color:#facc15">${row.flagged}</td><td>${row.last}</td>
+                <td>${row.barcode}</td><td>${row.users||''}</td><td>${row.good}</td><td style="color:#ef4444">${row.damaged}</td><td style="color:#facc15; font-weight:bold;">${row.flagged > 0 ? '🚩 Yes' : ''}</td><td>${row.last}</td>
             </tr>`;
         });
         tbody.innerHTML = htmlStr;
@@ -237,12 +237,11 @@ function renderScans() {
             htmlStr += `<tr>
                 <td><input type="checkbox" class="row-checkbox" data-barcode="${row.barcode}" data-user="${row.user}" data-branch="${row.branch}" data-session="${row.session_name}"></td>
                 <td>${row.barcode}</td><td>${row.user||''}</td><td>${row.branch||''}</td><td>${row.session_name||''}</td>
-                <td>${row.good}</td><td style="color:#ef4444">${row.damaged}</td><td style="color:#facc15">${row.flagged}</td><td>${row.last}</td>
+                <td>${row.good}</td><td style="color:#ef4444">${row.damaged}</td><td style="color:#facc15; font-weight:bold;">${row.flagged > 0 ? '🚩 Yes' : ''}</td><td>${row.last}</td>
                 {% if role == 'admin' %}
                 <td>
                     <button onclick="adjustCount('${row.barcode}', '${row.user}', '${row.branch}', '${row.session_name}', 'good', prompt('Enter change in GOOD count:'))">Good +/-</button>
                     <button onclick="adjustCount('${row.barcode}', '${row.user}', '${row.branch}', '${row.session_name}', 'damaged', prompt('Enter change in DAMAGED count:'))">Damaged +/-</button>
-                    <button onclick="adjustCount('${row.barcode}', '${row.user}', '${row.branch}', '${row.session_name}', 'flagged', prompt('Enter change in FLAGGED count:'))">Flagged +/-</button>
                 </td>
                 {% endif %}
             </tr>`;

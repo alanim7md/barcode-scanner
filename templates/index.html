@@ -274,7 +274,6 @@
                 <option value="last">Last Barcode Scanned</option>
                 <option value="unique">Unique Barcodes Count</option>
                 <option value="damaged">Damaged Items Total</option>
-                <option value="flagged">Flagged Items Total</option>
             </select>
         </div>
         <div class="count" id="count">0</div>
@@ -306,7 +305,6 @@
 
             <div style="display: flex; justify-content: space-between; gap: 15px;">
                 <button onclick="addDamaged()" style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #e2e8f0;">Add Damaged</button>
-                <button onclick="addFlagged()" style="flex: 1; background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.3); color: #facc15;">Flag Item</button>
                 <button class="btn-primary" onclick="manualAdd()" style="flex: 1;">Add Good</button>
             </div>
         </div>
@@ -430,13 +428,12 @@ function beep() {
     gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.15);
 }
 
-function scanItem(barcode, qty=1, isDamaged=false, isFlagged=false) {
+function scanItem(barcode, qty=1, isDamaged=false) {
     const session_name = document.getElementById('sessionName').value;
     const branch = document.getElementById('branchSelector').value;
     
     let endpoint = '/scan';
     if (isDamaged) endpoint = '/damaged';
-    else if (isFlagged) endpoint = '/flag';
     else if (qty > 1) endpoint = '/manual';
     
     if (navigator.onLine) {
@@ -452,19 +449,18 @@ function scanItem(barcode, qty=1, isDamaged=false, isFlagged=false) {
                 updateSyncStatus(true);
             } else { throw new Error("Server error"); }
         }).catch(err => {
-            pushLocal(barcode, qty, isDamaged, isFlagged, branch, session_name);
+            pushLocal(barcode, qty, isDamaged, branch, session_name);
         });
     } else {
-        pushLocal(barcode, qty, isDamaged, isFlagged, branch, session_name);
+        pushLocal(barcode, qty, isDamaged, branch, session_name);
     }
 }
 
-function pushLocal(barcode, qty, isDamaged, isFlagged, branch, session_name) {
+function pushLocal(barcode, qty, isDamaged, branch, session_name) {
     const ts = new Date().toISOString().replace('T', ' ').substring(0, 19);
     for(let i=0; i<qty; i++) {
         let b = barcode;
         if(isDamaged) b += "__DAMAGED";
-        if(isFlagged) b += "__FLAGGED";
         localScans.push({ barcode: b, timestamp: ts, user: "{{ user }}", branch, session_name });
     }
     saveLocal();
@@ -526,13 +522,10 @@ function updateCounterDisplay() {
     } else if (mode === 'damaged') {
         total = currentSummaryData.reduce((acc, item) => acc + item.damaged, 0);
         countEl.style.color = '#ef4444';
-    } else if (mode === 'flagged') {
-        total = currentSummaryData.reduce((acc, item) => acc + item.flagged, 0);
-        countEl.style.color = '#facc15';
     } else if (mode === 'last') {
         if (lastScannedBarcode) {
             const item = currentSummaryData.find(i => i.barcode === lastScannedBarcode);
-            total = item ? (item.good + item.damaged + item.flagged) : 0;
+            total = item ? (item.good + item.damaged) : 0;
         }
         countEl.style.color = '#22c55e';
     }
@@ -592,9 +585,12 @@ function renderSummary() {
             <td>${item.barcode}</td>
             <td>${item.good}</td>
             <td style="color:#ef4444">${item.damaged}</td>
-            <td style="color:#facc15">${item.flagged}</td>
+            <td style="color:#facc15; font-weight:bold;">${item.flagged > 0 ? '🚩 Yes' : ''}</td>
             <td>${item.last || ""}</td>
-            <td><button class="clear-btn" style="position:static; transform:none; color:#ef4444; font-size:18px;" onclick="deleteSummaryItem('${item.barcode}')" title="Delete all scans for this barcode in this session">🗑️</button></td>
+            <td>
+                <button class="clear-btn" style="position:static; transform:none; color:#facc15; font-size:18px; margin-right:8px;" onclick="toggleFlag('${item.barcode}')" title="Flag/Unflag this item">🚩</button>
+                <button class="clear-btn" style="position:static; transform:none; color:#ef4444; font-size:18px;" onclick="deleteSummaryItem('${item.barcode}')" title="Delete all scans for this barcode in this session">🗑️</button>
+            </td>
         </tr>`;
     });
     table.innerHTML = htmlStr;
@@ -665,7 +661,7 @@ function renderHistory() {
             <td>${item.session_name}</td>
             <td>${item.good}</td>
             <td style="color:#ef4444">${item.damaged}</td>
-            <td style="color:#facc15">${item.flagged}</td>
+            <td style="color:#facc15; font-weight:bold;">${item.flagged > 0 ? '🚩 Yes' : ''}</td>
             <td>${item.last || ""}</td>
         </tr>`;
     });
@@ -694,13 +690,19 @@ function manualAdd() {
 function addDamaged() {
     const barcode = document.getElementById('damagedBarcode').value.trim();
     const qty = parseInt(document.getElementById('damagedQty').value) || 1;
-    if (barcode) scanItem(barcode, qty, true, false);
+    if (barcode) scanItem(barcode, qty, true);
 }
 
-function addFlagged() {
-    const barcode = document.getElementById('manualBarcode').value.trim();
-    const qty = parseInt(document.getElementById('manualQty').value) || 1;
-    if (barcode) scanItem(barcode, qty, false, true);
+function toggleFlag(barcode) {
+    const session_name = document.getElementById('sessionName').value;
+    const branch = document.getElementById('branchSelector').value;
+    fetch('/flag_item', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ barcode, session_name, branch })
+    }).then(() => {
+        loadSummary();
+        loadHistory();
+    });
 }
 
 updateCount();
