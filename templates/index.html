@@ -24,6 +24,7 @@
         }
 
         input, select {
+            box-sizing: border-box;
             font-family: 'Inter', sans-serif;
             background: rgba(15, 23, 42, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -129,6 +130,7 @@
         }
 
         button {
+            box-sizing: border-box;
             padding: 16px 24px;
             border: none;
             border-radius: 14px;
@@ -177,14 +179,17 @@
             right: 15px;
             top: 50%;
             transform: translateY(-50%);
-            background: none;
+            background: none !important;
             border: none;
             color: #64748b;
             font-size: 28px;
             cursor: pointer;
-            padding: 0;
+            padding: 5px !important;
+            min-width: 0 !important;
+            width: auto !important;
             line-height: 1;
-            box-shadow: none;
+            box-shadow: none !important;
+            border-radius: 5px !important;
         }
         
         .clear-btn:hover {
@@ -251,19 +256,19 @@
             .nav-bar input, .nav-bar select { flex: 1; min-width: 120px; font-size: 16px !important; padding: 14px !important; height: auto !important; }
             
             #barcodeInput { font-size: 26px; padding: 20px 60px 20px 20px; margin-bottom: 20px; }
-            .clear-btn { font-size: 35px !important; right: 20px; padding: 10px !important; }
-            td button.clear-btn { font-size: 26px !important; margin: 0 8px !important; padding: 5px !important; }
+            .clear-btn { font-size: 30px !important; right: 10px !important; }
+            td button.clear-btn { font-size: 22px !important; margin: 0 5px !important; padding: 5px !important; display: inline-block !important; }
             
             .card { padding: 20px; margin-bottom: 20px !important; }
             .count { font-size: 110px; margin: 15px 0; }
             
             /* Tappable table rows */
-            th, td { padding: 18px 12px; font-size: 15px; }
+            th, td { padding: 16px 10px; font-size: 14px; }
             .table-container { max-height: 400px; -webkit-overflow-scrolling: touch; }
             
             /* Inputs & Buttons globally */
             input, select { font-size: 16px !important; padding: 14px !important; }
-            button { padding: 16px 20px !important; font-size: 16px !important; }
+            button { font-size: 16px !important; }
             
             /* Fix history filters */
             #histBranch, #histSession, #histDate, #histSearch { flex: 1; min-width: 100px; }
