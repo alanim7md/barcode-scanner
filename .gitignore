@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.env
+venv/
+env/
+.venv/
+
+# Ignore database files to avoid pushing sensitive scan data to GitHub
+*.db
+*.sqlite3
+database.db-shm
+database.db-wal

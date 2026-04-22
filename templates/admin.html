@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel</title>
+    <style>
+        body { font-family: system-ui, Arial; background: #0f172a; color: #e2e8f0; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; }
+        .card { background: #1e293b; padding: 20px; border-radius: 15px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px; border-bottom: 1px solid #334155; text-align: left; }
+        th { background: #0f172a; }
+        button { padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-primary { background: #38bdf8; color: black; }
+        .btn-danger { background: #ef4444; color: white; }
+        input, select { padding: 8px; border-radius: 5px; border: 1px solid #334155; background: #0f172a; color: white; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab { padding: 10px 20px; cursor: pointer; background: #334155; border-radius: 5px; }
+        .tab.active { background: #38bdf8; color: black; font-weight: bold; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .nav a { color: #38bdf8; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="nav">
+        <h1>Admin Panel</h1>
+        <div style="display:flex; gap:15px; align-items:center;">
+            <a href="/">← Back to Scanner</a>
+            <a href="/logout" style="color: #ef4444;">Logout</a>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="showTab('scans')">Scans</div>
+        <div class="tab" onclick="showTab('users')">Users</div>
+        <div class="tab" onclick="showTab('branches')">Branches</div>
+        <div class="tab" onclick="showTab('settings')">Global Settings</div>
+    </div>
+
+    <div id="scans" class="tab-content active card">
+        <h3>Scan View</h3>
+        <div style="display:flex; gap:10px; margin-bottom: 10px;">
+            <select id="viewMode" onchange="loadScans()">
+                <option value="detailed">Detailed View (By User)</option>
+                <option value="master">Master Branch View</option>
+            </select>
+            <select id="masterBranch" onchange="loadScans()" style="display:none;"></select>
+            <input id="masterSession" placeholder="Session Name" onchange="loadScans()" style="display:none;">
+            <button onclick="loadScans()">Refresh Data</button>
+            <button class="btn-primary" onclick="exportCSV()">Export to Excel (CSV)</button>
+            <button class="btn-danger" id="deleteSelectedBtn" onclick="deleteSelected()" style="display:none;">Delete Selected</button>
+            <input id="adminSearch" onkeyup="renderScans()" placeholder="Search..." style="padding: 5px; margin-left: auto;">
+        </div>
+        <div style="max-height: 500px; overflow-y: auto;">
+            <table>
+                <thead id="scans-thead">
+                    <!-- Dynamic headers -->
+                </thead>
+                <tbody id="scans-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="users" class="tab-content card">
+        <h3>Users</h3>
+        <table>
+            <thead><tr><th>Username</th><th>Role</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>{{ u.username }}</td>
+                    <td>{{ u.role }}</td>
+                    <td>
+                        <button onclick="changePassword('{{ u.username }}')">Change Password</button>
+                        {% if u.username != 'admin' %}
+                        <button class="btn-danger" onclick="deleteUser('{{ u.username }}')">Delete</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h4 style="margin-top: 30px;">Add User</h4>
+        <input id="new-user" placeholder="Username">
+        <input id="new-pass" placeholder="Password" type="password">
+        <select id="new-role"><option value="user">User</option><option value="admin">Admin</option></select>
+        <button class="btn-primary" onclick="addUser()">Add</button>
+    </div>
+
+    <div id="branches" class="tab-content card">
+        <h3>Branches</h3>
+        <table>
+            <thead><tr><th>Name</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for b in branches %}
+                <tr>
+                    <td>{{ b.name }}</td>
+                    <td><button class="btn-danger" onclick="deleteBranch('{{ b.name }}')">Delete</button></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h4 style="margin-top: 30px;">Add Branch</h4>
+        <input id="new-branch" placeholder="Branch Name">
+        <button class="btn-primary" onclick="addBranch()">Add</button>
+    </div>
+
+    <div id="settings" class="tab-content card">
+        <h3>Global Settings (Enforce for all users)</h3>
+        <p>Set a branch and session here to lock all users into scanning for this specific branch/session. Leave blank to allow users to choose.</p>
+        <label>Global Enforced Branch:</label><br>
+        <select id="global-branch" style="margin-top: 5px;"><option value="">-- None (Users Choose) --</option></select><br><br>
+        
+        <label>Global Enforced Session:</label><br>
+        <input id="global-session" placeholder="Session Name" style="margin-top: 5px;"><br><br>
+        
+        <button class="btn-primary" onclick="saveSettings()">Save Global Settings</button>
+    </div>
+</div>
+
+<script>
+fetch("/branches").then(r=>r.json()).then(data => {
+    const mb = document.getElementById('masterBranch');
+    const gb = document.getElementById('global-branch');
+    data.forEach(b => {
+        mb.appendChild(new Option(b, b));
+        gb.appendChild(new Option(b, b));
+    });
+    fetch("/settings").then(r=>r.json()).then(s => {
+        if(s.global_branch) gb.value = s.global_branch;
+        if(s.global_session) document.getElementById('global-session').value = s.global_session;
+    });
+});
+
+function showTab(id) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.target.classList.add('active');
+    if(id === 'scans') loadScans();
+}
+
+let currentAdminData = [];
+let sortCol = 'last';
+let sortAsc = false;
+
+function doSort(col) {
+    if (sortCol === col) sortAsc = !sortAsc;
+    else { sortCol = col; sortAsc = true; }
+    renderScans();
+}
+
+function loadScans() {
+    const mode = document.getElementById('viewMode').value;
+    const mb = document.getElementById('masterBranch');
+    const ms = document.getElementById('masterSession');
+    
+    if (mode === 'master') {
+        mb.style.display = 'inline-block';
+        ms.style.display = 'inline-block';
+        if (!ms.value) ms.value = new Date().toISOString().split('T')[0];
+        fetch(`/admin/master_scans?branch=${encodeURIComponent(mb.value)}&session_name=${encodeURIComponent(ms.value)}`)
+        .then(r=>r.json()).then(data => { currentAdminData = data; renderScans(); });
+    } else {
+        mb.style.display = 'none';
+        ms.style.display = 'none';
+        fetch('/admin/scans_data').then(r=>r.json()).then(data => { currentAdminData = data; renderScans(); });
+    }
+}
+
+function renderScans() {
+    const mode = document.getElementById('viewMode').value;
+    const thead = document.getElementById('scans-thead');
+    const tbody = document.getElementById('scans-tbody');
+    const search = (document.getElementById('adminSearch').value || "").toLowerCase();
+    
+    tbody.innerHTML = '';
+    document.getElementById('deleteSelectedBtn').style.display = 'inline-block';
+    
+    let filtered = currentAdminData.filter(row => 
+        (row.barcode || "").toLowerCase().includes(search) ||
+        (row.user || row.users || "").toLowerCase().includes(search) ||
+        (row.branch || "").toLowerCase().includes(search) ||
+        (row.session_name || "").toLowerCase().includes(search)
+    );
+    
+    filtered.sort((a, b) => {
+        let valA = a[sortCol]; let valB = b[sortCol];
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        if (valA < valB) return sortAsc ? -1 : 1;
+        if (valA > valB) return sortAsc ? 1 : -1;
+        return 0;
+    });
+    
+    const s = (col) => sortCol===col ? (sortAsc ? ' ↑' : ' ↓') : '';
+    
+    if (mode === 'master') {
+        thead.innerHTML = `<tr><th><input type="checkbox" onchange="toggleAllCheckboxes(this)"></th>
+            <th onclick="doSort('barcode')" style="cursor:pointer;">Barcode${s('barcode')}</th>
+            <th onclick="doSort('users')" style="cursor:pointer;">Users${s('users')}</th>
+            <th onclick="doSort('good')" style="cursor:pointer;">Good${s('good')}</th>
+            <th onclick="doSort('damaged')" style="cursor:pointer;">Damaged${s('damaged')}</th>
+            <th onclick="doSort('last')" style="cursor:pointer;">Last Scan${s('last')}</th></tr>`;
+        let htmlStr = "";
+        filtered.forEach(row => {
+            htmlStr += `<tr>
+                <td><input type="checkbox" class="row-checkbox" data-barcode="${row.barcode}"></td>
+                <td>${row.barcode}</td><td>${row.users||''}</td><td>${row.good}</td><td style="color:#ef4444">${row.damaged}</td><td>${row.last}</td>
+            </tr>`;
+        });
+        tbody.innerHTML = htmlStr;
+    } else {
+        thead.innerHTML = `<tr><th><input type="checkbox" onchange="toggleAllCheckboxes(this)"></th>
+            <th onclick="doSort('barcode')" style="cursor:pointer;">Barcode${s('barcode')}</th>
+            <th onclick="doSort('user')" style="cursor:pointer;">User${s('user')}</th>
+            <th onclick="doSort('branch')" style="cursor:pointer;">Branch${s('branch')}</th>
+            <th onclick="doSort('session_name')" style="cursor:pointer;">Session${s('session_name')}</th>
+            <th onclick="doSort('good')" style="cursor:pointer;">Good${s('good')}</th>
+            <th onclick="doSort('damaged')" style="cursor:pointer;">Damaged${s('damaged')}</th>
+            <th onclick="doSort('last')" style="cursor:pointer;">Last Scan${s('last')}</th><th>Adjust</th></tr>`;
+        let htmlStr = "";
+        filtered.forEach(row => {
+            htmlStr += `<tr>
+                <td><input type="checkbox" class="row-checkbox" data-barcode="${row.barcode}" data-user="${row.user}" data-branch="${row.branch}" data-session="${row.session_name}"></td>
+                <td>${row.barcode}</td><td>${row.user||''}</td><td>${row.branch||''}</td><td>${row.session_name||''}</td>
+                <td>${row.good}</td><td style="color:#ef4444">${row.damaged}</td><td>${row.last}</td>
+                <td>
+                    <button onclick="adjustCount('${row.barcode}', '${row.user}', '${row.branch}', '${row.session_name}', 'good', prompt('Enter change in GOOD count:'))">Good +/-</button>
+                    <button onclick="adjustCount('${row.barcode}', '${row.user}', '${row.branch}', '${row.session_name}', 'damaged', prompt('Enter change in DAMAGED count:'))">Damaged +/-</button>
+                </td>
+            </tr>`;
+        });
+        tbody.innerHTML = htmlStr;
+    }
+}
+
+function toggleAllCheckboxes(source) {
+    document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = source.checked);
+}
+
+function deleteSelected() {
+    const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+    if(checkboxes.length === 0) return alert("Select at least one entry to delete.");
+    const mode = document.getElementById('viewMode').value;
+    
+    let entries = [];
+    checkboxes.forEach(cb => {
+        if(mode === 'master') {
+            entries.push({
+                barcode: cb.dataset.barcode,
+                branch: document.getElementById('masterBranch').value,
+                session_name: document.getElementById('masterSession').value
+            });
+        } else {
+            entries.push({
+                barcode: cb.dataset.barcode,
+                user: cb.dataset.user,
+                branch: cb.dataset.branch,
+                session_name: cb.dataset.session
+            });
+        }
+    });
+    
+    const pw = prompt(`Are you sure you want to permanently delete ${entries.length} selected entries?\n\nEnter your Admin Password to confirm:`);
+    if(!pw) return;
+    
+    fetch('/admin/delete_entries', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ mode, password: pw, entries })
+    }).then(r => r.json()).then(res => {
+        if(res.error) alert("Deletion failed: " + res.error);
+        else { alert("Entries successfully deleted."); loadScans(); }
+    });
+}
+
+function exportCSV() {
+    const mode = document.getElementById('viewMode').value;
+    const branch = document.getElementById('masterBranch').value;
+    const session_name = document.getElementById('masterSession').value;
+    window.location.href = `/admin/export_csv?mode=${mode}&branch=${encodeURIComponent(branch)}&session_name=${encodeURIComponent(session_name)}`;
+}
+
+function saveSettings() {
+    fetch('/admin/settings', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            global_branch: document.getElementById('global-branch').value,
+            global_session: document.getElementById('global-session').value
+        })
+    }).then(() => alert("Global settings saved. Users will see this next time they load the page."));
+}
+
+function adjustCount(barcode, user, branch, session_name, type, diff) {
+    if (!diff || isNaN(diff)) return;
+    fetch('/admin/adjust_count', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ barcode, user, branch, session_name, type, diff })
+    }).then(() => loadScans());
+}
+
+function addUser() {
+    fetch('/add_user', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            username: document.getElementById('new-user').value,
+            password: document.getElementById('new-pass').value,
+            role: document.getElementById('new-role').value
+        })
+    }).then(() => location.reload());
+}
+
+function deleteUser(username) {
+    if(!confirm("Delete user?")) return;
+    fetch('/delete_user/'+username, {method: 'DELETE'}).then(() => location.reload());
+}
+
+function changePassword(username) {
+    const pw = prompt("New password for " + username + ":");
+    if(!pw) return;
+    fetch('/user_password', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username, password: pw})
+    }).then(() => alert("Password changed."));
+}
+
+function addBranch() {
+    fetch('/add_branch', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: document.getElementById('new-branch').value})
+    }).then(() => location.reload());
+}
+
+function deleteBranch(name) {
+    if(!confirm("Delete branch?")) return;
+    fetch('/delete_branch/'+name, {method: 'DELETE'}).then(() => location.reload());
+}
+
+loadScans();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scanner</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            background-attachment: fixed;
+            color: #f8fafc;
+            margin: 0;
+            padding: 20px 0;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            padding: 0 20px;
+            text-align: center;
+        }
+
+        input, select {
+            font-family: 'Inter', sans-serif;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f8fafc;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input:focus, select:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+        }
+
+        #barcodeInput {
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 32px;
+            padding: 20px 50px 20px 20px;
+            border-radius: 16px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 2px solid rgba(56, 189, 248, 0.5);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.15), inset 0 2px 4px rgba(0,0,0,0.5);
+            text-align: center;
+            font-weight: 300;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+        }
+
+        #barcodeInput:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.4), inset 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        #barcodeInput::placeholder {
+            color: #64748b;
+        }
+
+        .count {
+            font-size: 130px;
+            font-weight: 700;
+            margin: 10px 0 20px 0;
+            color: #38bdf8;
+            line-height: 1;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+
+        .table-container {
+            max-height: 350px;
+            overflow-y: auto;
+            border-radius: 10px;
+            background: rgba(15, 23, 42, 0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .table-container::-webkit-scrollbar { width: 8px; }
+        .table-container::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; }
+        .table-container::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            text-align: left;
+        }
+
+        th {
+            position: sticky;
+            top: 0;
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(4px);
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+            z-index: 10;
+        }
+        
+        tbody tr:hover {
+            background: rgba(255,255,255,0.02);
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+        }
+
+        .manual input {
+            padding: 12px 15px;
+            font-size: 16px;
+            border-radius: 10px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .clear-btn {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #64748b;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+            box-shadow: none;
+        }
+        
+        .clear-btn:hover {
+            color: #ef4444;
+            transform: translateY(-50%) scale(1.1);
+            box-shadow: none;
+        }
+
+        .nav-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 12px 25px;
+            border-radius: 16px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            font-weight: 700;
+            letter-spacing: -1px;
+            font-size: 36px;
+            background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 30px;
+        }
+
+        h3 {
+            margin-top: 0;
+            font-weight: 600;
+            color: #f8fafc;
+        }
+        
+        h4 {
+            color: #94a3b8;
+            margin: 20px 0 10px 0;
+            font-weight: 500;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 20px;
+            color: #4ade80;
+            font-size: 13px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="nav-bar">
+        <div style="display:flex; align-items:center; gap: 15px;">
+            <span style="font-weight: 600; color: #94a3b8; font-size: 15px;">
+                👤 <span style="color:#f8fafc; margin-right:5px;">{{ user }}</span> 
+                {% if role == 'admin' %}(<a href="/admin" style="color: #38bdf8; text-decoration: none; font-weight: 600; padding: 2px 8px; background: rgba(56, 189, 248, 0.1); border-radius: 6px;">Admin Panel</a>){% endif %}
+                <span style="margin: 0 10px; color: #475569;">|</span> 
+                <a href="/logout" style="color: #f87171; text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s;">Logout</a>
+            </span>
+        </div>
+        <div style="display:flex; align-items:center; gap: 15px;">
+            <select id="branchSelector" style="font-size: 14px; padding: 8px 12px; border-radius: 8px;"></select>
+            <input id="sessionName" value="" placeholder="Session Name" style="width: 140px; font-size: 14px; padding: 8px 12px; border-radius: 8px;" onchange="updateCount(); loadSummary();">
+            <span id="syncStatus" class="status-badge">🟢 Online</span>
+        </div>
+    </div>
+
+    <h1>Barcode Scanner</h1>
+
+    <div class="input-wrapper" style="width: 100%; display: block;">
+        <input id="barcodeInput" autofocus placeholder="Scan barcode..." />
+        <button class="clear-btn" onclick="document.getElementById('barcodeInput').value=''; document.getElementById('barcodeInput').focus();" style="right: 25px;">&times;</button>
+    </div>
+
+    <div class="card" style="margin-bottom: 30px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <h3 style="margin: 0; color: #94a3b8; text-transform: uppercase; font-size: 13px; letter-spacing: 1.5px;">Session Counter</h3>
+            <select id="countMode" onchange="updateCounterDisplay()" style="background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); color: #f8fafc; padding: 6px 12px; border-radius: 6px; outline: none; font-size: 13px; font-weight: 500; cursor: pointer;">
+                <option value="all">Total Items Scanned</option>
+                <option value="last">Last Barcode Scanned</option>
+                <option value="unique">Unique Barcodes Count</option>
+                <option value="damaged">Damaged Items Total</option>
+            </select>
+        </div>
+        <div class="count" id="count">0</div>
+    </div>
+    <div id="status"></div>
+
+    <div class="grid">
+
+        <div class="card manual">
+            <h3 style="text-align: center; margin-bottom: 20px;">Manual Entry</h3>
+            
+            <div style="display: flex; justify-content: space-between; gap: 10px; margin-bottom: 25px;">
+                <div class="input-wrapper" style="flex: 2;">
+                    <input id="manualBarcode" placeholder="Barcode" style="width: 100%; text-align: left; padding-left: 15px;">
+                    <button class="clear-btn" onclick="document.getElementById('manualBarcode').value=''; document.getElementById('manualBarcode').focus();">&times;</button>
+                </div>
+                <input id="manualQty" type="number" value="1" min="1" style="flex: 1; text-align: center; background: rgba(15, 23, 42, 0.4);">
+            </div>
+
+            <h4 style="text-align: center; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Damaged</h4>
+            
+            <div style="display: flex; justify-content: space-between; gap: 10px; margin-bottom: 30px;">
+                <div class="input-wrapper" style="flex: 2;">
+                    <input id="damagedBarcode" placeholder="Barcode" style="width: 100%; text-align: left; padding-left: 15px;">
+                    <button class="clear-btn" onclick="document.getElementById('damagedBarcode').value=''; document.getElementById('damagedBarcode').focus();">&times;</button>
+                </div>
+                <input id="damagedQty" type="number" value="1" min="1" style="flex: 1; text-align: center; background: rgba(15, 23, 42, 0.4);">
+            </div>
+
+            <div style="display: flex; justify-content: space-between; gap: 15px;">
+                <button onclick="addDamaged()" style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #e2e8f0;">Add Damaged</button>
+                <button class="btn-primary" onclick="manualAdd()" style="flex: 1;">Add Good</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3 style="margin:0;">Summary</h3>
+                <input id="sumSearch" onkeyup="renderSummary()" placeholder="Search..." style="padding:8px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); outline:none; background:rgba(15,23,42,0.6); color:#fff; font-size:13px; width: 200px;">
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead id="summary-thead">
+                        <tr>
+                            <th onclick="doSumSort('barcode')" style="cursor:pointer;">Barcode</th>
+                            <th onclick="doSumSort('good')" style="cursor:pointer;">Good</th>
+                            <th onclick="doSumSort('damaged')" style="cursor:pointer;">Damaged</th>
+                            <th onclick="doSumSort('last')" style="cursor:pointer;">Last Scan</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="summary"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="card" style="margin-top: 20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <h3 style="margin:0;">My History</h3>
+            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <select id="histBranch" style="padding: 8px 12px; border-radius: 8px; outline: none; font-size: 13px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1);"><option value="">All Branches</option></select>
+                <input id="histSession" placeholder="Session Name" style="padding: 8px 12px; border-radius: 8px; outline: none; width: 130px; font-size: 13px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1);">
+                <input id="histDate" type="date" style="padding: 8px 12px; border-radius: 8px; outline: none; font-size: 13px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1);">
+                <button onclick="loadHistory()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 8px 16px; font-size: 13px;">Filter</button>
+                <input id="histSearch" onkeyup="renderHistory()" placeholder="Search..." style="padding:8px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); outline:none; background:rgba(15,23,42,0.6); color:#fff; font-size: 13px; width: 150px;">
+            </div>
+        </div>
+        
+        <div class="table-container" style="margin-top: 15px;">
+            <table>
+                <thead id="history-thead">
+                    <tr>
+                        <th onclick="doHistSort('barcode')" style="cursor:pointer;">Barcode</th>
+                        <th onclick="doHistSort('branch')" style="cursor:pointer;">Branch</th>
+                        <th onclick="doHistSort('session_name')" style="cursor:pointer;">Session</th>
+                        <th onclick="doHistSort('good')" style="cursor:pointer;">Good</th>
+                        <th onclick="doHistSort('damaged')" style="cursor:pointer;">Damaged</th>
+                        <th onclick="doHistSort('last')" style="cursor:pointer;">Last Scan</th>
+                    </tr>
+                </thead>
+                <tbody id="history-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+let audioCtx = null;
+let lastScanTime = 0;
+let localScans = JSON.parse(localStorage.getItem('localScans') || '[]');
+let currentSummaryData = [];
+let lastScannedBarcode = null;
+
+document.getElementById('sessionName').value = new Date().toISOString().split('T')[0];
+
+function saveLocal() {
+    localStorage.setItem('localScans', JSON.stringify(localScans));
+}
+
+function updateSyncStatus(isOnline) {
+    const status = document.getElementById('syncStatus');
+    if (!isOnline || localScans.length > 0) {
+        status.innerText = `🔴 Offline (${localScans.length} unsynced)`;
+        status.style.color = '#ef4444';
+    } else {
+        status.innerText = `🟢 Online`;
+        status.style.color = '#22c55e';
+    }
+}
+
+// Load settings and branches
+fetch("/settings").then(r=>r.json()).then(settings => {
+    if (settings.global_session) {
+        document.getElementById('sessionName').value = settings.global_session;
+        document.getElementById('sessionName').disabled = true;
+    }
+    fetch("/branches").then(r=>r.json()).then(data => {
+        const sel = document.getElementById('branchSelector');
+        const hb = document.getElementById('histBranch');
+        data.forEach(b => {
+            let opt = document.createElement('option');
+            opt.value = b;
+            opt.innerText = b;
+            sel.appendChild(opt);
+            hb.appendChild(new Option(b, b));
+        });
+        if (settings.global_branch) {
+            sel.value = settings.global_branch;
+            sel.disabled = true;
+        }
+    });
+});
+
+document.addEventListener("click", () => {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+});
+
+function beep() {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.frequency.value = 900;
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.15);
+}
+
+function scanItem(barcode, qty=1, isDamaged=false) {
+    const session_name = document.getElementById('sessionName').value;
+    const branch = document.getElementById('branchSelector').value;
+    const endpoint = isDamaged ? '/damaged' : (qty > 1 ? '/manual' : '/scan');
+    
+    if (navigator.onLine) {
+        fetch(endpoint, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ barcode, qty, branch, session_name })
+        }).then(res => {
+            if (res.ok) {
+                updateCount();
+                loadSummary(barcode);
+                beep();
+                updateSyncStatus(true);
+            } else { throw new Error("Server error"); }
+        }).catch(err => {
+            pushLocal(barcode, qty, isDamaged, branch, session_name);
+        });
+    } else {
+        pushLocal(barcode, qty, isDamaged, branch, session_name);
+    }
+}
+
+function pushLocal(barcode, qty, isDamaged, branch, session_name) {
+    const ts = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    for(let i=0; i<qty; i++) {
+        let b = isDamaged ? barcode + "__DAMAGED" : barcode;
+        localScans.push({ barcode: b, timestamp: ts, user: "{{ user }}", branch, session_name });
+    }
+    saveLocal();
+    updateSyncStatus(false);
+    beep();
+    document.getElementById("count").innerText = parseInt(document.getElementById("count").innerText) + qty;
+}
+
+// Background sync
+setInterval(() => {
+    if (localScans.length > 0 && navigator.onLine) {
+        fetch('/sync', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ scans: localScans })
+        }).then(res => {
+            if (res.ok) {
+                localScans = [];
+                saveLocal();
+                updateSyncStatus(true);
+                updateCount();
+                loadSummary();
+            }
+        }).catch(err => updateSyncStatus(false));
+    } else if (navigator.onLine) {
+        updateSyncStatus(true);
+    } else {
+        updateSyncStatus(false);
+    }
+}, 3000);
+
+const input = document.getElementById("barcodeInput");
+input.addEventListener("keypress", function(e) {
+    if (e.key === "Enter") {
+        if (Date.now() - lastScanTime < 200) return;
+        lastScanTime = Date.now();
+        const barcode = input.value.trim();
+        if (!barcode) return;
+        scanItem(barcode, 1, false);
+        input.value = "";
+    }
+});
+
+function updateCount() {
+    // Deprecated, now handled by updateCounterDisplay
+}
+
+function updateCounterDisplay() {
+    const mode = document.getElementById('countMode').value;
+    const countEl = document.getElementById('count');
+    let total = 0;
+    
+    if (mode === 'all') {
+        total = currentSummaryData.reduce((acc, item) => acc + item.good + item.damaged, 0);
+        countEl.style.color = '#38bdf8';
+    } else if (mode === 'unique') {
+        total = currentSummaryData.length;
+        countEl.style.color = '#a855f7';
+    } else if (mode === 'damaged') {
+        total = currentSummaryData.reduce((acc, item) => acc + item.damaged, 0);
+        countEl.style.color = '#ef4444';
+    } else if (mode === 'last') {
+        if (lastScannedBarcode) {
+            const item = currentSummaryData.find(i => i.barcode === lastScannedBarcode);
+            total = item ? (item.good + item.damaged) : 0;
+        }
+        countEl.style.color = '#22c55e';
+    }
+    
+    countEl.innerText = total;
+}
+
+let sumSortCol = 'last'; let sumSortAsc = false;
+let histSortCol = 'last'; let histSortAsc = false;
+let currentHistoryData = [];
+
+function doSumSort(col) {
+    if (sumSortCol === col) sumSortAsc = !sumSortAsc;
+    else { sumSortCol = col; sumSortAsc = true; }
+    renderSummary();
+}
+
+function doHistSort(col) {
+    if (histSortCol === col) histSortAsc = !histSortAsc;
+    else { histSortCol = col; histSortAsc = true; }
+    renderHistory();
+}
+
+function renderSummary() {
+    const table = document.getElementById("summary");
+    const search = (document.getElementById('sumSearch').value || "").toLowerCase();
+    table.innerHTML = "";
+    
+    let filtered = currentSummaryData.filter(row => 
+        (row.barcode || "").toLowerCase().includes(search)
+    );
+    
+    filtered.sort((a, b) => {
+        let valA = a[sumSortCol]; let valB = b[sumSortCol];
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        if (valA < valB) return sumSortAsc ? -1 : 1;
+        if (valA > valB) return sumSortAsc ? 1 : -1;
+        return 0;
+    });
+    
+    const s = (col) => sumSortCol===col ? (sumSortAsc ? ' ↑' : ' ↓') : '';
+    document.getElementById("summary-thead").innerHTML = `<tr>
+        <th onclick="doSumSort('barcode')" style="cursor:pointer;">Barcode${s('barcode')}</th>
+        <th onclick="doSumSort('good')" style="cursor:pointer;">Good${s('good')}</th>
+        <th onclick="doSumSort('damaged')" style="cursor:pointer;">Damaged${s('damaged')}</th>
+        <th onclick="doSumSort('last')" style="cursor:pointer;">Last Scan${s('last')}</th>
+        <th>Action</th>
+    </tr>`;
+
+    let htmlStr = "";
+    filtered.forEach(item => {
+        const bg = (item.barcode === lastScannedBarcode) ? ' style="background: #334155;"' : '';
+        htmlStr += `
+        <tr${bg}>
+            <td>${item.barcode}</td>
+            <td>${item.good}</td>
+            <td style="color:#ef4444">${item.damaged}</td>
+            <td>${item.last || ""}</td>
+            <td><button class="clear-btn" style="position:static; transform:none; color:#ef4444; font-size:18px;" onclick="deleteSummaryItem('${item.barcode}')" title="Delete all scans for this barcode in this session">🗑️</button></td>
+        </tr>`;
+    });
+    table.innerHTML = htmlStr;
+    updateCounterDisplay();
+}
+
+function loadSummary(highlightBarcode=null) {
+    if (highlightBarcode) lastScannedBarcode = highlightBarcode;
+    const session_name = document.getElementById('sessionName').value;
+    fetch("/summary?session_name=" + encodeURIComponent(session_name))
+        .then(res => res.json())
+        .then(data => {
+            currentSummaryData = data;
+            renderSummary();
+        });
+}
+
+function deleteSummaryItem(barcode) {
+    if(!confirm(`Are you sure you want to delete ALL scans for ${barcode} in this session?`)) return;
+    const session_name = document.getElementById('sessionName').value;
+    fetch('/user/delete_scan', {
+        method: 'DELETE', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ barcode, session_name })
+    }).then(() => {
+        updateCount();
+        loadSummary();
+        loadHistory();
+    });
+}
+
+function renderHistory() {
+    const tbody = document.getElementById("history-tbody");
+    const search = (document.getElementById('histSearch').value || "").toLowerCase();
+    tbody.innerHTML = "";
+    
+    let filtered = currentHistoryData.filter(row => 
+        (row.barcode || "").toLowerCase().includes(search) ||
+        (row.branch || "").toLowerCase().includes(search) ||
+        (row.session_name || "").toLowerCase().includes(search)
+    );
+    
+    filtered.sort((a, b) => {
+        let valA = a[histSortCol]; let valB = b[histSortCol];
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        if (valA < valB) return histSortAsc ? -1 : 1;
+        if (valA > valB) return histSortAsc ? 1 : -1;
+        return 0;
+    });
+    
+    const s = (col) => histSortCol===col ? (histSortAsc ? ' ↑' : ' ↓') : '';
+    document.getElementById("history-thead").innerHTML = `<tr>
+        <th onclick="doHistSort('barcode')" style="cursor:pointer;">Barcode${s('barcode')}</th>
+        <th onclick="doHistSort('branch')" style="cursor:pointer;">Branch${s('branch')}</th>
+        <th onclick="doHistSort('session_name')" style="cursor:pointer;">Session${s('session_name')}</th>
+        <th onclick="doHistSort('good')" style="cursor:pointer;">Good${s('good')}</th>
+        <th onclick="doHistSort('damaged')" style="cursor:pointer;">Damaged${s('damaged')}</th>
+        <th onclick="doHistSort('last')" style="cursor:pointer;">Last Scan${s('last')}</th>
+    </tr>`;
+
+    let htmlStr = "";
+    filtered.forEach(item => {
+        htmlStr += `
+        <tr>
+            <td>${item.barcode}</td>
+            <td>${item.branch}</td>
+            <td>${item.session_name}</td>
+            <td>${item.good}</td>
+            <td style="color:#ef4444">${item.damaged}</td>
+            <td>${item.last || ""}</td>
+        </tr>`;
+    });
+    tbody.innerHTML = htmlStr;
+}
+
+function loadHistory() {
+    const branch = document.getElementById('histBranch').value;
+    const session = document.getElementById('histSession').value;
+    const date = document.getElementById('histDate').value;
+    
+    fetch(`/user/history?branch=${encodeURIComponent(branch)}&session_name=${encodeURIComponent(session)}&date=${encodeURIComponent(date)}`)
+        .then(res => res.json())
+        .then(data => {
+            currentHistoryData = data;
+            renderHistory();
+        });
+}
+
+function manualAdd() {
+    const barcode = document.getElementById('manualBarcode').value.trim();
+    const qty = parseInt(document.getElementById('manualQty').value) || 1;
+    if (barcode) scanItem(barcode, qty, false);
+}
+
+function addDamaged() {
+    const barcode = document.getElementById('damagedBarcode').value.trim();
+    const qty = parseInt(document.getElementById('damagedQty').value) || 1;
+    if (barcode) scanItem(barcode, qty, true);
+}
+
+updateCount();
+loadSummary();
+loadHistory();
+</script>
+
+</body>
+</html>
