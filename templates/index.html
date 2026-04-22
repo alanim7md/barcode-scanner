@@ -322,27 +322,27 @@
         <div class="card manual">
             <h3 style="text-align: center; margin-bottom: 20px;">Manual Entry</h3>
             
-            <div style="display: flex; justify-content: space-between; gap: 10px; margin-bottom: 25px;">
-                <div class="input-wrapper" style="flex: 2;">
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 25px;">
+                <div class="input-wrapper">
                     <input id="manualBarcode" placeholder="Barcode" style="width: 100%; text-align: left; padding-left: 15px;">
                     <button class="clear-btn" onclick="document.getElementById('manualBarcode').value=''; document.getElementById('manualBarcode').focus();">&times;</button>
                 </div>
-                <input id="manualQty" type="number" value="1" min="1" style="flex: 1; text-align: center; background: rgba(15, 23, 42, 0.4);">
+                <input id="manualQty" type="number" value="1" min="1" style="width: 100%; text-align: center; background: rgba(15, 23, 42, 0.4);">
             </div>
 
             <h4 style="text-align: center; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Damaged</h4>
             
-            <div style="display: flex; justify-content: space-between; gap: 10px; margin-bottom: 30px;">
-                <div class="input-wrapper" style="flex: 2;">
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 30px;">
+                <div class="input-wrapper">
                     <input id="damagedBarcode" placeholder="Barcode" style="width: 100%; text-align: left; padding-left: 15px;">
                     <button class="clear-btn" onclick="document.getElementById('damagedBarcode').value=''; document.getElementById('damagedBarcode').focus();">&times;</button>
                 </div>
-                <input id="damagedQty" type="number" value="1" min="1" style="flex: 1; text-align: center; background: rgba(15, 23, 42, 0.4);">
+                <input id="damagedQty" type="number" value="1" min="1" style="width: 100%; text-align: center; background: rgba(15, 23, 42, 0.4);">
             </div>
 
-            <div style="display: flex; justify-content: space-between; gap: 15px;">
-                <button onclick="addDamaged()" style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #e2e8f0;">Add Damaged</button>
-                <button class="btn-primary" onclick="manualAdd()" style="flex: 1;">Add Good</button>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <button onclick="addDamaged()" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #e2e8f0;">Add Damaged</button>
+                <button class="btn-primary" onclick="manualAdd()" style="width: 100%;">Add Good</button>
             </div>
         </div>
 
