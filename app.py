@@ -77,6 +77,13 @@ def init_db():
     if c.fetchone()[0] == 0:
         c.execute("INSERT INTO users (username, password, role) VALUES ('admin', 'admin123', 'admin')")
 
+    # ----- CREATE INDEXES FOR EXTREME SPEED -----
+    # These make searching, grouping, and sorting instantly fast even with millions of rows
+    c.execute("CREATE INDEX IF NOT EXISTS idx_scans_barcode ON scans(barcode)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_scans_user_session ON scans(user, session_name)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_scans_branch_session ON scans(branch, session_name)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_scans_timestamp ON scans(timestamp)")
+
     conn.commit()
     conn.close()
 
