@@ -82,9 +82,8 @@ def init_db():
     c.execute("CREATE INDEX IF NOT EXISTS idx_scans_branch_session ON scans(branch, session_name)")
     c.execute("CREATE INDEX IF NOT EXISTS idx_scans_timestamp ON scans(timestamp)")
     
-    # Unique constraint to prevent duplicate offline syncs
     try:
-        c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_scans_unique_sync ON scans(barcode, timestamp, user, session_name)")
+        c.execute("DROP INDEX IF EXISTS idx_scans_unique_sync")
     except sqlite3.OperationalError:
         pass
 
