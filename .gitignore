@@ -10,3 +10,5 @@ env/
 *.sqlite3
 database.db-shm
 database.db-wal
+users.db*
+backups/

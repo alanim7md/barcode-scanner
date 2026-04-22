@@ -9,6 +9,7 @@ app = Flask(__name__)
 app.secret_key = "secret123"
 
 DB = "database.db"
+USERS_DB = "users.db"
 
 # ---------- DB HELPER ----------
 def get_db():
@@ -19,19 +20,18 @@ def get_db():
     conn.execute("PRAGMA synchronous=NORMAL;")
     return conn
 
+def get_users_db():
+    conn = sqlite3.connect(USERS_DB, timeout=20)
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA synchronous=NORMAL;")
+    return conn
+
 # ---------- DB INIT ----------
 def init_db():
     conn = get_db()
     c = conn.cursor()
 
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE,
-            password TEXT,
-            role TEXT
-        )
-    """)
+    # Users table removed from here, moving to users.db below
 
     c.execute("""
         CREATE TABLE IF NOT EXISTS branches (
@@ -73,11 +73,7 @@ def init_db():
         )
     """)
 
-    # Seed default admin user if database is completely empty
-    c.execute("SELECT COUNT(*) FROM users")
-    if c.fetchone()[0] == 0:
-        c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", 
-                  ('admin', generate_password_hash('admin123'), 'admin'))
+    # Seed admin is moved to users.db setup
 
     # ----- CREATE INDEXES FOR EXTREME SPEED -----
     # These make searching, grouping, and sorting instantly fast even with millions of rows
@@ -95,6 +91,24 @@ def init_db():
     conn.commit()
     conn.close()
 
+    # Setup Users DB
+    u_conn = get_users_db()
+    u_c = u_conn.cursor()
+    u_c.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            password TEXT,
+            role TEXT
+        )
+    """)
+    u_c.execute("SELECT COUNT(*) FROM users")
+    if u_c.fetchone()[0] == 0:
+        u_c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", 
+                  ('admin', generate_password_hash('admin123'), 'admin'))
+    u_conn.commit()
+    u_conn.close()
+
 init_db()
 
 # ---------- LOGIN ----------
@@ -104,7 +118,7 @@ def login():
         u = request.form["username"]
         p = request.form["password"]
 
-        conn = get_db()
+        conn = get_users_db()
         c = conn.cursor()
         c.execute("SELECT role, password FROM users WHERE username=?", (u,))
         row = c.fetchone()
@@ -331,11 +345,14 @@ def admin():
     if session.get("role") != "admin":
         return "forbidden"
 
+    u_conn = get_users_db()
+    u_c = u_conn.cursor()
+    u_c.execute("SELECT username, role FROM users")
+    users = [{"username": r[0], "role": r[1]} for r in u_c.fetchall()]
+    u_conn.close()
+
     conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT username, role FROM users")
-    users = [{"username": r[0], "role": r[1]} for r in c.fetchall()]
-
     c.execute("SELECT id, name FROM branches")
     branches = [{"id": r[0], "name": r[1]} for r in c.fetchall()]
 
@@ -488,22 +505,24 @@ def admin_delete_entries():
     mode = data.get("mode")
     entries = data.get("entries", [])
     
-    conn = get_db()
-    c = conn.cursor()
-    c.execute("SELECT password FROM users WHERE username=?", (session.get("user"),))
-    row = c.fetchone()
+    u_conn = get_users_db()
+    u_c = u_conn.cursor()
+    u_c.execute("SELECT password FROM users WHERE username=?", (session.get("user"),))
+    row = u_c.fetchone()
+    u_conn.close()
     
     # Check hashed or plain text password
     if not row:
-        conn.close()
         return jsonify({"error": "Invalid password"}), 401
         
     db_password = row[0]
     is_valid = check_password_hash(db_password, password) if db_password.startswith(('scrypt:', 'pbkdf2:')) else db_password == password
     
     if not is_valid:
-        conn.close()
         return jsonify({"error": "Invalid password"}), 401
+        
+    conn = get_db()
+    c = conn.cursor()
         
     for entry in entries:
         barcode = entry.get("barcode")
@@ -525,7 +544,7 @@ def admin_delete_entries():
 @app.route("/add_user", methods=["POST"])
 def add_user():
     if session.get("role") != "admin": return "forbidden"
-    conn = get_db()
+    conn = get_users_db()
     c = conn.cursor()
     try:
         c.execute("INSERT INTO users (username,password,role) VALUES (?,?,?)",
@@ -539,7 +558,7 @@ def add_user():
 @app.route("/delete_user/<username>", methods=["DELETE"])
 def delete_user(username):
     if session.get("role") != "admin": return "forbidden"
-    conn = get_db()
+    conn = get_users_db()
     c = conn.cursor()
     c.execute("DELETE FROM users WHERE username=?", (username,))
     conn.commit()
@@ -549,7 +568,7 @@ def delete_user(username):
 @app.route("/user_password", methods=["POST"])
 def user_password():
     if session.get("role") != "admin": return "forbidden"
-    conn = get_db()
+    conn = get_users_db()
     c = conn.cursor()
     c.execute("UPDATE users SET password=? WHERE username=?", (generate_password_hash(request.json["password"]), request.json["username"]))
     conn.commit()
