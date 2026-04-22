@@ -628,4 +628,4 @@ if __name__ == "__main__":
     except ImportError:
         print("Waitress not installed. Please run 'pip install waitress' for production mode.")
         print("Falling back to Flask development server...")
-        app.run(host="0.0.0.0", debug=True)
+        app.run(host="0.0.0.0", debug=False)
