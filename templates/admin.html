@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>Admin Panel</title>
     <style>
         body { font-family: system-ui, Arial; background: #0f172a; color: #e2e8f0; margin: 0; padding: 20px; }
@@ -11,7 +13,20 @@
         th { background: #0f172a; }
         button { padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; }
         .btn-primary { background: #38bdf8; color: black; }
-        .btn-danger { background: #ef4444; color: white; }
+        button.btn-danger { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; }
+        button.btn-danger:hover { background: rgba(239, 68, 68, 0.2); }
+        
+        @media (max-width: 1024px) {
+            .tabs { flex-wrap: wrap; gap: 10px; }
+            .tab { flex: 1; min-width: 120px; text-align: center; padding: 15px; font-size: 16px; }
+            input, select { font-size: 16px !important; padding: 14px !important; width: 100%; box-sizing: border-box; }
+            button { padding: 14px 20px !important; font-size: 16px !important; margin-bottom: 5px; width: 100%; }
+            .nav { flex-direction: column; gap: 15px; text-align: center; }
+            th, td { padding: 16px 10px; font-size: 15px; }
+            .card > div[style*="display:flex"] { flex-direction: column; align-items: stretch; }
+            .card > div[style*="display:flex"] > * { width: 100%; margin-bottom: 10px; }
+            td button { margin-bottom: 10px; display: block; width: 100%; }
+        }
         input, select { padding: 8px; border-radius: 5px; border: 1px solid #334155; background: #0f172a; color: white; }
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
         .tab { padding: 10px 20px; cursor: pointer; background: #334155; border-radius: 5px; }
