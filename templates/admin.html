@@ -35,9 +35,11 @@
 
     <div class="tabs">
         <div class="tab active" onclick="showTab('scans')">Scans</div>
+        {% if role == 'admin' %}
         <div class="tab" onclick="showTab('users')">Users</div>
         <div class="tab" onclick="showTab('branches')">Branches</div>
         <div class="tab" onclick="showTab('settings')">Global Settings</div>
+        {% endif %}
     </div>
 
     <div id="scans" class="tab-content active card">
@@ -51,7 +53,9 @@
             <input id="masterSession" placeholder="Session Name" onchange="loadScans()" style="display:none;">
             <button onclick="loadScans()">Refresh Data</button>
             <button class="btn-primary" onclick="exportCSV()">Export to Excel (CSV)</button>
+            {% if role == 'admin' %}
             <button class="btn-danger" id="deleteSelectedBtn" onclick="deleteSelected()" style="display:none;">Delete Selected</button>
+            {% endif %}
             <input id="adminSearch" onkeyup="renderScans()" placeholder="Search..." style="padding: 5px; margin-left: auto;">
         </div>
         <div style="max-height: 500px; overflow-y: auto;">
@@ -87,7 +91,7 @@
         <h4 style="margin-top: 30px;">Add User</h4>
         <input id="new-user" placeholder="Username">
         <input id="new-pass" placeholder="Password" type="password">
-        <select id="new-role"><option value="user">User</option><option value="admin">Admin</option></select>
+        <select id="new-role"><option value="user">User</option><option value="moderator">Moderator</option><option value="admin">Admin</option></select>
         <button class="btn-primary" onclick="addUser()">Add</button>
     </div>
 
@@ -180,7 +184,8 @@ function renderScans() {
     const search = (document.getElementById('adminSearch').value || "").toLowerCase();
     
     tbody.innerHTML = '';
-    document.getElementById('deleteSelectedBtn').style.display = 'inline-block';
+    const delBtn = document.getElementById('deleteSelectedBtn');
+    if (delBtn) delBtn.style.display = 'inline-block';
     
     let filtered = currentAdminData.filter(row => 
         (row.barcode || "").toLowerCase().includes(search) ||
@@ -206,12 +211,13 @@ function renderScans() {
             <th onclick="doSort('users')" style="cursor:pointer;">Users${s('users')}</th>
             <th onclick="doSort('good')" style="cursor:pointer;">Good${s('good')}</th>
             <th onclick="doSort('damaged')" style="cursor:pointer;">Damaged${s('damaged')}</th>
+            <th onclick="doSort('flagged')" style="cursor:pointer;">Flagged${s('flagged')}</th>
             <th onclick="doSort('last')" style="cursor:pointer;">Last Scan${s('last')}</th></tr>`;
         let htmlStr = "";
         filtered.forEach(row => {
             htmlStr += `<tr>
                 <td><input type="checkbox" class="row-checkbox" data-barcode="${row.barcode}"></td>
-                <td>${row.barcode}</td><td>${row.users||''}</td><td>${row.good}</td><td style="color:#ef4444">${row.damaged}</td><td>${row.last}</td>
+                <td>${row.barcode}</td><td>${row.users||''}</td><td>${row.good}</td><td style="color:#ef4444">${row.damaged}</td><td style="color:#facc15">${row.flagged}</td><td>${row.last}</td>
             </tr>`;
         });
         tbody.innerHTML = htmlStr;
@@ -223,17 +229,22 @@ function renderScans() {
             <th onclick="doSort('session_name')" style="cursor:pointer;">Session${s('session_name')}</th>
             <th onclick="doSort('good')" style="cursor:pointer;">Good${s('good')}</th>
             <th onclick="doSort('damaged')" style="cursor:pointer;">Damaged${s('damaged')}</th>
-            <th onclick="doSort('last')" style="cursor:pointer;">Last Scan${s('last')}</th><th>Adjust</th></tr>`;
+            <th onclick="doSort('flagged')" style="cursor:pointer;">Flagged${s('flagged')}</th>
+            <th onclick="doSort('last')" style="cursor:pointer;">Last Scan${s('last')}</th>
+            {% if role == 'admin' %}<th>Adjust</th>{% endif %}</tr>`;
         let htmlStr = "";
         filtered.forEach(row => {
             htmlStr += `<tr>
                 <td><input type="checkbox" class="row-checkbox" data-barcode="${row.barcode}" data-user="${row.user}" data-branch="${row.branch}" data-session="${row.session_name}"></td>
                 <td>${row.barcode}</td><td>${row.user||''}</td><td>${row.branch||''}</td><td>${row.session_name||''}</td>
-                <td>${row.good}</td><td style="color:#ef4444">${row.damaged}</td><td>${row.last}</td>
+                <td>${row.good}</td><td style="color:#ef4444">${row.damaged}</td><td style="color:#facc15">${row.flagged}</td><td>${row.last}</td>
+                {% if role == 'admin' %}
                 <td>
                     <button onclick="adjustCount('${row.barcode}', '${row.user}', '${row.branch}', '${row.session_name}', 'good', prompt('Enter change in GOOD count:'))">Good +/-</button>
                     <button onclick="adjustCount('${row.barcode}', '${row.user}', '${row.branch}', '${row.session_name}', 'damaged', prompt('Enter change in DAMAGED count:'))">Damaged +/-</button>
+                    <button onclick="adjustCount('${row.barcode}', '${row.user}', '${row.branch}', '${row.session_name}', 'flagged', prompt('Enter change in FLAGGED count:'))">Flagged +/-</button>
                 </td>
+                {% endif %}
             </tr>`;
         });
         tbody.innerHTML = htmlStr;

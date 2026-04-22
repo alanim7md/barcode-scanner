@@ -158,13 +158,16 @@ def index():
     return render_template("index.html", user=session["user"], role=session["role"])
 
 # ---------- SCAN ----------
-def insert_scans_bulk(barcode, qty, is_damaged=False, session_name=None, branch=None):
+def insert_scans_bulk(barcode, qty, is_damaged=False, is_flagged=False, session_name=None, branch=None):
     if session_name is None:
         session_name = request.json.get("session_name", "")
     if branch is None:
         branch = request.json.get("branch")
         
-    actual_barcode = barcode + "__DAMAGED" if is_damaged else barcode
+    actual_barcode = barcode
+    if is_damaged: actual_barcode += "__DAMAGED"
+    if is_flagged: actual_barcode += "__FLAGGED"
+        
     user = session.get("user")
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
@@ -194,6 +197,11 @@ def damaged():
     insert_scans_bulk(request.json["barcode"], int(request.json.get("qty", 1)), is_damaged=True)
     return jsonify({"status":"ok"})
 
+@app.route("/flag", methods=["POST"])
+def flag():
+    insert_scans_bulk(request.json["barcode"], int(request.json.get("qty", 1)), is_flagged=True)
+    return jsonify({"status":"ok"})
+
 @app.route("/sync", methods=["POST"])
 def sync():
     scans = request.json.get("scans", [])
@@ -220,10 +228,11 @@ def summary():
 
     c.execute("""
         SELECT 
-            REPLACE(barcode,'__DAMAGED',''),
-            SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
+            REPLACE(REPLACE(barcode,'__DAMAGED',''),'__FLAGGED',''),
+            SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' AND barcode NOT LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
             SUM(CASE WHEN barcode LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
-            MAX(timestamp)
+            MAX(timestamp),
+            SUM(CASE WHEN barcode LIKE '%__FLAGGED' THEN 1 ELSE 0 END)
         FROM scans
         WHERE user=? AND session_name=?
         GROUP BY 1
@@ -236,7 +245,8 @@ def summary():
             "barcode": r[0],
             "good": r[1],
             "damaged": r[2],
-            "last": r[3]
+            "last": r[3],
+            "flagged": r[4]
         })
 
     conn.close()
@@ -287,8 +297,8 @@ def user_delete_scan():
     c = conn.cursor()
     c.execute("""
         DELETE FROM scans 
-        WHERE (barcode=? OR barcode=?) AND user=? AND session_name=?
-    """, (barcode, barcode + "__DAMAGED", session.get("user"), session_name))
+        WHERE (barcode=? OR barcode=? OR barcode=?) AND user=? AND session_name=?
+    """, (barcode, barcode + "__DAMAGED", barcode + "__FLAGGED", session.get("user"), session_name))
     conn.commit()
     conn.close()
     return jsonify({"status": "ok"})
@@ -302,12 +312,13 @@ def user_history():
     
     query = """
         SELECT 
-            REPLACE(barcode,'__DAMAGED',''),
+            REPLACE(REPLACE(barcode,'__DAMAGED',''),'__FLAGGED',''),
             branch,
             session_name,
-            SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
+            SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' AND barcode NOT LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
             SUM(CASE WHEN barcode LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
-            MAX(timestamp)
+            MAX(timestamp),
+            SUM(CASE WHEN barcode LIKE '%__FLAGGED' THEN 1 ELSE 0 END)
         FROM scans
         WHERE user=?
     """
@@ -333,7 +344,7 @@ def user_history():
     for r in c.fetchall():
         data.append({
             "barcode": r[0], "branch": r[1], "session_name": r[2],
-            "good": r[3], "damaged": r[4], "last": r[5]
+            "good": r[3], "damaged": r[4], "last": r[5], "flagged": r[6]
         })
     conn.close()
     return jsonify(data)
@@ -341,7 +352,7 @@ def user_history():
 # ---------- ADMIN ----------
 @app.route("/admin")
 def admin():
-    if session.get("role") != "admin":
+    if session.get("role") not in ["admin", "moderator"]:
         return "forbidden"
 
     u_conn = get_users_db()
@@ -356,23 +367,24 @@ def admin():
     branches = [{"id": r[0], "name": r[1]} for r in c.fetchall()]
 
     conn.close()
-    return render_template("admin.html", users=users, branches=branches)
+    return render_template("admin.html", users=users, branches=branches, role=session.get("role"))
 
 @app.route("/admin/scans_data")
 def admin_scans_data():
-    if session.get("role") != "admin": return "forbidden"
+    if session.get("role") not in ["admin", "moderator"]: return "forbidden"
     # Grouped view
     conn = get_db()
     c = conn.cursor()
     c.execute("""
         SELECT 
-            REPLACE(barcode,'__DAMAGED',''),
+            REPLACE(REPLACE(barcode,'__DAMAGED',''),'__FLAGGED',''),
             user,
             branch,
             session_name,
-            SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
+            SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' AND barcode NOT LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
             SUM(CASE WHEN barcode LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
-            MAX(timestamp)
+            MAX(timestamp),
+            SUM(CASE WHEN barcode LIKE '%__FLAGGED' THEN 1 ELSE 0 END)
         FROM scans
         GROUP BY 1, 2, 3, 4
         ORDER BY MAX(timestamp) DESC
@@ -381,25 +393,26 @@ def admin_scans_data():
     for r in c.fetchall():
         data.append({
             "barcode": r[0], "user": r[1], "branch": r[2], "session_name": r[3],
-            "good": r[4], "damaged": r[5], "last": r[6]
+            "good": r[4], "damaged": r[5], "last": r[6], "flagged": r[7]
         })
     conn.close()
     return jsonify(data)
 
 @app.route("/admin/master_scans")
 def admin_master_scans():
-    if session.get("role") != "admin": return "forbidden"
+    if session.get("role") not in ["admin", "moderator"]: return "forbidden"
     branch = request.args.get("branch", "")
     session_name = request.args.get("session_name", "")
     conn = get_db()
     c = conn.cursor()
     c.execute("""
         SELECT 
-            REPLACE(barcode,'__DAMAGED',''),
-            SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
+            REPLACE(REPLACE(barcode,'__DAMAGED',''),'__FLAGGED',''),
+            SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' AND barcode NOT LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
             SUM(CASE WHEN barcode LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
             MAX(timestamp),
-            GROUP_CONCAT(DISTINCT user)
+            GROUP_CONCAT(DISTINCT user),
+            SUM(CASE WHEN barcode LIKE '%__FLAGGED' THEN 1 ELSE 0 END)
         FROM scans
         WHERE branch=? AND session_name=?
         GROUP BY 1
@@ -408,14 +421,14 @@ def admin_master_scans():
     data = []
     for r in c.fetchall():
         data.append({
-            "barcode": r[0], "good": r[1], "damaged": r[2], "last": r[3], "users": r[4]
+            "barcode": r[0], "good": r[1], "damaged": r[2], "last": r[3], "users": r[4], "flagged": r[5]
         })
     conn.close()
     return jsonify(data)
 
 @app.route("/admin/export_csv")
 def admin_export_csv():
-    if session.get("role") != "admin": return "forbidden"
+    if session.get("role") not in ["admin", "moderator"]: return "forbidden"
     mode = request.args.get("mode", "detailed")
     branch = request.args.get("branch", "")
     session_name = request.args.get("session_name", "")
@@ -424,21 +437,23 @@ def admin_export_csv():
     output = io.StringIO()
     writer = csv.writer(output)
     if mode == "master":
-        writer.writerow(["Barcode", "Good", "Damaged", "Last Scan"])
+        writer.writerow(["Barcode", "Good", "Damaged", "Flagged", "Last Scan"])
         c.execute("""
-            SELECT REPLACE(barcode,'__DAMAGED',''),
-                   SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
+            SELECT REPLACE(REPLACE(barcode,'__DAMAGED',''),'__FLAGGED',''),
+                   SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' AND barcode NOT LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
                    SUM(CASE WHEN barcode LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
+                   SUM(CASE WHEN barcode LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
                    MAX(timestamp)
             FROM scans WHERE branch=? AND session_name=? GROUP BY 1 ORDER BY MAX(timestamp) DESC
         """, (branch, session_name))
         for r in c.fetchall(): writer.writerow(r)
     else:
-        writer.writerow(["Barcode", "User", "Branch", "Session", "Good", "Damaged", "Last Scan"])
+        writer.writerow(["Barcode", "User", "Branch", "Session", "Good", "Damaged", "Flagged", "Last Scan"])
         c.execute("""
-            SELECT REPLACE(barcode,'__DAMAGED',''), user, branch, session_name,
-                   SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
+            SELECT REPLACE(REPLACE(barcode,'__DAMAGED',''),'__FLAGGED',''), user, branch, session_name,
+                   SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' AND barcode NOT LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
                    SUM(CASE WHEN barcode LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
+                   SUM(CASE WHEN barcode LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
                    MAX(timestamp)
             FROM scans GROUP BY 1, 2, 3, 4 ORDER BY MAX(timestamp) DESC
         """)
@@ -471,7 +486,12 @@ def set_settings():
 def admin_adjust_count():
     if session.get("role") != "admin": return "forbidden"
     data = request.json
-    barcode = data["barcode"] if data["type"] == "good" else data["barcode"] + "__DAMAGED"
+    barcode = data["barcode"]
+    if data["type"] == "damaged":
+        barcode += "__DAMAGED"
+    elif data["type"] == "flagged":
+        barcode += "__FLAGGED"
+        
     diff = int(data["diff"])
     
     conn = get_db()
@@ -528,13 +548,13 @@ def admin_delete_entries():
         if mode == "master":
             c.execute("""
                 DELETE FROM scans 
-                WHERE (barcode=? OR barcode=?) AND branch=? AND session_name=?
-            """, (barcode, barcode + "__DAMAGED", entry.get("branch"), entry.get("session_name")))
+                WHERE (barcode=? OR barcode=? OR barcode=?) AND branch=? AND session_name=?
+            """, (barcode, barcode + "__DAMAGED", barcode + "__FLAGGED", entry.get("branch"), entry.get("session_name")))
         else:
             c.execute("""
                 DELETE FROM scans 
-                WHERE (barcode=? OR barcode=?) AND user=? AND branch=? AND session_name=?
-            """, (barcode, barcode + "__DAMAGED", entry.get("user"), entry.get("branch"), entry.get("session_name")))
+                WHERE (barcode=? OR barcode=? OR barcode=?) AND user=? AND branch=? AND session_name=?
+            """, (barcode, barcode + "__DAMAGED", barcode + "__FLAGGED", entry.get("user"), entry.get("branch"), entry.get("session_name")))
             
     conn.commit()
     conn.close()

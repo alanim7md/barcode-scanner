@@ -3,7 +3,7 @@ from datetime import datetime
 import zipfile
 
 # Files to protect
-FILES_TO_BACKUP = ["database.db", "users.db"]
+FILES_TO_BACKUP = ["database.db"]
 BACKUP_DIR = "backups"
 
 if not os.path.exists(BACKUP_DIR):
