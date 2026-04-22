@@ -7,6 +7,8 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
         
+        * { box-sizing: border-box; }
+        
         body {
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
@@ -246,29 +248,48 @@
         @media (max-width: 1024px) {
             .container { padding: 10px; }
             .grid { grid-template-columns: 1fr; gap: 20px; margin-top: 20px; }
-            .nav-bar { flex-direction: column; gap: 20px; padding: 20px; align-items: stretch; text-align: center; }
-            .nav-bar > div { justify-content: center; flex-wrap: wrap; width: 100%; gap: 10px !important; }
-            .nav-bar input, .nav-bar select { flex: 1; min-width: 120px; font-size: 16px !important; padding: 14px !important; height: auto !important; }
+            .nav-bar { flex-direction: column; gap: 15px; padding: 20px; text-align: center; }
+            .nav-bar > div { flex-direction: column; width: 100%; gap: 10px !important; }
+            .nav-bar input, .nav-bar select { width: 100% !important; font-size: 16px !important; padding: 14px !important; height: auto !important; }
             
-            #barcodeInput { font-size: 26px; padding: 20px 60px 20px 20px; margin-bottom: 20px; }
-            .clear-btn { font-size: 35px !important; right: 20px; padding: 10px !important; }
-            td button.clear-btn { font-size: 26px !important; margin: 0 8px !important; padding: 5px !important; }
+            #barcodeInput { font-size: 24px; padding: 20px 50px 20px 20px; margin-bottom: 20px; }
             
             .card { padding: 20px; margin-bottom: 20px !important; }
-            .count { font-size: 110px; margin: 15px 0; }
+            .count { font-size: 90px; margin: 15px 0; }
             
             /* Tappable table rows */
-            th, td { padding: 18px 12px; font-size: 15px; }
+            th, td { padding: 15px 10px; font-size: 14px; }
             .table-container { max-height: 400px; -webkit-overflow-scrolling: touch; }
             
             /* Inputs & Buttons globally */
             input, select { font-size: 16px !important; padding: 14px !important; }
-            button { padding: 16px 20px !important; font-size: 16px !important; }
+            button { padding: 14px 20px !important; font-size: 16px !important; width: 100%; }
+            
+            /* Fix manual entry inputs squishing */
+            .card.manual > div[style*="display: flex"] { flex-direction: column; gap: 15px !important; margin-bottom: 20px !important; }
+            .card.manual > div[style*="display: flex"] > * { width: 100% !important; flex: none !important; }
+            .card.manual > div[style*="display: flex"] > div.input-wrapper { width: 100% !important; display: block; }
+            
+            /* Clear buttons must not be massive */
+            button.clear-btn { 
+                width: auto !important;
+                padding: 8px !important; 
+                font-size: 24px !important; 
+                right: 5px !important; 
+                background: none !important;
+            }
+            td button.clear-btn { 
+                font-size: 20px !important; 
+                margin: 0 4px !important; 
+                padding: 5px !important; 
+                display: inline-block !important; 
+                width: auto !important;
+            }
             
             /* Fix history filters */
-            #histBranch, #histSession, #histDate, #histSearch { flex: 1; min-width: 100px; }
+            #histBranch, #histSession, #histDate, #histSearch { width: 100% !important; margin-bottom: 10px; }
             
-            h1 { font-size: 32px; margin-bottom: 20px; }
+            h1 { font-size: 28px; margin-bottom: 15px; }
         }
     </style>
 </head>
@@ -366,17 +387,17 @@
 
     </div>
 
-    <div class="card" style="margin-top: 20px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-            <h3 style="margin:0;">My History</h3>
-            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                <select id="histBranch" style="padding: 8px 12px; border-radius: 8px; outline: none; font-size: 13px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1);"><option value="">All Branches</option></select>
-                <input id="histSession" placeholder="Session Name" style="padding: 8px 12px; border-radius: 8px; outline: none; width: 130px; font-size: 13px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1);">
-                <input id="histDate" type="date" style="padding: 8px 12px; border-radius: 8px; outline: none; font-size: 13px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1);">
-                <button onclick="loadHistory()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 8px 16px; font-size: 13px;">Filter</button>
-                <input id="histSearch" onkeyup="renderHistory()" placeholder="Search..." style="padding:8px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); outline:none; background:rgba(15,23,42,0.6); color:#fff; font-size: 13px; width: 150px;">
+        <div class="card" style="margin-top: 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <h3 style="margin:0;">My History</h3>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; width: 100%;">
+                    <select id="histBranch" style="padding: 8px 12px; border-radius: 8px; outline: none; font-size: 13px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); flex: 1;"><option value="">All Branches</option></select>
+                    <input id="histSession" placeholder="Session Name" style="padding: 8px 12px; border-radius: 8px; outline: none; width: 130px; font-size: 13px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); flex: 1;">
+                    <input id="histDate" type="date" style="padding: 8px 12px; border-radius: 8px; outline: none; font-size: 13px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); flex: 1;">
+                    <button onclick="loadHistory()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 8px 16px; font-size: 13px; flex: 1;">Filter</button>
+                    <input id="histSearch" onkeyup="renderHistory()" placeholder="Search..." style="padding:8px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); outline:none; background:rgba(15,23,42,0.6); color:#fff; font-size: 13px; flex: 2;">
+                </div>
             </div>
-        </div>
         
         <div class="table-container" style="margin-top: 15px;">
             <table>
