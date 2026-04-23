@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>Admin Panel</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: system-ui, Arial; background: #0f172a; color: #e2e8f0; margin: 0; padding: 20px; }
         .container { max-width: 1000px; margin: auto; }
@@ -81,6 +82,19 @@
         <div style="margin-top: 20px; text-align: right;">
             <button class="btn-primary" onclick="loadStats()">Refresh Stats</button>
         </div>
+
+        {% if role == 'admin' %}
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-top: 30px;">
+            <div style="background: #334155; padding: 20px; border-radius: 10px;">
+                <h4 style="margin-top: 0; color: #94a3b8;">Scans Over Time (Last 7 Days)</h4>
+                <canvas id="timeChart" style="max-height: 300px;"></canvas>
+            </div>
+            <div style="background: #334155; padding: 20px; border-radius: 10px;">
+                <h4 style="margin-top: 0; color: #94a3b8;">Item Status Distribution</h4>
+                <canvas id="statusChart" style="max-height: 300px;"></canvas>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <div id="scans" class="tab-content card">
@@ -191,6 +205,9 @@ function showTab(id) {
     if(id === 'dashboard') loadStats();
 }
 
+let timeChartObj = null;
+let statusChartObj = null;
+
 function loadStats() {
     fetch('/admin/stats')
         .then(r => r.json())
@@ -202,6 +219,57 @@ function loadStats() {
             document.getElementById('stat-flagged').innerText = data.flagged_items || 0;
         })
         .catch(err => console.error("Failed to load stats:", err));
+
+    if (document.getElementById('timeChart')) {
+        fetch('/admin/chart_data')
+            .then(r => r.json())
+            .then(data => {
+                if (data.forbidden) return;
+                
+                if (timeChartObj) timeChartObj.destroy();
+                timeChartObj = new Chart(document.getElementById('timeChart'), {
+                    type: 'line',
+                    data: {
+                        labels: data.time.labels,
+                        datasets: [{
+                            label: 'Scans',
+                            data: data.time.data,
+                            borderColor: '#38bdf8',
+                            tension: 0.1,
+                            fill: true,
+                            backgroundColor: 'rgba(56, 189, 248, 0.1)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' } },
+                            x: { grid: { color: 'rgba(255,255,255,0.1)' } }
+                        },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+
+                if (statusChartObj) statusChartObj.destroy();
+                statusChartObj = new Chart(document.getElementById('statusChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Good', 'Damaged', 'Flagged'],
+                        datasets: [{
+                            data: [data.status.good, data.status.damaged, data.status.flagged],
+                            backgroundColor: ['#4ade80', '#ef4444', '#facc15'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { color: '#e2e8f0' } }
+                        }
+                    }
+                });
+            });
+    }
 }
 
 let currentAdminData = [];

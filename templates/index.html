@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>Scanner</title>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
         
@@ -299,10 +300,19 @@
 
     <h1>Barcode Scanner</h1>
 
-    <div class="input-wrapper" style="width: 100%; display: block;">
-        <input id="barcodeInput" autofocus placeholder="Scan barcode..." />
-        <button class="clear-btn" onclick="document.getElementById('barcodeInput').value=''; document.getElementById('barcodeInput').focus();" style="right: 25px;">&times;</button>
+    <div style="display: flex; gap: 10px; width: 100%; margin-bottom: 5px;">
+        <div class="input-wrapper" style="flex: 1;">
+            <input id="barcodeInput" autofocus placeholder="Scan barcode..." style="margin-bottom: 0;" />
+            <button class="clear-btn" onclick="document.getElementById('barcodeInput').value=''; document.getElementById('barcodeInput').focus();" style="right: 25px;">&times;</button>
+        </div>
+        <button onclick="toggleCamera()" class="btn-primary" style="padding: 0 20px; font-size: 24px; border-radius: 16px;">📷</button>
     </div>
+    
+    <div style="text-align: right; margin-bottom: 30px;">
+        <button onclick="undoLastScan()" style="background: transparent; color: #f87171; border: 1px solid rgba(248,113,113,0.3); padding: 6px 12px; font-size: 13px; border-radius: 6px; cursor: pointer;">↶ Undo Last Scan</button>
+    </div>
+
+    <div id="reader" style="width: 100%; margin-bottom: 20px; display: none; border-radius: 16px; overflow: hidden; background: white;"></div>
 
     <div class="card" style="margin-bottom: 30px;">
         <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05);">
@@ -740,6 +750,59 @@ function toggleFlag(barcode) {
         loadSummary();
         loadHistory();
     });
+}
+
+function undoLastScan() {
+    if (localScans.length > 0) {
+        localScans.pop();
+        saveLocal();
+        updateCount();
+        loadSummary();
+        return;
+    }
+    
+    if (!navigator.onLine) return;
+    
+    const session_name = document.getElementById('sessionName').value;
+    fetch('/undo', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ session_name })
+    }).then(r => r.json()).then(() => {
+        updateCount();
+        loadSummary();
+        loadHistory();
+    });
+}
+
+let html5QrcodeScanner = null;
+function toggleCamera() {
+    const reader = document.getElementById('reader');
+    if (reader.style.display === 'none') {
+        reader.style.display = 'block';
+        if (!html5QrcodeScanner) {
+            html5QrcodeScanner = new Html5QrcodeScanner(
+                "reader", { fps: 10, qrbox: {width: 250, height: 150} }, false);
+            html5QrcodeScanner.render((decodedText, decodedResult) => {
+                scanItem(decodedText, 1, false);
+                // Pause automatically after scan, users can resume
+                html5QrcodeScanner.pause();
+                setTimeout(() => {
+                    if (confirm("Item scanned successfully! Continue scanning?")) {
+                        html5QrcodeScanner.resume();
+                    } else {
+                        toggleCamera();
+                    }
+                }, 100);
+            }, (error) => {});
+        }
+    } else {
+        reader.style.display = 'none';
+        if (html5QrcodeScanner) {
+            html5QrcodeScanner.clear();
+            html5QrcodeScanner = null;
+        }
+    }
 }
 
 updateCount();

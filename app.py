@@ -235,6 +235,25 @@ def sync():
     conn.close()
     return jsonify({"status": "ok"})
 
+@app.route("/undo", methods=["POST"])
+def undo():
+    user = session.get("user")
+    session_name = request.json.get("session_name")
+    
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("""
+        SELECT id FROM scans 
+        WHERE user=? AND session_name=?
+        ORDER BY timestamp DESC LIMIT 1
+    """, (user, session_name))
+    row = c.fetchone()
+    if row:
+        c.execute("DELETE FROM scans WHERE id=?", (row[0],))
+        conn.commit()
+    conn.close()
+    return jsonify({"status": "ok"})
+
 # ---------- SUMMARY ----------
 @app.route("/summary")
 def summary():
@@ -502,6 +521,40 @@ def admin_stats():
         "unique_barcodes": unique_barcodes,
         "active_users": active_users,
         "flagged_items": flagged_items
+    })
+
+@app.route("/admin/chart_data")
+def admin_chart_data():
+    if session.get("role") not in ["admin", "moderator"]: return "forbidden"
+    conn = get_db()
+    c = conn.cursor()
+    
+    c.execute("""
+        SELECT date(timestamp), COUNT(*) 
+        FROM scans 
+        WHERE date(timestamp) >= date('now', '-7 days')
+        GROUP BY date(timestamp)
+        ORDER BY date(timestamp) ASC
+    """)
+    dates = []
+    counts = []
+    for r in c.fetchall():
+        dates.append(r[0])
+        counts.append(r[1])
+        
+    c.execute("""
+        SELECT 
+            SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' AND barcode NOT LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
+            SUM(CASE WHEN barcode LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
+            SUM(CASE WHEN barcode LIKE '%__FLAGGED' THEN 1 ELSE 0 END)
+        FROM scans
+    """)
+    status_counts = c.fetchone()
+    conn.close()
+    
+    return jsonify({
+        "time": {"labels": dates, "data": counts},
+        "status": {"good": status_counts[0] or 0, "damaged": status_counts[1] or 0, "flagged": status_counts[2] or 0}
     })
 
 @app.route("/settings")
