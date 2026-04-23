@@ -49,7 +49,8 @@
     </div>
 
     <div class="tabs">
-        <div class="tab active" onclick="showTab('scans')">Scans</div>
+        <div class="tab active" onclick="showTab('dashboard')">Dashboard</div>
+        <div class="tab" onclick="showTab('scans')">Scans</div>
         {% if role == 'admin' %}
         <div class="tab" onclick="showTab('users')">Users</div>
         <div class="tab" onclick="showTab('branches')">Branches</div>
@@ -57,7 +58,32 @@
         {% endif %}
     </div>
 
-    <div id="scans" class="tab-content active card">
+    <div id="dashboard" class="tab-content active card">
+        <h3>System Statistics</h3>
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div style="flex: 1; background: #334155; padding: 20px; border-radius: 10px; text-align: center; min-width: 150px;">
+                <h2 id="stat-items" style="margin: 0; color: #38bdf8; font-size: 2em;">0</h2>
+                <p style="margin: 5px 0 0 0;">Total Items Scanned</p>
+            </div>
+            <div style="flex: 1; background: #334155; padding: 20px; border-radius: 10px; text-align: center; min-width: 150px;">
+                <h2 id="stat-barcodes" style="margin: 0; color: #38bdf8; font-size: 2em;">0</h2>
+                <p style="margin: 5px 0 0 0;">Unique Barcodes</p>
+            </div>
+            <div style="flex: 1; background: #334155; padding: 20px; border-radius: 10px; text-align: center; min-width: 150px;">
+                <h2 id="stat-users" style="margin: 0; color: #38bdf8; font-size: 2em;">0</h2>
+                <p style="margin: 5px 0 0 0;">Active Users</p>
+            </div>
+            <div style="flex: 1; background: #334155; padding: 20px; border-radius: 10px; text-align: center; min-width: 150px;">
+                <h2 id="stat-flagged" style="margin: 0; color: #ef4444; font-size: 2em;">0</h2>
+                <p style="margin: 5px 0 0 0;">Flagged Assigned</p>
+            </div>
+        </div>
+        <div style="margin-top: 20px; text-align: right;">
+            <button class="btn-primary" onclick="loadStats()">Refresh Stats</button>
+        </div>
+    </div>
+
+    <div id="scans" class="tab-content card">
         <h3>Scan View</h3>
         <div style="display:flex; gap:10px; margin-bottom: 10px;">
             <select id="viewMode" onchange="loadScans()">
@@ -162,6 +188,20 @@ function showTab(id) {
     document.getElementById(id).classList.add('active');
     event.target.classList.add('active');
     if(id === 'scans') loadScans();
+    if(id === 'dashboard') loadStats();
+}
+
+function loadStats() {
+    fetch('/admin/stats')
+        .then(r => r.json())
+        .then(data => {
+            if (data.forbidden) return;
+            document.getElementById('stat-items').innerText = data.total_scans || 0;
+            document.getElementById('stat-barcodes').innerText = data.unique_barcodes || 0;
+            document.getElementById('stat-users').innerText = data.active_users || 0;
+            document.getElementById('stat-flagged').innerText = data.flagged_items || 0;
+        })
+        .catch(err => console.error("Failed to load stats:", err));
 }
 
 let currentAdminData = [];
@@ -367,6 +407,7 @@ function deleteBranch(name) {
 }
 
 loadScans();
+loadStats();
 </script>
 
 </body>

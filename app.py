@@ -477,6 +477,33 @@ def admin_export_csv():
     conn.close()
     return Response(output.getvalue(), mimetype="text/csv", headers={"Content-Disposition": "attachment;filename=scans_export.csv"})
 
+@app.route("/admin/stats")
+def admin_stats():
+    if session.get("role") not in ["admin", "moderator"]: return "forbidden"
+    conn = get_db()
+    c = conn.cursor()
+    
+    c.execute("SELECT COUNT(*) FROM scans")
+    total_scans = c.fetchone()[0]
+    
+    c.execute("SELECT COUNT(DISTINCT REPLACE(REPLACE(barcode,'__DAMAGED',''),'__FLAGGED','')) FROM scans")
+    unique_barcodes = c.fetchone()[0]
+    
+    c.execute("SELECT COUNT(DISTINCT user) FROM scans")
+    active_users = c.fetchone()[0]
+    
+    c.execute("SELECT COUNT(*) FROM scans WHERE barcode LIKE '%__FLAGGED'")
+    flagged_items = c.fetchone()[0]
+    
+    conn.close()
+    
+    return jsonify({
+        "total_scans": total_scans,
+        "unique_barcodes": unique_barcodes,
+        "active_users": active_users,
+        "flagged_items": flagged_items
+    })
+
 @app.route("/settings")
 def get_settings():
     conn = get_db()
