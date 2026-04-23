@@ -331,18 +331,8 @@
                 <input id="manualQty" type="number" value="1" min="1" style="width: 100%; text-align: center; background: rgba(15, 23, 42, 0.4);">
             </div>
 
-            <h4 style="text-align: center; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Damaged</h4>
-            
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 30px;">
-                <div class="input-wrapper">
-                    <input id="damagedBarcode" placeholder="Barcode" style="width: 100%; text-align: left; padding-left: 15px;">
-                    <button class="clear-btn" onclick="document.getElementById('damagedBarcode').value=''; document.getElementById('damagedBarcode').focus();">&times;</button>
-                </div>
-                <input id="damagedQty" type="number" value="1" min="1" style="width: 100%; text-align: center; background: rgba(15, 23, 42, 0.4);">
-            </div>
-
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <button onclick="addDamaged()" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #e2e8f0;">Add Damaged</button>
+                <button onclick="addDamaged()" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #ef4444;">Add Damaged</button>
                 <button class="btn-primary" onclick="manualAdd()" style="width: 100%;">Add Good</button>
             </div>
         </div>
@@ -726,8 +716,8 @@ function manualAdd() {
 }
 
 function addDamaged() {
-    const barcode = document.getElementById('damagedBarcode').value.trim();
-    const qty = parseInt(document.getElementById('damagedQty').value) || 1;
+    const barcode = document.getElementById('manualBarcode').value.trim();
+    const qty = parseInt(document.getElementById('manualQty').value) || 1;
     if (barcode) scanItem(barcode, qty, true);
 }
 
