@@ -4,11 +4,15 @@ from datetime import datetime
 import zipfile
 import sqlite3
 import csv
+import requests
 
 # --- CONFIGURATION ---
-# Set this to the local path of your Google Drive folder. 
-# Example: r"G:\My Drive\ScannerBackups" or r"C:\Users\alani\Google Drive\Backups"
-GOOGLE_DRIVE_FOLDER = r"" 
+# Since you are on PythonAnywhere, the absolute easiest and most reliable way 
+# to receive automated backups is via a private Telegram Bot. 
+# 1. Message @BotFather on Telegram, send /newbot, and copy the HTTP API Token here.
+# 2. Message @userinfobot on Telegram to get your personal Chat ID and paste it here.
+TELEGRAM_BOT_TOKEN = "" 
+TELEGRAM_CHAT_ID = "" 
 
 DB_FILE = "database.db"
 USERS_DB = "users.db"
@@ -78,16 +82,24 @@ def create_backup():
 
     print(f"Local backup saved to: {backup_filename}")
 
-    # Copy to Google Drive if configured
-    if GOOGLE_DRIVE_FOLDER and os.path.exists(GOOGLE_DRIVE_FOLDER):
+    # Upload to Telegram API
+    if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
         try:
-            drive_dest = os.path.join(GOOGLE_DRIVE_FOLDER, f"backup_{timestamp}.zip")
-            shutil.copy2(backup_filename, drive_dest)
-            print(f"✅ Successfully copied to Google Drive: {drive_dest}")
+            print("Uploading backup to Telegram...")
+            url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendDocument"
+            with open(backup_filename, 'rb') as f:
+                files = {'document': f}
+                data = {'chat_id': TELEGRAM_CHAT_ID, 'caption': f'Scanner DB Backup: {timestamp}'}
+                response = requests.post(url, files=files, data=data)
+                
+                if response.status_code == 200:
+                    print("✅ Successfully sent backup to Telegram!")
+                else:
+                    print(f"❌ Failed to send to Telegram: {response.text}")
         except Exception as e:
-            print(f"❌ Failed to copy to Google Drive: {e}")
+            print(f"❌ Error sending to Telegram: {e}")
     else:
-        print("⚠️ Google Drive folder not configured or not found. Kept locally only.")
+        print("⚠️ Telegram Bot Token/Chat ID not configured. Backup kept locally only.")
 
 if __name__ == "__main__":
     create_backup()
