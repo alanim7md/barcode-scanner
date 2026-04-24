@@ -14,10 +14,11 @@ import requests
 TELEGRAM_BOT_TOKEN = "8743232273:AAEO5MIq5VsPgQJuBurKX1oVU-yPKZq5M5Q" 
 TELEGRAM_CHAT_ID = "187903023" 
 
-DB_FILE = "database.db"
-USERS_DB = "users.db"
-BACKUP_DIR = "backups"
-TEMP_DIR = "temp_csv_export"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_FILE = os.path.join(BASE_DIR, "database.db")
+USERS_DB = os.path.join(BASE_DIR, "users.db")
+BACKUP_DIR = os.path.join(BASE_DIR, "backups")
+TEMP_DIR = os.path.join(BASE_DIR, "temp_csv_export")
 
 def create_backup():
     if not os.path.exists(BACKUP_DIR):
