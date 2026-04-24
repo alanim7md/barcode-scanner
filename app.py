@@ -3,10 +3,15 @@ import sqlite3
 from datetime import datetime
 import io
 import csv
+import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.secret_key = "secret123"
+
+def get_gmt3_time():
+    from datetime import timezone, timedelta
+    return datetime.now(timezone(timedelta(hours=3))).strftime("%Y-%m-%d %H:%M:%S")
 
 DB = "database.db"
 USERS_DB = "users.db"
@@ -101,6 +106,11 @@ def init_db():
             role TEXT
         )
     """)
+    try:
+        u_c.execute("ALTER TABLE users ADD COLUMN session_token TEXT")
+    except sqlite3.OperationalError:
+        pass
+        
     u_c.execute("SELECT COUNT(*) FROM users")
     if u_c.fetchone()[0] == 0:
         u_c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", 
@@ -109,6 +119,29 @@ def init_db():
     u_conn.close()
 
 init_db()
+
+@app.before_request
+def check_session_token():
+    if request.endpoint in ['login', 'static']:
+        return
+
+    user = session.get("user")
+    token = session.get("session_token")
+
+    if user:
+        conn = get_users_db()
+        c = conn.cursor()
+        c.execute("SELECT session_token FROM users WHERE username=?", (user,))
+        row = c.fetchone()
+        conn.close()
+
+        # If user has a token in DB and it doesn't match the one in session, log them out
+        if row and row[0] and row[0] != token:
+            session.clear()
+            if request.path.startswith('/api/') or request.method == 'POST':
+                from flask import jsonify
+                return jsonify({"error": "logged_out", "redirect": "/login"}), 401
+            return redirect("/login")
 
 # ---------- LOGIN ----------
 @app.route("/login", methods=["GET","POST"])
@@ -129,14 +162,18 @@ def login():
             is_valid = check_password_hash(db_password, p) if db_password.startswith(('scrypt:', 'pbkdf2:')) else db_password == p
             
             if is_valid:
+                new_token = str(uuid.uuid4())
                 session["user"] = u
                 session["role"] = db_role
+                session["session_token"] = new_token
+                
+                c.execute("UPDATE users SET session_token=? WHERE username=?", (new_token, u))
                 
                 # Auto-upgrade plain text to hashed
                 if not db_password.startswith(('scrypt:', 'pbkdf2:')):
                     c.execute("UPDATE users SET password=? WHERE username=?", (generate_password_hash(p), u))
-                    conn.commit()
                     
+                conn.commit()
                 conn.close()
                 return redirect("/")
                 
@@ -166,36 +203,66 @@ def insert_scans_bulk(barcode, qty, is_damaged=False, is_flagged=False, session_
         
     actual_barcode = barcode
     if is_damaged: actual_barcode += "__DAMAGED"
-    if is_flagged: actual_barcode += "__FLAGGED"
         
     user = session.get("user")
-    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    rows = [(actual_barcode, ts, user, branch, session_name) for _ in range(qty)]
+    ts = get_gmt3_time()
     
     conn = get_db()
     c = conn.cursor()
+    
+    clean_barcode = barcode.replace('__DAMAGED', '').replace('__FLAGGED', '')
+    c.execute("""
+        SELECT DISTINCT session_name 
+        FROM scans 
+        WHERE (barcode = ? OR barcode = ? OR barcode = ?) 
+        AND session_name != ? AND session_name != ''
+    """, (clean_barcode, clean_barcode + "__DAMAGED", clean_barcode + "__FLAGGED", session_name))
+    
+    collision_row = c.fetchone()
+    warning_msg = None
+    old_session = None
+    auto_flag = False
+    
+    if collision_row:
+        old_session = collision_row[0]
+        warning_msg = "cross_session"
+        auto_flag = True
+        
+    if is_flagged: actual_barcode += "__FLAGGED"
+    
+    rows = [(actual_barcode, ts, user, branch, session_name) for _ in range(qty)]
     c.executemany("""
         INSERT INTO scans (barcode, timestamp, user, branch, session_name)
         VALUES (?, ?, ?, ?, ?)
     """, rows)
+    
+    if auto_flag:
+        c.execute("SELECT COUNT(*) FROM scans WHERE barcode=? AND session_name=?", (clean_barcode + "__FLAGGED", session_name))
+        if c.fetchone()[0] == 0:
+            c.execute("""
+                INSERT INTO scans (barcode, timestamp, user, branch, session_name) 
+                VALUES (?, ?, ?, ?, ?)
+            """, (clean_barcode + "__FLAGGED", ts, user, branch, session_name))
+            
     conn.commit()
     conn.close()
+    
+    return {"status": "ok", "warning": warning_msg, "old_session": old_session}
 
 @app.route("/scan", methods=["POST"])
 def scan():
-    insert_scans_bulk(request.json["barcode"], 1)
-    return jsonify({"status":"ok"})
+    res = insert_scans_bulk(request.json["barcode"], 1)
+    return jsonify(res)
 
 @app.route("/manual", methods=["POST"])
 def manual():
-    insert_scans_bulk(request.json["barcode"], int(request.json.get("qty", 1)))
-    return jsonify({"status":"ok"})
+    res = insert_scans_bulk(request.json["barcode"], int(request.json.get("qty", 1)))
+    return jsonify(res)
 
 @app.route("/damaged", methods=["POST"])
 def damaged():
-    insert_scans_bulk(request.json["barcode"], int(request.json.get("qty", 1)), is_damaged=True)
-    return jsonify({"status":"ok"})
+    res = insert_scans_bulk(request.json["barcode"], int(request.json.get("qty", 1)), is_damaged=True)
+    return jsonify(res)
 
 @app.route("/flag_item", methods=["POST"])
 def flag_item():
@@ -213,7 +280,7 @@ def flag_item():
         c.execute("DELETE FROM scans WHERE barcode=? AND session_name=? AND user=?", (barcode + "__FLAGGED", session_name, user))
     else:
         c.execute("INSERT INTO scans (barcode, timestamp, user, branch, session_name) VALUES (?, ?, ?, ?, ?)", 
-                 (barcode + "__FLAGGED", datetime.now().strftime("%Y-%m-%d %H:%M:%S"), user, branch, session_name))
+                 (barcode + "__FLAGGED", get_gmt3_time(), user, branch, session_name))
     conn.commit()
     conn.close()
     return jsonify({"status":"ok"})
@@ -231,6 +298,27 @@ def sync():
         INSERT OR IGNORE INTO scans (barcode, timestamp, user, branch, session_name)
         VALUES (?, ?, ?, ?, ?)
     """, rows)
+    
+    for s in scans:
+        barcode = s.get("barcode")
+        session_name = s.get("session_name")
+        clean_barcode = barcode.replace('__DAMAGED', '').replace('__FLAGGED', '')
+        
+        c.execute("""
+            SELECT 1 FROM scans 
+            WHERE (barcode=? OR barcode=? OR barcode=?) 
+            AND session_name!=? AND session_name!=''
+            LIMIT 1
+        """, (clean_barcode, clean_barcode + "__DAMAGED", clean_barcode + "__FLAGGED", session_name))
+        
+        if c.fetchone():
+            c.execute("SELECT COUNT(*) FROM scans WHERE barcode=? AND session_name=?", (clean_barcode + "__FLAGGED", session_name))
+            if c.fetchone()[0] == 0:
+                c.execute("""
+                    INSERT INTO scans (barcode, timestamp, user, branch, session_name) 
+                    VALUES (?, ?, ?, ?, ?)
+                """, (clean_barcode + "__FLAGGED", get_gmt3_time(), s.get("user"), s.get("branch"), session_name))
+                
     conn.commit()
     conn.close()
     return jsonify({"status": "ok"})
@@ -597,7 +685,7 @@ def admin_adjust_count():
             c.execute("""
                 INSERT INTO scans (barcode, timestamp, user, branch, session_name)
                 VALUES (?, ?, ?, ?, ?)
-            """, (barcode, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), data["user"], data["branch"], data["session_name"]))
+            """, (barcode, get_gmt3_time(), data["user"], data["branch"], data["session_name"]))
     elif diff < 0:
         c.execute("""
             DELETE FROM scans 
@@ -686,6 +774,16 @@ def user_password():
     conn = get_users_db()
     c = conn.cursor()
     c.execute("UPDATE users SET password=? WHERE username=?", (generate_password_hash(request.json["password"]), request.json["username"]))
+    conn.commit()
+    conn.close()
+    return "ok"
+
+@app.route("/force_logout/<username>", methods=["POST"])
+def force_logout(username):
+    if session.get("role") != "admin": return "forbidden"
+    conn = get_users_db()
+    c = conn.cursor()
+    c.execute("UPDATE users SET session_token=? WHERE username=?", (str(uuid.uuid4()), username))
     conn.commit()
     conn.close()
     return "ok"
