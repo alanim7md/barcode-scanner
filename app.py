@@ -632,21 +632,35 @@ def admin_stats():
 @app.route("/admin/chart_data")
 def admin_chart_data():
     if session.get("role") not in ["admin", "moderator"]: return "forbidden"
+    time_range = request.args.get("range", "7days")
     conn = get_db()
     c = conn.cursor()
     
-    c.execute("""
-        SELECT date(timestamp), COUNT(*) 
-        FROM scans 
-        WHERE date(timestamp) >= date('now', '-7 days')
-        GROUP BY date(timestamp)
-        ORDER BY date(timestamp) ASC
-    """)
     dates = []
     counts = []
-    for r in c.fetchall():
-        dates.append(r[0])
-        counts.append(r[1])
+    
+    if time_range == "24hours":
+        c.execute("""
+            SELECT strftime('%H:00', timestamp), COUNT(*) 
+            FROM scans 
+            WHERE timestamp >= datetime('now', '+3 hours', '-24 hours')
+            GROUP BY strftime('%Y-%m-%d %H', timestamp)
+            ORDER BY strftime('%Y-%m-%d %H', timestamp) ASC
+        """)
+        for r in c.fetchall():
+            dates.append(r[0])
+            counts.append(r[1])
+    else:
+        c.execute("""
+            SELECT date(timestamp), COUNT(*) 
+            FROM scans 
+            WHERE timestamp >= datetime('now', '+3 hours', '-7 days')
+            GROUP BY date(timestamp)
+            ORDER BY date(timestamp) ASC
+        """)
+        for r in c.fetchall():
+            dates.append(r[0])
+            counts.append(r[1])
         
     c.execute("""
         SELECT user, COUNT(*) 
