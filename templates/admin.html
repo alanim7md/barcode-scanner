@@ -371,12 +371,13 @@ function renderScans() {
             <th onclick="doSort('good')" style="cursor:pointer;">Good${s('good')}</th>
             <th onclick="doSort('damaged')" style="cursor:pointer;">Damaged${s('damaged')}</th>
             <th onclick="doSort('flagged')" style="cursor:pointer;">Flagged${s('flagged')}</th>
+            <th>Flag Reason</th>
             <th onclick="doSort('last')" style="cursor:pointer;">Last Scan${s('last')}</th></tr>`;
         let htmlStr = "";
         filtered.forEach(row => {
             htmlStr += `<tr>
                 <td><input type="checkbox" class="row-checkbox" data-barcode="${row.barcode}"></td>
-                <td>${row.barcode}</td><td>${row.users||''}</td><td>${row.good}</td><td style="color:#ef4444">${row.damaged}</td><td style="color:#facc15; font-weight:bold;">${row.flagged > 0 ? '🚩 Yes' : ''}</td><td>${row.last}</td>
+                <td>${row.barcode}</td><td>${row.users||''}</td><td>${row.good}</td><td style="color:#ef4444">${row.damaged}</td><td style="color:#facc15; font-weight:bold;">${row.flagged > 0 ? '🚩 Yes' : ''}</td><td>${row.reason || ''}</td><td>${row.last}</td>
             </tr>`;
         });
         tbody.innerHTML = htmlStr;
@@ -389,6 +390,7 @@ function renderScans() {
             <th onclick="doSort('good')" style="cursor:pointer;">Good${s('good')}</th>
             <th onclick="doSort('damaged')" style="cursor:pointer;">Damaged${s('damaged')}</th>
             <th onclick="doSort('flagged')" style="cursor:pointer;">Flagged${s('flagged')}</th>
+            <th>Flag Reason</th>
             <th onclick="doSort('last')" style="cursor:pointer;">Last Scan${s('last')}</th>
             {% if role == 'admin' %}<th>Adjust</th>{% endif %}</tr>`;
         let htmlStr = "";
@@ -396,7 +398,7 @@ function renderScans() {
             htmlStr += `<tr>
                 <td><input type="checkbox" class="row-checkbox" data-barcode="${row.barcode}" data-user="${row.user}" data-branch="${row.branch}" data-session="${row.session_name}"></td>
                 <td>${row.barcode}</td><td>${row.user||''}</td><td>${row.branch||''}</td><td>${row.session_name||''}</td>
-                <td>${row.good}</td><td style="color:#ef4444">${row.damaged}</td><td style="color:#facc15; font-weight:bold;">${row.flagged > 0 ? '🚩 Yes' : ''}</td><td>${row.last}</td>
+                <td>${row.good}</td><td style="color:#ef4444">${row.damaged}</td><td style="color:#facc15; font-weight:bold;">${row.flagged > 0 ? '🚩 Yes' : ''}</td><td>${row.reason || ''}</td><td>${row.last}</td>
                 {% if role == 'admin' %}
                 <td>
                     <button onclick="adjustCount('${row.barcode}', '${row.user}', '${row.branch}', '${row.session_name}', 'good', prompt('Enter change in GOOD count:'))">Good +/-</button>

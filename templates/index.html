@@ -557,6 +557,9 @@ function scanItem(barcode, qty=1, isDamaged=false) {
             if (data.warning === "cross_session") {
                 showToast(`⚠️ WARNING: This item was also counted in session: ${data.old_session}. It has been auto-flagged.`, "error");
                 errorBeep();
+            } else if (data.warning === "user_collision") {
+                showToast(`⚠️ WARNING: This item was already counted by ${data.other_user}! It has been auto-flagged.`, "error");
+                errorBeep();
             } else {
                 beep();
             }
