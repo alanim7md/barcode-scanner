@@ -11,8 +11,8 @@ import requests
 # to receive automated backups is via a private Telegram Bot. 
 # 1. Message @BotFather on Telegram, send /newbot, and copy the HTTP API Token here.
 # 2. Message @userinfobot on Telegram to get your personal Chat ID and paste it here.
-TELEGRAM_BOT_TOKEN = "" 
-TELEGRAM_CHAT_ID = "" 
+TELEGRAM_BOT_TOKEN = "8743232273:AAEO5MIq5VsPgQJuBurKX1oVU-yPKZq5M5Q" 
+TELEGRAM_CHAT_ID = "187903023" 
 
 DB_FILE = "database.db"
 USERS_DB = "users.db"
