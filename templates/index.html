@@ -293,7 +293,8 @@
         </div>
         <div style="display:flex; align-items:center; gap: 15px;">
             <select id="branchSelector" style="font-size: 14px; padding: 8px 12px; border-radius: 8px;"></select>
-            <input id="sessionName" value="" placeholder="Session Name" style="width: 140px; font-size: 14px; padding: 8px 12px; border-radius: 8px;" onchange="updateCount(); loadSummary();">
+            <input id="sessionName" list="main-session-list" value="" placeholder="Session Name" style="width: 140px; font-size: 14px; padding: 8px 12px; border-radius: 8px;" onchange="updateCount(); loadSummary();">
+            <datalist id="main-session-list"></datalist>
             <span id="syncStatus" class="status-badge">🟢 Online</span>
         </div>
     </div>
@@ -380,7 +381,7 @@
             <h3 style="margin:0;">My History</h3>
             <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
                 <select id="histBranch" style="padding: 8px 12px; border-radius: 8px; outline: none; font-size: 13px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1);"><option value="">All Branches</option></select>
-                <input id="histSession" placeholder="Session Name" style="padding: 8px 12px; border-radius: 8px; outline: none; width: 130px; font-size: 13px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1);">
+                <select id="histSession" style="padding: 8px 12px; border-radius: 8px; outline: none; font-size: 13px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1);"><option value="">All Sessions</option></select>
                 <input id="histDate" type="date" style="padding: 8px 12px; border-radius: 8px; outline: none; font-size: 13px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1);">
                 <button onclick="loadHistory()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 8px 16px; font-size: 13px;">Filter</button>
                 <input id="histSearch" onkeyup="renderHistory()" placeholder="Search..." style="padding:8px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); outline:none; background:rgba(15,23,42,0.6); color:#fff; font-size: 13px; width: 150px;">
@@ -451,6 +452,18 @@ fetch("/settings").then(r=>r.json()).then(settings => {
             sel.value = settings.global_branch;
             sel.disabled = true;
         }
+    });
+});
+
+// Load distinct sessions
+fetch("/sessions").then(r=>r.json()).then(data => {
+    const dl = document.getElementById('main-session-list');
+    const hs = document.getElementById('histSession');
+    data.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        dl.appendChild(opt);
+        hs.appendChild(new Option(s, s));
     });
 });
 

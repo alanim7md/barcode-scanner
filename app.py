@@ -388,13 +388,21 @@ def count():
 
 # (Removed destructive reset)
 
-# ---------- BRANCHES ----------
 @app.route("/branches")
 def branches():
     conn = get_db()
     c = conn.cursor()
     c.execute("SELECT name FROM branches")
     data = [r[0] for r in c.fetchall()]
+    conn.close()
+    return jsonify(data)
+
+@app.route("/sessions")
+def get_sessions():
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT DISTINCT session_name FROM scans WHERE session_name != '' AND session_name IS NOT NULL ORDER BY session_name")
+    data = [r[0] for r in c.fetchall() if r[0]]
     conn.close()
     return jsonify(data)
 
@@ -528,7 +536,8 @@ def admin_master_scans():
     session_name = request.args.get("session_name", "")
     conn = get_db()
     c = conn.cursor()
-    c.execute("""
+    
+    query = """
         SELECT 
             REPLACE(REPLACE(barcode,'__DAMAGED',''),'__FLAGGED',''),
             SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' AND barcode NOT LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
@@ -537,10 +546,19 @@ def admin_master_scans():
             GROUP_CONCAT(DISTINCT user),
             SUM(CASE WHEN barcode LIKE '%__FLAGGED' THEN 1 ELSE 0 END)
         FROM scans
-        WHERE branch=? AND session_name=?
-        GROUP BY 1
-        ORDER BY MAX(timestamp) DESC
-    """, (branch, session_name))
+        WHERE 1=1
+    """
+    params = []
+    if branch:
+        query += " AND branch=?"
+        params.append(branch)
+    if session_name:
+        query += " AND session_name=?"
+        params.append(session_name)
+        
+    query += " GROUP BY 1 ORDER BY MAX(timestamp) DESC"
+    
+    c.execute(query, tuple(params))
     data = []
     for r in c.fetchall():
         data.append({
@@ -631,18 +649,23 @@ def admin_chart_data():
         counts.append(r[1])
         
     c.execute("""
-        SELECT 
-            SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' AND barcode NOT LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
-            SUM(CASE WHEN barcode LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
-            SUM(CASE WHEN barcode LIKE '%__FLAGGED' THEN 1 ELSE 0 END)
+        SELECT user, COUNT(*) 
         FROM scans
+        WHERE user IS NOT NULL AND user != ''
+        GROUP BY user
+        ORDER BY COUNT(*) DESC
     """)
-    status_counts = c.fetchone()
+    user_labels = []
+    user_counts = []
+    for r in c.fetchall():
+        user_labels.append(r[0])
+        user_counts.append(r[1])
+        
     conn.close()
     
     return jsonify({
         "time": {"labels": dates, "data": counts},
-        "status": {"good": status_counts[0] or 0, "damaged": status_counts[1] or 0, "flagged": status_counts[2] or 0}
+        "users": {"labels": user_labels, "data": user_counts}
     })
 
 @app.route("/settings")

@@ -70,8 +70,8 @@
                 <canvas id="timeChart" style="max-height: 300px;"></canvas>
             </div>
             <div style="background: #334155; padding: 20px; border-radius: 10px;">
-                <h4 style="margin-top: 0; color: #94a3b8;">Item Status Distribution</h4>
-                <canvas id="statusChart" style="max-height: 300px;"></canvas>
+                <h4 style="margin-top: 0; color: #94a3b8;">User Activity (Total Scans)</h4>
+                <canvas id="userChart" style="max-height: 300px;"></canvas>
             </div>
         </div>
     </div>
@@ -106,8 +106,12 @@
                 <option value="detailed">Detailed View (By User)</option>
                 <option value="master">Master Branch View</option>
             </select>
-            <select id="masterBranch" onchange="loadScans()" style="display:none;"></select>
-            <input id="masterSession" placeholder="Session Name" onchange="loadScans()" style="display:none;">
+            <select id="masterBranch" onchange="loadScans()" style="display:none;">
+                <option value="">-- All Branches --</option>
+            </select>
+            <select id="masterSession" onchange="loadScans()" style="display:none;">
+                <option value="">-- All Sessions --</option>
+            </select>
             <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #facc15; font-weight: bold; background: rgba(250, 204, 21, 0.1); padding: 5px 10px; border-radius: 5px;">
                 <input type="checkbox" id="showFlaggedOnly" onchange="renderScans()"> Flagged Only
             </label>
@@ -182,7 +186,8 @@
         <select id="global-branch" style="margin-top: 5px;"><option value="">-- None (Users Choose) --</option></select><br><br>
         
         <label>Global Enforced Session:</label><br>
-        <input id="global-session" placeholder="Session Name" style="margin-top: 5px;"><br><br>
+        <input id="global-session" list="session-list" placeholder="Session Name" style="margin-top: 5px;">
+        <datalist id="session-list"></datalist><br><br>
         
         <button class="btn-primary" onclick="saveSettings()">Save Global Settings</button>
     </div>
@@ -199,6 +204,19 @@ fetch("/branches").then(r=>r.json()).then(data => {
     fetch("/settings").then(r=>r.json()).then(s => {
         if(s.global_branch) gb.value = s.global_branch;
         if(s.global_session) document.getElementById('global-session').value = s.global_session;
+    });
+});
+
+fetch("/sessions").then(r=>r.json()).then(data => {
+    const ms = document.getElementById('masterSession');
+    const dl = document.getElementById('session-list');
+    data.forEach(s => {
+        ms.appendChild(new Option(s, s));
+        if (dl) {
+            const opt = document.createElement('option');
+            opt.value = s;
+            dl.appendChild(opt);
+        }
     });
 });
 
@@ -257,14 +275,14 @@ function loadStats() {
                 });
 
                 if (statusChartObj) statusChartObj.destroy();
-                statusChartObj = new Chart(document.getElementById('statusChart'), {
+                statusChartObj = new Chart(document.getElementById('userChart'), {
                     type: 'doughnut',
                     data: {
-                        labels: ['Good', 'Damaged', 'Flagged'],
+                        labels: data.users.labels,
                         datasets: [{
-                            data: [data.status.good, data.status.damaged, data.status.flagged],
-                            backgroundColor: ['#4ade80', '#ef4444', '#facc15'],
-                            borderWidth: 0
+                            data: data.users.data,
+                            borderWidth: 0,
+                            backgroundColor: ['#38bdf8', '#818cf8', '#a78bfa', '#e879f9', '#f472b6', '#fb7185', '#34d399']
                         }]
                     },
                     options: {
