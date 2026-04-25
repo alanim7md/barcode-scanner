@@ -577,7 +577,7 @@ def admin_scans_data():
     """)
     data = []
     for r in c.fetchall():
-        reasons = r[8]
+        reasons = r[9]
         clean_reason = ""
         if reasons:
             valid_reasons = [x.strip() for x in reasons.split(',') if x and x.strip()]
@@ -624,7 +624,7 @@ def admin_master_scans():
     c.execute(query, tuple(params))
     data = []
     for r in c.fetchall():
-        reasons = r[6]
+        reasons = r[7]
         clean_reason = ""
         if reasons:
             valid_reasons = [x.strip() for x in reasons.split(',') if x and x.strip()]
