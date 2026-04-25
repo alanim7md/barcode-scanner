@@ -366,6 +366,7 @@
                             <th>Damaged</th>
                             <th>Flagged</th>
                             <th>First Scan</th>
+                            <th>Last Scan</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -707,6 +708,7 @@ function renderSummary() {
         <th>Damaged</th>
         <th>Flagged</th>
         <th>First Scan</th>
+        <th>Last Scan</th>
         <th>Action</th>
     </tr>`;
 
@@ -723,6 +725,7 @@ function renderSummary() {
             <td>${item.good}</td>
             <td style="color:#ef4444">${item.damaged}</td>
             <td style="color:#facc15; font-weight:bold;">${item.flagged > 0 ? '🚩 Yes' : ''}</td>
+            <td>${item.first || ""}</td>
             <td>${item.last || ""}</td>
             <td>
                 <button class="clear-btn" style="position:static; transform:none; color:#facc15; font-size:18px; margin-right:8px;" onclick="toggleFlag('${item.barcode}')" title="Flag/Unflag this item">🚩</button>

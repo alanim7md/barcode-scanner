@@ -383,6 +383,7 @@ function renderScans() {
             <th onclick="doSort('damaged')" style="cursor:pointer;">Damaged${s('damaged')}</th>
             <th onclick="doSort('flagged')" style="cursor:pointer;">Flagged${s('flagged')}</th>
             <th>Flag Reason</th>
+            <th onclick="doSort('first')" style="cursor:pointer;">First Scan${s('first')}</th>
             <th onclick="doSort('last')" style="cursor:pointer;">Last Scan${s('last')}</th>
             <th>Actions</th></tr>`;
         let htmlStr = "";
@@ -393,7 +394,7 @@ function renderScans() {
             }
             htmlStr += `<tr${bg}>
                 <td><input type="checkbox" class="row-checkbox" data-barcode="${row.barcode}"></td>
-                <td>${row.barcode}</td><td>${row.users||''}</td><td>${row.good}</td><td style="color:#ef4444">${row.damaged}</td><td style="color:#facc15; font-weight:bold;">${row.flagged > 0 ? '🚩 Yes' : ''}</td><td>${row.reason || ''}</td><td>${row.last}</td>
+                <td>${row.barcode}</td><td>${row.users||''}</td><td>${row.good}</td><td style="color:#ef4444">${row.damaged}</td><td style="color:#facc15; font-weight:bold;">${row.flagged > 0 ? '🚩 Yes' : ''}</td><td>${row.reason || ''}</td><td>${row.first}</td><td>${row.last}</td>
                 <td>
                     <button style="background: transparent; color: #22c55e; font-size: 18px; padding: 2px 5px;" onclick="setOdooMarkAdmin('${row.barcode}')" title="Mark as entered in Odoo">✅</button>
                     {% if role == 'admin' %}
@@ -413,6 +414,7 @@ function renderScans() {
             <th onclick="doSort('damaged')" style="cursor:pointer;">Damaged${s('damaged')}</th>
             <th onclick="doSort('flagged')" style="cursor:pointer;">Flagged${s('flagged')}</th>
             <th>Flag Reason</th>
+            <th onclick="doSort('first')" style="cursor:pointer;">First Scan${s('first')}</th>
             <th onclick="doSort('last')" style="cursor:pointer;">Last Scan${s('last')}</th>
             <th>Actions</th></tr>`;
         let htmlStr = "";
@@ -424,7 +426,7 @@ function renderScans() {
             htmlStr += `<tr${bg}>
                 <td><input type="checkbox" class="row-checkbox" data-barcode="${row.barcode}" data-user="${row.user}" data-branch="${row.branch}" data-session="${row.session_name}"></td>
                 <td>${row.barcode}</td><td>${row.user||''}</td><td>${row.branch||''}</td><td>${row.session_name||''}</td>
-                <td>${row.good}</td><td style="color:#ef4444">${row.damaged}</td><td style="color:#facc15; font-weight:bold;">${row.flagged > 0 ? '🚩 Yes' : ''}</td><td>${row.reason || ''}</td><td>${row.last}</td>
+                <td>${row.good}</td><td style="color:#ef4444">${row.damaged}</td><td style="color:#facc15; font-weight:bold;">${row.flagged > 0 ? '🚩 Yes' : ''}</td><td>${row.reason || ''}</td><td>${row.first}</td><td>${row.last}</td>
                 <td>
                     <button style="background: transparent; color: #22c55e; font-size: 18px; padding: 2px 5px;" onclick="setOdooMarkAdmin('${row.barcode}')" title="Mark as entered in Odoo">✅</button>
                     {% if role == 'admin' %}

@@ -203,6 +203,8 @@ def logout():
 def index():
     if "user" not in session or "role" not in session:
         return redirect("/login")
+    if session["role"] == "moderator":
+        return redirect("/admin")
     return render_template("index.html", user=session["user"], role=session["role"])
 
 # ---------- SCAN ----------
@@ -404,11 +406,12 @@ def summary():
             SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' AND barcode NOT LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
             SUM(CASE WHEN barcode LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
             MIN(timestamp),
+            MAX(timestamp),
             SUM(CASE WHEN barcode LIKE '%__FLAGGED' THEN 1 ELSE 0 END)
         FROM scans
         WHERE user=? AND session_name=?
         GROUP BY 1
-        ORDER BY MIN(timestamp) DESC
+        ORDER BY MAX(timestamp) DESC
     """, (session.get("user"), sess_name))
 
     data = []
@@ -417,8 +420,9 @@ def summary():
             "barcode": r[0],
             "good": r[1],
             "damaged": r[2],
-            "last": r[3],
-            "flagged": r[4]
+            "first": r[3],
+            "last": r[4],
+            "flagged": r[5]
         })
 
     conn.close()
@@ -563,6 +567,7 @@ def admin_scans_data():
             session_name,
             SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' AND barcode NOT LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
             SUM(CASE WHEN barcode LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
+            MIN(timestamp),
             MAX(timestamp),
             SUM(CASE WHEN barcode LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
             GROUP_CONCAT(DISTINCT flag_reason)
@@ -580,7 +585,7 @@ def admin_scans_data():
             
         data.append({
             "barcode": r[0], "user": r[1], "branch": r[2], "session_name": r[3],
-            "good": r[4], "damaged": r[5], "last": r[6], "flagged": r[7], "reason": clean_reason
+            "good": r[4], "damaged": r[5], "first": r[6], "last": r[7], "flagged": r[8], "reason": clean_reason
         })
     conn.close()
     return jsonify(data)
@@ -598,6 +603,7 @@ def admin_master_scans():
             REPLACE(REPLACE(barcode,'__DAMAGED',''),'__FLAGGED',''),
             SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' AND barcode NOT LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
             SUM(CASE WHEN barcode LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
+            MIN(timestamp),
             MAX(timestamp),
             GROUP_CONCAT(DISTINCT user),
             SUM(CASE WHEN barcode LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
@@ -625,7 +631,7 @@ def admin_master_scans():
             clean_reason = ", ".join(set(valid_reasons))
             
         data.append({
-            "barcode": r[0], "good": r[1], "damaged": r[2], "last": r[3], "users": r[4], "flagged": r[5], "reason": clean_reason
+            "barcode": r[0], "good": r[1], "damaged": r[2], "first": r[3], "last": r[4], "users": r[5], "flagged": r[6], "reason": clean_reason
         })
     conn.close()
     return jsonify(data)
@@ -641,23 +647,25 @@ def admin_export_csv():
     output = io.StringIO()
     writer = csv.writer(output)
     if mode == "master":
-        writer.writerow(["Barcode", "Good", "Damaged", "Flagged", "Last Scan"])
+        writer.writerow(["Barcode", "Good", "Damaged", "Flagged", "First Scan", "Last Scan"])
         c.execute("""
             SELECT REPLACE(REPLACE(barcode,'__DAMAGED',''),'__FLAGGED',''),
                    SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' AND barcode NOT LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
                    SUM(CASE WHEN barcode LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
                    SUM(CASE WHEN barcode LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
+                   MIN(timestamp),
                    MAX(timestamp)
             FROM scans WHERE branch=? AND session_name=? GROUP BY 1 ORDER BY MAX(timestamp) DESC
         """, (branch, session_name))
         for r in c.fetchall(): writer.writerow(r)
     else:
-        writer.writerow(["Barcode", "User", "Branch", "Session", "Good", "Damaged", "Flagged", "Last Scan"])
+        writer.writerow(["Barcode", "User", "Branch", "Session", "Good", "Damaged", "Flagged", "First Scan", "Last Scan"])
         c.execute("""
             SELECT REPLACE(REPLACE(barcode,'__DAMAGED',''),'__FLAGGED',''), user, branch, session_name,
                    SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' AND barcode NOT LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
                    SUM(CASE WHEN barcode LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
                    SUM(CASE WHEN barcode LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
+                   MIN(timestamp),
                    MAX(timestamp)
             FROM scans GROUP BY 1, 2, 3, 4 ORDER BY MAX(timestamp) DESC
         """)
