@@ -306,6 +306,17 @@ function loadStats() {
 let currentAdminData = [];
 let sortCol = 'last';
 let sortAsc = false;
+let odooMarkedBarcodeAdmin = localStorage.getItem('odooMarkedBarcodeAdmin') || null;
+
+function setOdooMarkAdmin(barcode) {
+    if (odooMarkedBarcodeAdmin === barcode) {
+        odooMarkedBarcodeAdmin = null; // Toggle off
+    } else {
+        odooMarkedBarcodeAdmin = barcode;
+    }
+    localStorage.setItem('odooMarkedBarcodeAdmin', odooMarkedBarcodeAdmin || '');
+    renderScans();
+}
 
 function doSort(col) {
     if (sortCol === col) sortAsc = !sortAsc;
@@ -372,17 +383,23 @@ function renderScans() {
             <th onclick="doSort('damaged')" style="cursor:pointer;">Damaged${s('damaged')}</th>
             <th onclick="doSort('flagged')" style="cursor:pointer;">Flagged${s('flagged')}</th>
             <th>Flag Reason</th>
-            <th onclick="doSort('last')" style="cursor:pointer;">Last Scan${s('last')}</th></tr>`;
+            <th onclick="doSort('last')" style="cursor:pointer;">Last Scan${s('last')}</th>
+            <th>Actions</th></tr>`;
         let htmlStr = "";
         filtered.forEach(row => {
-            htmlStr += `<tr>
+            let bg = '';
+            if (row.barcode === odooMarkedBarcodeAdmin) {
+                bg = ' style="background: rgba(34, 197, 94, 0.2); border-left: 4px solid #22c55e;"';
+            }
+            htmlStr += `<tr${bg}>
                 <td><input type="checkbox" class="row-checkbox" data-barcode="${row.barcode}"></td>
                 <td>${row.barcode}</td><td>${row.users||''}</td><td>${row.good}</td><td style="color:#ef4444">${row.damaged}</td><td style="color:#facc15; font-weight:bold;">${row.flagged > 0 ? '🚩 Yes' : ''}</td><td>${row.reason || ''}</td><td>${row.last}</td>
-                {% if role == 'admin' %}
                 <td>
+                    <button style="background: transparent; color: #22c55e; font-size: 18px; padding: 2px 5px;" onclick="setOdooMarkAdmin('${row.barcode}')" title="Mark as entered in Odoo">✅</button>
+                    {% if role == 'admin' %}
                     <button style="background: rgba(250, 204, 21, 0.1); color: #facc15; border: 1px solid rgba(250, 204, 21, 0.3);" onclick="toggleAdminFlag('${row.barcode}', 'null', document.getElementById('masterBranch').value, document.getElementById('masterSession').value)">🚩 Toggle</button>
+                    {% endif %}
                 </td>
-                {% endif %}
             </tr>`;
         });
         tbody.innerHTML = htmlStr;
@@ -397,20 +414,25 @@ function renderScans() {
             <th onclick="doSort('flagged')" style="cursor:pointer;">Flagged${s('flagged')}</th>
             <th>Flag Reason</th>
             <th onclick="doSort('last')" style="cursor:pointer;">Last Scan${s('last')}</th>
-            {% if role == 'admin' %}<th>Adjust</th>{% endif %}</tr>`;
+            <th>Actions</th></tr>`;
         let htmlStr = "";
         filtered.forEach(row => {
-            htmlStr += `<tr>
+            let bg = '';
+            if (row.barcode === odooMarkedBarcodeAdmin) {
+                bg = ' style="background: rgba(34, 197, 94, 0.2); border-left: 4px solid #22c55e;"';
+            }
+            htmlStr += `<tr${bg}>
                 <td><input type="checkbox" class="row-checkbox" data-barcode="${row.barcode}" data-user="${row.user}" data-branch="${row.branch}" data-session="${row.session_name}"></td>
                 <td>${row.barcode}</td><td>${row.user||''}</td><td>${row.branch||''}</td><td>${row.session_name||''}</td>
                 <td>${row.good}</td><td style="color:#ef4444">${row.damaged}</td><td style="color:#facc15; font-weight:bold;">${row.flagged > 0 ? '🚩 Yes' : ''}</td><td>${row.reason || ''}</td><td>${row.last}</td>
-                {% if role == 'admin' %}
                 <td>
+                    <button style="background: transparent; color: #22c55e; font-size: 18px; padding: 2px 5px;" onclick="setOdooMarkAdmin('${row.barcode}')" title="Mark as entered in Odoo">✅</button>
+                    {% if role == 'admin' %}
                     <button onclick="adjustCount('${row.barcode}', '${row.user}', '${row.branch}', '${row.session_name}', 'good', prompt('Enter change in GOOD count:'))">Good +/-</button>
                     <button onclick="adjustCount('${row.barcode}', '${row.user}', '${row.branch}', '${row.session_name}', 'damaged', prompt('Enter change in DAMAGED count:'))">Damaged +/-</button>
                     <button style="background: rgba(250, 204, 21, 0.1); color: #facc15; border: 1px solid rgba(250, 204, 21, 0.3);" onclick="toggleAdminFlag('${row.barcode}', '${row.user}', '${row.branch}', '${row.session_name}')">🚩 Toggle</button>
+                    {% endif %}
                 </td>
-                {% endif %}
             </tr>`;
         });
         tbody.innerHTML = htmlStr;
