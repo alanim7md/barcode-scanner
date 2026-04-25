@@ -209,6 +209,8 @@ def index():
 
 # ---------- SCAN ----------
 def insert_scans_bulk(barcode, qty, is_damaged=False, is_flagged=False, session_name=None, branch=None):
+    # Normalize barcode: uppercase and strip whitespace so 'abc' == 'ABC'
+    barcode = barcode.strip().upper()
     if session_name is None:
         session_name = request.json.get("session_name", "")
     if branch is None:
@@ -301,7 +303,7 @@ def damaged():
 
 @app.route("/flag_item", methods=["POST"])
 def flag_item():
-    barcode = request.json["barcode"]
+    barcode = request.json["barcode"].strip().upper()
     session_name = request.json.get("session_name")
     branch = request.json.get("branch")
     user = session.get("user")
@@ -326,7 +328,7 @@ def sync():
     if not scans:
         return jsonify({"status": "ok"})
         
-    rows = [(s.get("barcode"), s.get("timestamp"), s.get("user"), s.get("branch"), s.get("session_name")) for s in scans]
+    rows = [((s.get("barcode") or "").strip().upper(), s.get("timestamp"), s.get("user"), s.get("branch"), s.get("session_name")) for s in scans]
     conn = get_db()
     c = conn.cursor()
     c.executemany("""
@@ -335,7 +337,7 @@ def sync():
     """, rows)
     
     for s in scans:
-        barcode = s.get("barcode")
+        barcode = (s.get("barcode") or "").strip().upper()
         session_name = s.get("session_name")
         user = s.get("user")
         clean_barcode = barcode.replace('__DAMAGED', '').replace('__FLAGGED', '')
@@ -778,7 +780,7 @@ def set_settings():
 def admin_adjust_count():
     if session.get("role") != "admin": return "forbidden"
     data = request.json
-    barcode = data["barcode"]
+    barcode = data["barcode"].strip().upper()
     if data["type"] == "damaged":
         barcode += "__DAMAGED"
     elif data["type"] == "flagged":
@@ -812,7 +814,7 @@ def admin_adjust_count():
 def admin_toggle_flag():
     if session.get("role") != "admin": return jsonify({"error": "forbidden"}), 403
     data = request.json
-    barcode = data["barcode"]
+    barcode = data["barcode"].strip().upper()
     target_user = data.get("user")
     branch = data.get("branch")
     session_name = data.get("session_name")
@@ -869,7 +871,7 @@ def admin_delete_entries():
     c = conn.cursor()
         
     for entry in entries:
-        barcode = entry.get("barcode")
+        barcode = (entry.get("barcode") or "").strip().upper()
         if mode == "master":
             c.execute("""
                 DELETE FROM scans 
