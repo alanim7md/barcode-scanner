@@ -397,12 +397,12 @@ def summary():
             REPLACE(REPLACE(barcode,'__DAMAGED',''),'__FLAGGED',''),
             SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' AND barcode NOT LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
             SUM(CASE WHEN barcode LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
-            MAX(timestamp),
+            MIN(timestamp),
             SUM(CASE WHEN barcode LIKE '%__FLAGGED' THEN 1 ELSE 0 END)
         FROM scans
         WHERE user=? AND session_name=?
         GROUP BY 1
-        ORDER BY MAX(timestamp) DESC
+        ORDER BY MIN(timestamp) DESC
     """, (session.get("user"), sess_name))
 
     data = []

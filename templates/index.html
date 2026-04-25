@@ -361,11 +361,11 @@
                 <table>
                     <thead id="summary-thead">
                         <tr>
-                            <th onclick="doSumSort('barcode')" style="cursor:pointer;">Barcode</th>
-                            <th onclick="doSumSort('good')" style="cursor:pointer;">Good</th>
-                            <th onclick="doSumSort('damaged')" style="cursor:pointer;">Damaged</th>
-                            <th onclick="doSumSort('flagged')" style="cursor:pointer;">Flagged</th>
-                            <th onclick="doSumSort('last')" style="cursor:pointer;">Last Scan</th>
+                            <th>Barcode</th>
+                            <th>Good</th>
+                            <th>Damaged</th>
+                            <th>Flagged</th>
+                            <th>First Scan</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -414,6 +414,17 @@ let lastScanTime = 0;
 let localScans = JSON.parse(localStorage.getItem('localScans') || '[]');
 let currentSummaryData = [];
 let lastScannedBarcode = null;
+let odooMarkedBarcode = localStorage.getItem('odooMarkedBarcode') || null;
+
+function setOdooMark(barcode) {
+    if (odooMarkedBarcode === barcode) {
+        odooMarkedBarcode = null; // Toggle off
+    } else {
+        odooMarkedBarcode = barcode;
+    }
+    localStorage.setItem('odooMarkedBarcode', odooMarkedBarcode || '');
+    renderSummary();
+}
 
 document.getElementById('sessionName').value = new Date().toISOString().split('T')[0];
 
@@ -701,19 +712,24 @@ function renderSummary() {
         return 0;
     });
     
-    const s = (col) => sumSortCol===col ? (sumSortAsc ? ' ↑' : ' ↓') : '';
     document.getElementById("summary-thead").innerHTML = `<tr>
-        <th onclick="doSumSort('barcode')" style="cursor:pointer;">Barcode${s('barcode')}</th>
-        <th onclick="doSumSort('good')" style="cursor:pointer;">Good${s('good')}</th>
-        <th onclick="doSumSort('damaged')" style="cursor:pointer;">Damaged${s('damaged')}</th>
-        <th onclick="doSumSort('flagged')" style="cursor:pointer;">Flagged${s('flagged')}</th>
-        <th onclick="doSumSort('last')" style="cursor:pointer;">Last Scan${s('last')}</th>
+        <th>Barcode</th>
+        <th>Good</th>
+        <th>Damaged</th>
+        <th>Flagged</th>
+        <th>First Scan</th>
         <th>Action</th>
     </tr>`;
 
     let htmlStr = "";
     filtered.forEach(item => {
-        const bg = (item.barcode === lastScannedBarcode) ? ' style="background: #334155;"' : '';
+        let bg = '';
+        if (item.barcode === odooMarkedBarcode) {
+            bg = ' style="background: rgba(34, 197, 94, 0.2); border-left: 4px solid #22c55e;"';
+        } else if (item.barcode === lastScannedBarcode) {
+            bg = ' style="background: #334155;"';
+        }
+        
         htmlStr += `
         <tr${bg}>
             <td>${item.barcode}</td>
@@ -722,6 +738,7 @@ function renderSummary() {
             <td style="color:#facc15; font-weight:bold;">${item.flagged > 0 ? '🚩 Yes' : ''}</td>
             <td>${item.last || ""}</td>
             <td>
+                <button class="clear-btn" style="position:static; transform:none; color:#22c55e; font-size:18px; margin-right:8px;" onclick="setOdooMark('${item.barcode}')" title="Mark as last entered in Odoo">✅</button>
                 <button class="clear-btn" style="position:static; transform:none; color:#facc15; font-size:18px; margin-right:8px;" onclick="toggleFlag('${item.barcode}')" title="Flag/Unflag this item">🚩</button>
                 <button class="clear-btn" style="position:static; transform:none; color:#ef4444; font-size:18px;" onclick="deleteSummaryItem('${item.barcode}')" title="Delete all scans for this barcode in this session">🗑️</button>
             </td>
