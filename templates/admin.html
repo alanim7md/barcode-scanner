@@ -378,6 +378,11 @@ function renderScans() {
             htmlStr += `<tr>
                 <td><input type="checkbox" class="row-checkbox" data-barcode="${row.barcode}"></td>
                 <td>${row.barcode}</td><td>${row.users||''}</td><td>${row.good}</td><td style="color:#ef4444">${row.damaged}</td><td style="color:#facc15; font-weight:bold;">${row.flagged > 0 ? '🚩 Yes' : ''}</td><td>${row.reason || ''}</td><td>${row.last}</td>
+                {% if role == 'admin' %}
+                <td>
+                    <button style="background: rgba(250, 204, 21, 0.1); color: #facc15; border: 1px solid rgba(250, 204, 21, 0.3);" onclick="toggleAdminFlag('${row.barcode}', 'null', document.getElementById('masterBranch').value, document.getElementById('masterSession').value)">🚩 Toggle</button>
+                </td>
+                {% endif %}
             </tr>`;
         });
         tbody.innerHTML = htmlStr;
@@ -403,6 +408,7 @@ function renderScans() {
                 <td>
                     <button onclick="adjustCount('${row.barcode}', '${row.user}', '${row.branch}', '${row.session_name}', 'good', prompt('Enter change in GOOD count:'))">Good +/-</button>
                     <button onclick="adjustCount('${row.barcode}', '${row.user}', '${row.branch}', '${row.session_name}', 'damaged', prompt('Enter change in DAMAGED count:'))">Damaged +/-</button>
+                    <button style="background: rgba(250, 204, 21, 0.1); color: #facc15; border: 1px solid rgba(250, 204, 21, 0.3);" onclick="toggleAdminFlag('${row.barcode}', '${row.user}', '${row.branch}', '${row.session_name}')">🚩 Toggle</button>
                 </td>
                 {% endif %}
             </tr>`;
@@ -472,6 +478,13 @@ function adjustCount(barcode, user, branch, session_name, type, diff) {
     fetch('/admin/adjust_count', {
         method: 'POST', headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ barcode, user, branch, session_name, type, diff })
+    }).then(() => loadScans());
+}
+
+function toggleAdminFlag(barcode, user, branch, session_name) {
+    fetch('/admin/toggle_flag', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ barcode, user, branch, session_name })
     }).then(() => loadScans());
 }
 

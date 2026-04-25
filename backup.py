@@ -6,11 +6,7 @@ import sqlite3
 import csv
 import requests
 
-# --- CONFIGURATION ---
-# Since you are on PythonAnywhere, the absolute easiest and most reliable way 
-# to receive automated backups is via a private Telegram Bot. 
-# 1. Message @BotFather on Telegram, send /newbot, and copy the HTTP API Token here.
-# 2. Message @userinfobot on Telegram to get your personal Chat ID and paste it here.
+
 TELEGRAM_BOT_TOKEN = "" 
 TELEGRAM_CHAT_ID = "" 
 

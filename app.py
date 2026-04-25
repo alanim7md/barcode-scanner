@@ -794,6 +794,39 @@ def admin_adjust_count():
     conn.close()
     return jsonify({"status": "ok"})
 
+@app.route("/admin/toggle_flag", methods=["POST"])
+def admin_toggle_flag():
+    if session.get("role") != "admin": return jsonify({"error": "forbidden"}), 403
+    data = request.json
+    barcode = data["barcode"]
+    target_user = data.get("user")
+    branch = data.get("branch")
+    session_name = data.get("session_name")
+    
+    conn = get_db()
+    c = conn.cursor()
+    
+    if target_user and target_user != "null":
+        c.execute("SELECT COUNT(*) FROM scans WHERE barcode=? AND session_name=? AND user=?", (barcode + "__FLAGGED", session_name, target_user))
+        is_flagged = c.fetchone()[0] > 0
+        if is_flagged:
+            c.execute("DELETE FROM scans WHERE barcode=? AND session_name=? AND user=?", (barcode + "__FLAGGED", session_name, target_user))
+        else:
+            c.execute("INSERT INTO scans (barcode, timestamp, user, branch, session_name, flag_reason) VALUES (?, ?, ?, ?, ?, ?)", 
+                     (barcode + "__FLAGGED", get_gmt3_time(), target_user, branch, session_name, "Admin Manual Flag"))
+    else:
+        c.execute("SELECT COUNT(*) FROM scans WHERE barcode=? AND session_name=? AND branch=?", (barcode + "__FLAGGED", session_name, branch))
+        is_flagged = c.fetchone()[0] > 0
+        if is_flagged:
+            c.execute("DELETE FROM scans WHERE barcode=? AND session_name=? AND branch=?", (barcode + "__FLAGGED", session_name, branch))
+        else:
+            c.execute("INSERT INTO scans (barcode, timestamp, user, branch, session_name, flag_reason) VALUES (?, ?, ?, ?, ?, ?)", 
+                     (barcode + "__FLAGGED", get_gmt3_time(), session.get("user"), branch, session_name, "Admin Manual Flag"))
+            
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "ok"})
+
 @app.route("/admin/delete_entries", methods=["POST"])
 def admin_delete_entries():
     if session.get("role") != "admin": return jsonify({"error": "forbidden"}), 403
