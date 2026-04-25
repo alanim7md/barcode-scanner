@@ -123,7 +123,13 @@ def init_db():
     u_conn.commit()
     u_conn.close()
 
-init_db()
+try:
+    init_db()
+except sqlite3.OperationalError:
+    # This happens when multiple uWSGI workers start at the exact same time on PythonAnywhere
+    # and race to execute CREATE/ALTER TABLE statements. One worker wins, the others hit a lock.
+    # Ignoring the error allows the worker to start up successfully.
+    pass
 
 @app.before_request
 def check_session_token():
