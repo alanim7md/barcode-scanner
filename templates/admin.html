@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
@@ -8,428 +9,950 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        *, *::before, *::after { box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); background-attachment: fixed; color: #f8fafc; margin: 0; padding: 20px; min-height: 100vh; }
-        .container { max-width: 1100px; margin: auto; }
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
 
-        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
-        .nav h1 { margin: 0; font-size: 22px; color: #f8fafc; display: flex; align-items: center; gap: 8px; }
-        .nav-links { display: flex; gap: 10px; align-items: center; }
-        .nav-links a { text-decoration: none; padding: 8px 16px; border-radius: 9px; font-size: 13px; font-weight: 600; transition: all 0.2s; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #e2e8f0; display: inline-flex; align-items: center; justify-content: center; }
-        .nav-links a:hover { background: rgba(255,255,255,0.1); color: #fff; transform: translateY(-1px); }
-        .nav-links a.logout { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.2); color: #f87171; }
-        .nav-links a.logout:hover { background: rgba(239,68,68,0.2); color: #fca5a5; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            background-attachment: fixed;
+            color: #f8fafc;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .nav h1 {
+            margin: 0;
+            font-size: 22px;
+            color: #f8fafc;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e2e8f0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+        .nav-links a.logout {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+
+        .nav-links a.logout:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+        }
 
         /* CARDS */
-        .card { background: rgba(30,41,59,0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); padding: 24px; border-radius: 20px; margin-bottom: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08); }
-        .card h3 { margin: 0 0 20px 0; font-size: 15px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; }
+        .card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 24px;
+            border-radius: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+
+        .card h3 {
+            margin: 0 0 20px 0;
+            font-size: 15px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
 
         /* STAT CARDS */
-        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 8px; }
-        .stat-card { background: rgba(15,23,42,0.5); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 20px; text-align: center; }
-        .stat-card .stat-num { font-size: 2.2em; font-weight: 700; color: #38bdf8; line-height: 1; margin-bottom: 6px; }
-        .stat-card .stat-num.danger { color: #f87171; }
-        .stat-card p { margin: 0; font-size: 13px; color: #64748b; font-weight: 500; }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 8px;
+        }
+
+        .stat-card {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-card .stat-num {
+            font-size: 2.2em;
+            font-weight: 700;
+            color: #38bdf8;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .stat-card .stat-num.danger {
+            color: #f87171;
+        }
+
+        .stat-card p {
+            margin: 0;
+            font-size: 13px;
+            color: #64748b;
+            font-weight: 500;
+        }
 
         /* TABS */
-        .tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
-        .tab { padding: 10px 20px; cursor: pointer; background: rgba(51,65,85,0.5); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; font-size: 14px; font-weight: 500; color: #94a3b8; transition: all 0.2s; }
-        .tab:hover { background: rgba(56,189,248,0.1); color: #f8fafc; border-color: rgba(56,189,248,0.2); }
-        .tab.active { background: linear-gradient(135deg, #38bdf8, #0284c7); color: white; font-weight: 600; border-color: transparent; box-shadow: 0 4px 12px rgba(2,132,199,0.4); }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: rgba(51, 65, 85, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #94a3b8;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            background: rgba(56, 189, 248, 0.1);
+            color: #f8fafc;
+            border-color: rgba(56, 189, 248, 0.2);
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #38bdf8, #0284c7);
+            color: white;
+            font-weight: 600;
+            border-color: transparent;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
 
         /* TABLE */
-        .table-wrap { max-height: 500px; overflow-y: auto; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); background: rgba(15,23,42,0.3); }
-        .table-wrap::-webkit-scrollbar { width: 6px; }
-        .table-wrap::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
-        .table-wrap::-webkit-scrollbar-thumb { background: #475569; border-radius: 6px; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { position: sticky; top: 0; background: rgba(15,23,42,0.95); backdrop-filter: blur(4px); padding: 12px 14px; font-weight: 600; color: #64748b; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; border-bottom: 1px solid rgba(255,255,255,0.06); z-index: 2; }
-        td { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); color: #e2e8f0; vertical-align: middle; }
-        tbody tr:hover { background: rgba(255,255,255,0.02); }
+        .table-wrap {
+            max-height: 500px;
+            overflow-y: auto;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(15, 23, 42, 0.3);
+        }
+
+        .table-wrap::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .table-wrap::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .table-wrap::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 6px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            position: sticky;
+            top: 0;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(4px);
+            padding: 12px 14px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 1px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            z-index: 2;
+        }
+
+        td {
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: #e2e8f0;
+            vertical-align: middle;
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
 
         /* LOADING SPINNER */
-        .spinner-wrap { padding: 40px; text-align: center; color: #475569; }
-        .spinner { display: inline-block; width: 32px; height: 32px; border: 3px solid rgba(56,189,248,0.2); border-top-color: #38bdf8; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 12px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner-wrap {
+            padding: 40px;
+            text-align: center;
+            color: #475569;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            border: 3px solid rgba(56, 189, 248, 0.2);
+            border-top-color: #38bdf8;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 12px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
 
         /* BUTTONS */
-        button { font-family: 'Inter', sans-serif; cursor: pointer; transition: all 0.2s; border: none; }
-        .btn { padding: 9px 16px; border-radius: 9px; font-size: 13px; font-weight: 600; }
-        .btn-primary { background: linear-gradient(135deg, #38bdf8, #0284c7); color: white; box-shadow: 0 3px 10px rgba(2,132,199,0.35); }
-        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(2,132,199,0.5); }
-        .btn-danger { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: #f87171; }
-        .btn-danger:hover { background: rgba(239,68,68,0.2); }
-        .btn-warn { background: rgba(250,204,21,0.1); border: 1px solid rgba(250,204,21,0.25); color: #facc15; }
-        .btn-warn:hover { background: rgba(250,204,21,0.2); }
-        .btn-ghost { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; }
-        .btn-ghost:hover { background: rgba(255,255,255,0.1); color: #f8fafc; }
-        .btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 7px; }
-        .btn-icon { background: transparent; padding: 4px 8px; font-size: 16px; border-radius: 6px; border: none; }
+        button {
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn {
+            padding: 9px 16px;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #38bdf8, #0284c7);
+            color: white;
+            box-shadow: 0 3px 10px rgba(2, 132, 199, 0.35);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 14px rgba(2, 132, 199, 0.5);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            color: #f87171;
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-warn {
+            background: rgba(250, 204, 21, 0.1);
+            border: 1px solid rgba(250, 204, 21, 0.25);
+            color: #facc15;
+        }
+
+        .btn-warn:hover {
+            background: rgba(250, 204, 21, 0.2);
+        }
+
+        .btn-ghost {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+        }
+
+        .btn-ghost:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #f8fafc;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 7px;
+        }
+
+        .btn-icon {
+            background: transparent;
+            padding: 4px 8px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: none;
+        }
 
         /* INPUTS */
-        input, select { font-family: 'Inter', sans-serif; background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.1); color: #f8fafc; border-radius: 9px; padding: 9px 14px; font-size: 13px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
-        input:focus, select:focus { border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56,189,248,0.15); }
-        input::placeholder { color: #475569; }
-        label { font-size: 13px; font-weight: 500; color: #94a3b8; display: block; margin-bottom: 6px; }
+        input,
+        select {
+            font-family: 'Inter', sans-serif;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f8fafc;
+            border-radius: 9px;
+            padding: 9px 14px;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+        }
+
+        input::placeholder {
+            color: #475569;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #94a3b8;
+            display: block;
+            margin-bottom: 6px;
+        }
 
         /* CHART CONTAINERS */
-        .chart-box { background: rgba(15,23,42,0.4); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 20px; }
+        .chart-box {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 20px;
+        }
 
         /* FILTER ROW */
-        .filter-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+        .filter-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 16px;
+        }
 
         /* USERS TABLE */
-        .user-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+        .user-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
 
         /* MODAL */
-        #modalOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); z-index: 10000; justify-content: center; align-items: center; }
-        .modal-box { background: rgba(30,41,59,0.97); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 32px; max-width: 430px; width: 92%; box-shadow: 0 30px 60px rgba(0,0,0,0.6); animation: fadeUp 0.25s ease; }
-        @keyframes fadeUp { from { opacity:0; transform: translateY(16px); } to { opacity:1; transform: translateY(0); } }
-        .modal-title { font-size: 17px; font-weight: 700; color: #f8fafc; margin: 0 0 14px 0; }
-        .modal-body { color: #94a3b8; font-size: 14px; line-height: 1.65; }
-        .modal-body strong { color: #f8fafc; }
-        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
-        .modal-input { width: 100%; padding: 11px 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: rgba(15,23,42,0.7); color: #f8fafc; font-size: 14px; font-family: 'Inter', sans-serif; outline: none; margin-top: 12px; transition: border-color 0.2s; }
-        .modal-input:focus { border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56,189,248,0.15); }
-        .mbtn { padding: 10px 22px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 14px; transition: all 0.2s; }
-        .mbtn-primary { background: linear-gradient(135deg,#38bdf8,#0284c7); color: white; box-shadow: 0 4px 12px rgba(2,132,199,0.4); }
-        .mbtn-primary:hover { transform: translateY(-1px); }
-        .mbtn-secondary { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); color: #94a3b8; }
-        .mbtn-secondary:hover { background: rgba(255,255,255,0.12); color: #f8fafc; }
-        .mbtn-danger { background: linear-gradient(135deg,#f87171,#dc2626); color: white; box-shadow: 0 4px 12px rgba(220,38,38,0.4); }
-        .mbtn-danger:hover { transform: translateY(-1px); }
+        #modalOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-box {
+            background: rgba(30, 41, 59, 0.97);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 32px;
+            max-width: 430px;
+            width: 92%;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+            animation: fadeUp 0.25s ease;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #f8fafc;
+            margin: 0 0 14px 0;
+        }
+
+        .modal-body {
+            color: #94a3b8;
+            font-size: 14px;
+            line-height: 1.65;
+        }
+
+        .modal-body strong {
+            color: #f8fafc;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 11px 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(15, 23, 42, 0.7);
+            color: #f8fafc;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            margin-top: 12px;
+            transition: border-color 0.2s;
+        }
+
+        .modal-input:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+        }
+
+        .mbtn {
+            padding: 10px 22px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .mbtn-primary {
+            background: linear-gradient(135deg, #38bdf8, #0284c7);
+            color: white;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
+        }
+
+        .mbtn-primary:hover {
+            transform: translateY(-1px);
+        }
+
+        .mbtn-secondary {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #94a3b8;
+        }
+
+        .mbtn-secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: #f8fafc;
+        }
+
+        .mbtn-danger {
+            background: linear-gradient(135deg, #f87171, #dc2626);
+            color: white;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+        }
+
+        .mbtn-danger:hover {
+            transform: translateY(-1px);
+        }
 
         @media (max-width: 768px) {
-            .stat-grid { grid-template-columns: 1fr 1fr; }
-            .nav { flex-direction: column; gap: 16px; text-align: center; justify-content: center; }
-            .filter-row { flex-direction: column; align-items: stretch; }
-            .filter-row input, .filter-row select, .filter-row button, .filter-row label { width: 100%; justify-content: center; text-align: center; }
-            .user-actions { flex-direction: column; }
-            .user-actions button { width: 100%; }
-            input, select { font-size: 16px !important; }
-            
+            .stat-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .nav {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+                justify-content: center;
+            }
+
+            .filter-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-row input,
+            .filter-row select,
+            .filter-row button,
+            .filter-row label {
+                width: 100%;
+                justify-content: center;
+                text-align: center;
+            }
+
+            .user-actions {
+                flex-direction: column;
+            }
+
+            .user-actions button {
+                width: 100%;
+            }
+
+            input,
+            select {
+                font-size: 16px !important;
+            }
+
             /* Make tables scrollable on mobile without breaking layout */
-            .table-wrap { max-height: 400px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-            table { min-width: 700px; }
-            
+            .table-wrap {
+                max-height: 400px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            table {
+                min-width: 700px;
+            }
+
             /* Make tabs scrollable */
-            .tabs { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 8px; justify-content: flex-start; scrollbar-width: none; }
-            .tabs::-webkit-scrollbar { display: none; }
-            .tab { flex: 0 0 auto; white-space: nowrap; }
+            .tabs {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                padding-bottom: 8px;
+                justify-content: flex-start;
+                scrollbar-width: none;
+            }
+
+            .tabs::-webkit-scrollbar {
+                display: none;
+            }
+
+            .tab {
+                flex: 0 0 auto;
+                white-space: nowrap;
+            }
         }
+
         @media (max-width: 480px) {
-            .stat-grid { grid-template-columns: 1fr; }
-            body { padding: 12px; }
-            .card { padding: 16px; }
-            table { min-width: 600px; }
+            .stat-grid {
+                grid-template-columns: 1fr;
+            }
+
+            body {
+                padding: 12px;
+            }
+
+            .card {
+                padding: 16px;
+            }
+
+            table {
+                min-width: 600px;
+            }
         }
     </style>
 </head>
+
 <body>
 
-<div class="container">
-    <div class="nav">
-        <h1>⚡ Admin Panel</h1>
-        <div class="nav-links">
-            <a href="/">← Scanner</a>
-            <a href="/logout" class="logout">Logout</a>
-        </div>
-    </div>
-
-    <div class="tabs">
-        {% if role == 'admin' %}
-        <div class="tab" onclick="showTab('dashboard', this)">📊 Analytics</div>
-        {% endif %}
-        <div class="tab active" onclick="showTab('scans', this)">📋 Scans & Stats</div>
-        {% if role == 'admin' %}
-        <div class="tab" onclick="showTab('users', this)">👥 Users</div>
-        <div class="tab" onclick="showTab('branches', this)">🏢 Branches</div>
-        <div class="tab" onclick="showTab('settings', this)">⚙️ Settings</div>
-        {% endif %}
-    </div>
-
-    {% if role == 'admin' %}
-    <div id="dashboard" class="tab-content card">
-        <h3>System Analytics</h3>
-        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-top: 4px;">
-            <div class="chart-box">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                    <span style="font-weight:600; color:#94a3b8; font-size:13px; text-transform:uppercase; letter-spacing:1px;">Scans Over Time</span>
-                    <select id="timeRange" onchange="loadStats()" style="font-size:12px; padding:5px 10px;">
-                        <option value="7days">Last 7 Days</option>
-                        <option value="24hours">Last 24 Hours</option>
-                    </select>
-                </div>
-                <canvas id="timeChart" style="max-height:280px;"></canvas>
-            </div>
-            <div class="chart-box">
-                <div style="font-weight:600; color:#94a3b8; font-size:13px; text-transform:uppercase; letter-spacing:1px; margin-bottom:16px;">User Activity</div>
-                <canvas id="userChart" style="max-height:280px;"></canvas>
+    <div class="container">
+        <div class="nav">
+            <h1>⚡ Admin Panel</h1>
+            <div class="nav-links">
+                <a href="/">← Scanner</a>
+                <a href="/logout" class="logout">Logout</a>
             </div>
         </div>
-    </div>
-    {% endif %}
 
-    <div id="scans" class="tab-content active card">
-        <h3>System Statistics</h3>
-        <div class="stat-grid">
-            <div class="stat-card"><div class="stat-num" id="stat-items">0</div><p>Total Items Scanned</p></div>
-            <div class="stat-card"><div class="stat-num" id="stat-barcodes">0</div><p>Unique Barcodes</p></div>
-            <div class="stat-card"><div class="stat-num" id="stat-users">0</div><p>Active Users</p></div>
-            <div class="stat-card"><div class="stat-num danger" id="stat-flagged">0</div><p>Flagged Items</p></div>
-        </div>
-
-        <hr style="border:0; border-top:1px solid rgba(255,255,255,0.06); margin:24px 0;">
-
-        <h3>Scan View</h3>
-        <div class="filter-row">
-            <select id="viewMode" onchange="loadScans()">
-                <option value="detailed">Detailed View (By User)</option>
-                <option value="master">Master Branch View</option>
-            </select>
-            <select id="masterBranch" onchange="loadScans()" style="display:none;">
-                <option value="">-- All Branches --</option>
-            </select>
-            <select id="masterSession" onchange="loadScans()" style="display:none;">
-                <option value="">-- All Sessions --</option>
-            </select>
-            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; color:#facc15; font-weight:600; background:rgba(250,204,21,0.08); padding:7px 12px; border-radius:9px; border:1px solid rgba(250,204,21,0.2); margin:0;">
-                <input type="checkbox" id="showFlaggedOnly" onchange="renderScans()"> Flagged Only
-            </label>
-            <button class="btn btn-ghost" onclick="loadScans()">↻ Refresh</button>
-            <button class="btn btn-primary" onclick="exportCSV()">⬇ Export CSV</button>
+        <div class="tabs">
             {% if role == 'admin' %}
-            <button class="btn btn-danger" id="deleteSelectedBtn" onclick="deleteSelected()" style="display:none;">🗑 Delete Selected</button>
+            <div class="tab" onclick="showTab('dashboard', this)">📊 Analytics</div>
             {% endif %}
-            <input id="adminSearch" onkeyup="renderScans()" placeholder="Search barcodes..." style="margin-left:auto; width:180px;">
+            <div class="tab active" onclick="showTab('scans', this)">📋 Scans & Stats</div>
+            {% if role == 'admin' %}
+            <div class="tab" onclick="showTab('users', this)">👥 Users</div>
+            <div class="tab" onclick="showTab('branches', this)">🏢 Branches</div>
+            <div class="tab" onclick="showTab('settings', this)">⚙️ Settings</div>
+            {% endif %}
         </div>
-        <div class="table-wrap" id="scansTableWrap">
-            <div class="spinner-wrap" id="scansSpinner"><div class="spinner"></div><br>Loading data…</div>
-            <table style="display:none;">
-                <thead id="scans-thead"></thead>
-                <tbody id="scans-tbody"></tbody>
-            </table>
+
+        {% if role == 'admin' %}
+        <div id="dashboard" class="tab-content card">
+            <h3>System Analytics</h3>
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-top: 4px;">
+                <div class="chart-box">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                        <span
+                            style="font-weight:600; color:#94a3b8; font-size:13px; text-transform:uppercase; letter-spacing:1px;">Scans
+                            Over Time</span>
+                        <select id="timeRange" onchange="loadStats()" style="font-size:12px; padding:5px 10px;">
+                            <option value="7days">Last 7 Days</option>
+                            <option value="24hours">Last 24 Hours</option>
+                        </select>
+                    </div>
+                    <canvas id="timeChart" style="max-height:280px;"></canvas>
+                </div>
+                <div class="chart-box">
+                    <div
+                        style="font-weight:600; color:#94a3b8; font-size:13px; text-transform:uppercase; letter-spacing:1px; margin-bottom:16px;">
+                        User Activity</div>
+                    <canvas id="userChart" style="max-height:280px;"></canvas>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div id="scans" class="tab-content active card">
+            <h3>System Statistics</h3>
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-num" id="stat-items">0</div>
+                    <p>Total Items Scanned</p>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-num" id="stat-barcodes">0</div>
+                    <p>Unique Barcodes</p>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-num" id="stat-users">0</div>
+                    <p>Active Users</p>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-num danger" id="stat-flagged">0</div>
+                    <p>Flagged Items</p>
+                </div>
+            </div>
+
+            <hr style="border:0; border-top:1px solid rgba(255,255,255,0.06); margin:24px 0;">
+
+            <h3>Scan View</h3>
+            <div class="filter-row">
+                <select id="viewMode" onchange="loadScans()">
+                    <option value="detailed">Detailed View (By User)</option>
+                    <option value="master">Master Branch View</option>
+                </select>
+                <select id="masterBranch" onchange="loadScans()" style="display:none;">
+                    <option value="">-- All Branches --</option>
+                </select>
+                <select id="masterSession" onchange="loadScans()" style="display:none;">
+                    <option value="">-- All Sessions --</option>
+                </select>
+                <label
+                    style="display:flex; align-items:center; gap:6px; cursor:pointer; color:#facc15; font-weight:600; background:rgba(250,204,21,0.08); padding:7px 12px; border-radius:9px; border:1px solid rgba(250,204,21,0.2); margin:0;">
+                    <input type="checkbox" id="showFlaggedOnly" onchange="renderScans()"> Flagged Only
+                </label>
+                <button class="btn btn-ghost" onclick="loadScans()">↻ Refresh</button>
+                <button class="btn btn-primary" onclick="exportCSV()">⬇ Export CSV</button>
+                {% if role == 'admin' %}
+                <button class="btn btn-danger" id="deleteSelectedBtn" onclick="deleteSelected()"
+                    style="display:none;">🗑 Delete Selected</button>
+                {% endif %}
+                <input id="adminSearch" onkeyup="renderScans()" placeholder="Search barcodes..."
+                    style="margin-left:auto; width:180px;">
+            </div>
+            <div class="table-wrap" id="scansTableWrap">
+                <div class="spinner-wrap" id="scansSpinner">
+                    <div class="spinner"></div><br>Loading data…
+                </div>
+                <table style="display:none;">
+                    <thead id="scans-thead"></thead>
+                    <tbody id="scans-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="users" class="tab-content card">
+            <h3>Users</h3>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Role</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td style="font-weight:600;">{{ u.username }}</td>
+                            <td><span
+                                    style="padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600; background:{% if u.role=='admin' %}rgba(56,189,248,0.15); color:#38bdf8{% elif u.role=='moderator' %}rgba(168,85,247,0.15); color:#c084fc{% else %}rgba(255,255,255,0.06); color:#94a3b8{% endif %};">{{
+                                    u.role }}</span></td>
+                            <td>
+                                <div class="user-actions">
+                                    <button class="btn btn-ghost btn-sm" onclick="changePassword('{{ u.username }}')">🔑
+                                        Password</button>
+                                    <button class="btn btn-warn btn-sm" onclick="forceLogoutUser('{{ u.username }}')">⏏
+                                        Force Logout</button>
+                                    {% if u.username != 'admin' %}
+                                    <button class="btn btn-danger btn-sm" onclick="deleteUser('{{ u.username }}')">🗑
+                                        Delete</button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top:28px;">Add User</h3>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
+                <div><label>Username</label><input id="new-user" placeholder="e.g. john"></div>
+                <div><label>Password</label><input id="new-pass" placeholder="Password" type="password"></div>
+                <div><label>Role</label><select id="new-role">
+                        <option value="user">User</option>
+                        <option value="moderator">Moderator</option>
+                        <option value="admin">Admin</option>
+                    </select></div>
+                <button class="btn btn-primary" style="margin-top:22px;" onclick="addUser()">+ Add User</button>
+            </div>
+        </div>
+
+        <div id="branches" class="tab-content card">
+            <h3>Branches</h3>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Branch Name</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in branches %}
+                        <tr>
+                            <td style="font-weight:500;">{{ b.name }}</td>
+                            <td><button class="btn btn-danger btn-sm" onclick="deleteBranch('{{ b.name }}')">🗑
+                                    Delete</button></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <h3 style="margin-top:28px;">Add Branch</h3>
+            <div style="display:flex; gap:10px; align-items:flex-end;">
+                <div><label>Branch Name</label><input id="new-branch" placeholder="e.g. Main Store"></div>
+                <button class="btn btn-primary" style="margin-top:22px;" onclick="addBranch()">+ Add Branch</button>
+            </div>
+        </div>
+
+        <div id="settings" class="tab-content card">
+            <h3>Global Settings</h3>
+            <p style="color:#64748b; font-size:14px; margin-top:-10px; margin-bottom:24px;">Lock all users to a specific
+                branch and session. Leave blank to let users choose freely.</p>
+            <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:flex-end;">
+                <div><label>Enforced Branch</label><select id="global-branch">
+                        <option value="">— None (Users Choose) —</option>
+                    </select></div>
+                <div><label>Enforced Session</label><input id="global-session" list="session-list"
+                        placeholder="Session name"><datalist id="session-list"></datalist></div>
+                <button class="btn btn-primary" style="margin-top:22px;" onclick="saveSettings()">💾 Save
+                    Settings</button>
+            </div>
         </div>
     </div>
 
-    <div id="users" class="tab-content card">
-        <h3>Users</h3>
-        <div class="table-wrap">
-        <table>
-            <thead><tr><th>Username</th><th>Role</th><th>Actions</th></tr></thead>
-            <tbody>
-                {% for u in users %}
-                <tr>
-                    <td style="font-weight:600;">{{ u.username }}</td>
-                    <td><span style="padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600; background:{% if u.role=='admin' %}rgba(56,189,248,0.15); color:#38bdf8{% elif u.role=='moderator' %}rgba(168,85,247,0.15); color:#c084fc{% else %}rgba(255,255,255,0.06); color:#94a3b8{% endif %};">{{ u.role }}</span></td>
-                    <td>
-                        <div class="user-actions">
-                        <button class="btn btn-ghost btn-sm" onclick="changePassword('{{ u.username }}')">🔑 Password</button>
-                        <button class="btn btn-warn btn-sm" onclick="forceLogoutUser('{{ u.username }}')">⏏ Force Logout</button>
-                        {% if u.username != 'admin' %}
-                        <button class="btn btn-danger btn-sm" onclick="deleteUser('{{ u.username }}')">🗑 Delete</button>
-                        {% endif %}
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        </div>
-
-        <h3 style="margin-top:28px;">Add User</h3>
-        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
-            <div><label>Username</label><input id="new-user" placeholder="e.g. john"></div>
-            <div><label>Password</label><input id="new-pass" placeholder="Password" type="password"></div>
-            <div><label>Role</label><select id="new-role"><option value="user">User</option><option value="moderator">Moderator</option><option value="admin">Admin</option></select></div>
-            <button class="btn btn-primary" style="margin-top:22px;" onclick="addUser()">+ Add User</button>
-        </div>
-    </div>
-
-    <div id="branches" class="tab-content card">
-        <h3>Branches</h3>
-        <div class="table-wrap">
-        <table>
-            <thead><tr><th>Branch Name</th><th>Actions</th></tr></thead>
-            <tbody>
-                {% for b in branches %}
-                <tr>
-                    <td style="font-weight:500;">{{ b.name }}</td>
-                    <td><button class="btn btn-danger btn-sm" onclick="deleteBranch('{{ b.name }}')">🗑 Delete</button></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        </div>
-        <h3 style="margin-top:28px;">Add Branch</h3>
-        <div style="display:flex; gap:10px; align-items:flex-end;">
-            <div><label>Branch Name</label><input id="new-branch" placeholder="e.g. Main Store"></div>
-            <button class="btn btn-primary" style="margin-top:22px;" onclick="addBranch()">+ Add Branch</button>
-        </div>
-    </div>
-
-    <div id="settings" class="tab-content card">
-        <h3>Global Settings</h3>
-        <p style="color:#64748b; font-size:14px; margin-top:-10px; margin-bottom:24px;">Lock all users to a specific branch and session. Leave blank to let users choose freely.</p>
-        <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:flex-end;">
-            <div><label>Enforced Branch</label><select id="global-branch"><option value="">— None (Users Choose) —</option></select></div>
-            <div><label>Enforced Session</label><input id="global-session" list="session-list" placeholder="Session name"><datalist id="session-list"></datalist></div>
-            <button class="btn btn-primary" style="margin-top:22px;" onclick="saveSettings()">💾 Save Settings</button>
-        </div>
-    </div>
-</div>
-
-<script>
-fetch("/branches").then(r=>r.json()).then(data => {
-    const mb = document.getElementById('masterBranch');
-    const gb = document.getElementById('global-branch');
-    data.forEach(b => {
-        mb.appendChild(new Option(b, b));
-        gb.appendChild(new Option(b, b));
-    });
-    fetch("/settings").then(r=>r.json()).then(s => {
-        if(s.global_branch) gb.value = s.global_branch;
-        if(s.global_session) document.getElementById('global-session').value = s.global_session;
-    });
-});
-
-fetch("/sessions").then(r=>r.json()).then(data => {
-    const ms = document.getElementById('masterSession');
-    const dl = document.getElementById('session-list');
-    data.forEach(s => {
-        ms.appendChild(new Option(s, s));
-        if (dl) {
-            const opt = document.createElement('option');
-            opt.value = s;
-            dl.appendChild(opt);
-        }
-    });
-});
-
-function showTab(id, el) {
-    document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
-    document.querySelectorAll('.tab').forEach(e => e.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    if (el) el.classList.add('active');
-    if(id === 'scans') loadScans();
-    if(id === 'dashboard') loadStats();
-}
-
-let timeChartObj = null;
-let statusChartObj = null;
-
-function loadStats() {
-    fetch('/admin/stats')
-        .then(r => r.json())
-        .then(data => {
-            if (data.forbidden) return;
-            document.getElementById('stat-items').innerText = data.total_scans || 0;
-            document.getElementById('stat-barcodes').innerText = data.unique_barcodes || 0;
-            document.getElementById('stat-users').innerText = data.active_users || 0;
-            document.getElementById('stat-flagged').innerText = data.flagged_items || 0;
-        })
-        .catch(err => console.error("Failed to load stats:", err));
-
-    if (document.getElementById('timeChart')) {
-        const timeRange = document.getElementById('timeRange') ? document.getElementById('timeRange').value : '7days';
-        fetch('/admin/chart_data?range=' + timeRange)
-            .then(r => r.json())
-            .then(data => {
-                if (data.forbidden) return;
-                if (timeChartObj) timeChartObj.destroy();
-                timeChartObj = new Chart(document.getElementById('timeChart'), {
-                    type: 'line',
-                    data: { labels: data.time.labels, datasets: [{ label: 'Scans', data: data.time.data, borderColor: '#38bdf8', tension: 0.4, fill: true, backgroundColor: 'rgba(56,189,248,0.08)' }] },
-                    options: { responsive: true, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#64748b' } }, x: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#64748b' } } }, plugins: { legend: { display: false } } }
-                });
-                if (statusChartObj) statusChartObj.destroy();
-                statusChartObj = new Chart(document.getElementById('userChart'), {
-                    type: 'doughnut',
-                    data: { labels: data.users.labels, datasets: [{ data: data.users.data, borderWidth: 0, backgroundColor: ['#38bdf8','#818cf8','#a78bfa','#e879f9','#f472b6','#fb7185','#34d399'] }] },
-                    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 12 } } } }
-                });
+    <script>
+        fetch("/branches").then(r => r.json()).then(data => {
+            const mb = document.getElementById('masterBranch');
+            const gb = document.getElementById('global-branch');
+            data.forEach(b => {
+                mb.appendChild(new Option(b, b));
+                gb.appendChild(new Option(b, b));
             });
-    }
-}
+            fetch("/settings").then(r => r.json()).then(s => {
+                if (s.global_branch) gb.value = s.global_branch;
+                if (s.global_session) document.getElementById('global-session').value = s.global_session;
+            });
+        });
 
-let currentAdminData = [];
-let sortCol = 'last';
-let sortAsc = false;
-let odooMarkedBarcodeAdmin = localStorage.getItem('odooMarkedBarcodeAdmin') || null;
+        fetch("/sessions").then(r => r.json()).then(data => {
+            const ms = document.getElementById('masterSession');
+            const dl = document.getElementById('session-list');
+            data.forEach(s => {
+                ms.appendChild(new Option(s, s));
+                if (dl) {
+                    const opt = document.createElement('option');
+                    opt.value = s;
+                    dl.appendChild(opt);
+                }
+            });
+        });
 
-function setOdooMarkAdmin(barcode) {
-    odooMarkedBarcodeAdmin = odooMarkedBarcodeAdmin === barcode ? null : barcode;
-    localStorage.setItem('odooMarkedBarcodeAdmin', odooMarkedBarcodeAdmin || '');
-    renderScans();
-}
+        function showTab(id, el) {
+            document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(e => e.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if (el) el.classList.add('active');
+            if (id === 'scans') loadScans();
+            if (id === 'dashboard') loadStats();
+        }
 
-function doSort(col) {
-    if (sortCol === col) sortAsc = !sortAsc;
-    else { sortCol = col; sortAsc = true; }
-    renderScans();
-}
+        let timeChartObj = null;
+        let statusChartObj = null;
 
-function showSpinner() {
-    const sp = document.getElementById('scansSpinner');
-    const tbl = document.querySelector('#scansTableWrap table');
-    if (sp) sp.style.display = 'block';
-    if (tbl) tbl.style.display = 'none';
-}
+        function loadStats() {
+            fetch('/admin/stats')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.forbidden) return;
+                    document.getElementById('stat-items').innerText = data.total_scans || 0;
+                    document.getElementById('stat-barcodes').innerText = data.unique_barcodes || 0;
+                    document.getElementById('stat-users').innerText = data.active_users || 0;
+                    document.getElementById('stat-flagged').innerText = data.flagged_items || 0;
+                })
+                .catch(err => console.error("Failed to load stats:", err));
 
-function hideSpinner() {
-    const sp = document.getElementById('scansSpinner');
-    const tbl = document.querySelector('#scansTableWrap table');
-    if (sp) sp.style.display = 'none';
-    if (tbl) tbl.style.display = 'table';
-}
+            if (document.getElementById('timeChart')) {
+                const timeRange = document.getElementById('timeRange') ? document.getElementById('timeRange').value : '7days';
+                fetch('/admin/chart_data?range=' + timeRange)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.forbidden) return;
+                        if (timeChartObj) timeChartObj.destroy();
+                        timeChartObj = new Chart(document.getElementById('timeChart'), {
+                            type: 'line',
+                            data: { labels: data.time.labels, datasets: [{ label: 'Scans', data: data.time.data, borderColor: '#38bdf8', tension: 0.4, fill: true, backgroundColor: 'rgba(56,189,248,0.08)' }] },
+                            options: { responsive: true, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#64748b' } }, x: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#64748b' } } }, plugins: { legend: { display: false } } }
+                        });
+                        if (statusChartObj) statusChartObj.destroy();
+                        statusChartObj = new Chart(document.getElementById('userChart'), {
+                            type: 'doughnut',
+                            data: { labels: data.users.labels, datasets: [{ data: data.users.data, borderWidth: 0, backgroundColor: ['#38bdf8', '#818cf8', '#a78bfa', '#e879f9', '#f472b6', '#fb7185', '#34d399'] }] },
+                            options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 12 } } } }
+                        });
+                    });
+            }
+        }
 
-function loadScans() {
-    const mode = document.getElementById('viewMode').value;
-    const mb = document.getElementById('masterBranch');
-    const ms = document.getElementById('masterSession');
-    showSpinner();
-    if (mode === 'master') {
-        mb.style.display = 'inline-block';
-        ms.style.display = 'inline-block';
-        if (!ms.value) ms.value = new Date().toISOString().split('T')[0];
-        fetch(`/admin/master_scans?branch=${encodeURIComponent(mb.value)}&session_name=${encodeURIComponent(ms.value)}`)
-        .then(r=>r.json()).then(data => { currentAdminData = data; renderScans(); hideSpinner(); });
-    } else {
-        mb.style.display = 'none';
-        ms.style.display = 'none';
-        fetch('/admin/scans_data').then(r=>r.json()).then(data => { currentAdminData = data; renderScans(); hideSpinner(); });
-    }
-}
+        let currentAdminData = [];
+        let sortCol = 'last';
+        let sortAsc = false;
+        let odooMarkedBarcodeAdmin = localStorage.getItem('odooMarkedBarcodeAdmin') || null;
 
-function renderScans() {
-    const mode = document.getElementById('viewMode').value;
-    const thead = document.getElementById('scans-thead');
-    const tbody = document.getElementById('scans-tbody');
-    const search = (document.getElementById('adminSearch').value || "").toLowerCase();
-    const flaggedOnly = document.getElementById('showFlaggedOnly').checked;
-    tbody.innerHTML = '';
-    const delBtn = document.getElementById('deleteSelectedBtn');
-    if (delBtn) delBtn.style.display = 'inline-block';
-    let filtered = currentAdminData.filter(row =>
-        (row.barcode || "").toLowerCase().includes(search) ||
-        (row.user || row.users || "").toLowerCase().includes(search) ||
-        (row.branch || "").toLowerCase().includes(search) ||
-        (row.session_name || "").toLowerCase().includes(search)
-    );
-    if (flaggedOnly) filtered = filtered.filter(row => row.flagged > 0);
-    filtered.sort((a, b) => {
-        let valA = a[sortCol]; let valB = b[sortCol];
-        if (typeof valA === 'string') valA = valA.toLowerCase();
-        if (typeof valB === 'string') valB = valB.toLowerCase();
-        if (valA < valB) return sortAsc ? -1 : 1;
-        if (valA > valB) return sortAsc ? 1 : -1;
-        return 0;
-    });
-    const s = col => sortCol===col ? (sortAsc ? ' ↑' : ' ↓') : '';
-    if (mode === 'master') {
-        thead.innerHTML = `<tr><th><input type="checkbox" onchange="toggleAllCheckboxes(this)"></th>
+        function setOdooMarkAdmin(barcode) {
+            odooMarkedBarcodeAdmin = odooMarkedBarcodeAdmin === barcode ? null : barcode;
+            localStorage.setItem('odooMarkedBarcodeAdmin', odooMarkedBarcodeAdmin || '');
+            renderScans();
+        }
+
+        function doSort(col) {
+            if (sortCol === col) sortAsc = !sortAsc;
+            else { sortCol = col; sortAsc = true; }
+            renderScans();
+        }
+
+        function showSpinner() {
+            const sp = document.getElementById('scansSpinner');
+            const tbl = document.querySelector('#scansTableWrap table');
+            if (sp) sp.style.display = 'block';
+            if (tbl) tbl.style.display = 'none';
+        }
+
+        function hideSpinner() {
+            const sp = document.getElementById('scansSpinner');
+            const tbl = document.querySelector('#scansTableWrap table');
+            if (sp) sp.style.display = 'none';
+            if (tbl) tbl.style.display = 'table';
+        }
+
+        function loadScans() {
+            const mode = document.getElementById('viewMode').value;
+            const mb = document.getElementById('masterBranch');
+            const ms = document.getElementById('masterSession');
+            showSpinner();
+            if (mode === 'master') {
+                mb.style.display = 'inline-block';
+                ms.style.display = 'inline-block';
+                if (!ms.value) ms.value = new Date().toISOString().split('T')[0];
+                fetch(`/admin/master_scans?branch=${encodeURIComponent(mb.value)}&session_name=${encodeURIComponent(ms.value)}`)
+                    .then(r => r.json()).then(data => { currentAdminData = data; renderScans(); hideSpinner(); });
+            } else {
+                mb.style.display = 'none';
+                ms.style.display = 'none';
+                fetch('/admin/scans_data').then(r => r.json()).then(data => { currentAdminData = data; renderScans(); hideSpinner(); });
+            }
+        }
+
+        function renderScans() {
+            const mode = document.getElementById('viewMode').value;
+            const thead = document.getElementById('scans-thead');
+            const tbody = document.getElementById('scans-tbody');
+            const search = (document.getElementById('adminSearch').value || "").toLowerCase();
+            const flaggedOnly = document.getElementById('showFlaggedOnly').checked;
+            tbody.innerHTML = '';
+            const delBtn = document.getElementById('deleteSelectedBtn');
+            if (delBtn) delBtn.style.display = 'inline-block';
+            let filtered = currentAdminData.filter(row =>
+                (row.barcode || "").toLowerCase().includes(search) ||
+                (row.user || row.users || "").toLowerCase().includes(search) ||
+                (row.branch || "").toLowerCase().includes(search) ||
+                (row.session_name || "").toLowerCase().includes(search)
+            );
+            if (flaggedOnly) filtered = filtered.filter(row => row.flagged > 0);
+            filtered.sort((a, b) => {
+                let valA = a[sortCol]; let valB = b[sortCol];
+                if (typeof valA === 'string') valA = valA.toLowerCase();
+                if (typeof valB === 'string') valB = valB.toLowerCase();
+                if (valA < valB) return sortAsc ? -1 : 1;
+                if (valA > valB) return sortAsc ? 1 : -1;
+                return 0;
+            });
+            const s = col => sortCol === col ? (sortAsc ? ' ↑' : ' ↓') : '';
+            if (mode === 'master') {
+                thead.innerHTML = `<tr><th><input type="checkbox" onchange="toggleAllCheckboxes(this)"></th>
             <th onclick="doSort('barcode')" style="cursor:pointer">Barcode${s('barcode')}</th>
             <th onclick="doSort('users')" style="cursor:pointer">Users${s('users')}</th>
             <th onclick="doSort('good')" style="cursor:pointer">Good${s('good')}</th>
@@ -439,24 +962,24 @@ function renderScans() {
             <th onclick="doSort('first')" style="cursor:pointer">First Scan${s('first')}</th>
             <th onclick="doSort('last')" style="cursor:pointer">Last Scan${s('last')}</th>
             <th>Actions</th></tr>`;
-        let html = "";
-        filtered.forEach(row => {
-            const marked = row.barcode === odooMarkedBarcodeAdmin;
-            html += `<tr${marked ? ' style="background:rgba(34,197,94,0.12);border-left:3px solid #22c55e"' : ''}>
+                let html = "";
+                filtered.forEach(row => {
+                    const marked = row.barcode === odooMarkedBarcodeAdmin;
+                    html += `<tr${marked ? ' style="background:rgba(34,197,94,0.12);border-left:3px solid #22c55e"' : ''}>
                 <td><input type="checkbox" class="row-checkbox" data-barcode="${row.barcode}"></td>
-                <td style="font-family:monospace;font-size:12px;">${row.barcode}</td><td>${row.users||''}</td>
+                <td style="font-family:monospace;font-size:12px;">${row.barcode}</td><td>${row.users || ''}</td>
                 <td style="color:#4ade80;font-weight:600;">${row.good}</td>
                 <td style="color:#f87171;font-weight:600;">${row.damaged}</td>
                 <td style="color:#facc15;font-weight:700;">${row.flagged > 0 ? '🚩 Yes' : ''}</td>
-                <td style="color:#94a3b8;font-size:12px;">${row.reason||''}</td><td style="color:#64748b;font-size:12px;">${row.first}</td><td style="color:#64748b;font-size:12px;">${row.last}</td>
+                <td style="color:#94a3b8;font-size:12px;">${row.reason || ''}</td><td style="color:#64748b;font-size:12px;">${row.first}</td><td style="color:#64748b;font-size:12px;">${row.last}</td>
                 <td><button class="btn-icon" onclick="setOdooMarkAdmin('${row.barcode}')" title="Mark as entered">✅</button>
                 {% if role == 'admin' %}
                 <button class="btn btn-warn btn-sm" onclick="toggleAdminFlag('${row.barcode}','null',document.getElementById('masterBranch').value,document.getElementById('masterSession').value)">🚩</button>
                 {% endif %}</td></tr>`;
-        });
-        tbody.innerHTML = html;
-    } else {
-        thead.innerHTML = `<tr><th><input type="checkbox" onchange="toggleAllCheckboxes(this)"></th>
+                });
+                tbody.innerHTML = html;
+            } else {
+                thead.innerHTML = `<tr><th><input type="checkbox" onchange="toggleAllCheckboxes(this)"></th>
             <th onclick="doSort('barcode')" style="cursor:pointer">Barcode${s('barcode')}</th>
             <th onclick="doSort('user')" style="cursor:pointer">User${s('user')}</th>
             <th onclick="doSort('branch')" style="cursor:pointer">Branch${s('branch')}</th>
@@ -468,17 +991,17 @@ function renderScans() {
             <th onclick="doSort('first')" style="cursor:pointer">First${s('first')}</th>
             <th onclick="doSort('last')" style="cursor:pointer">Last${s('last')}</th>
             <th>Actions</th></tr>`;
-        let html = "";
-        filtered.forEach(row => {
-            const marked = row.barcode === odooMarkedBarcodeAdmin;
-            html += `<tr${marked ? ' style="background:rgba(34,197,94,0.12);border-left:3px solid #22c55e"' : ''}>
+                let html = "";
+                filtered.forEach(row => {
+                    const marked = row.barcode === odooMarkedBarcodeAdmin;
+                    html += `<tr${marked ? ' style="background:rgba(34,197,94,0.12);border-left:3px solid #22c55e"' : ''}>
                 <td><input type="checkbox" class="row-checkbox" data-barcode="${row.barcode}" data-user="${row.user}" data-branch="${row.branch}" data-session="${row.session_name}"></td>
                 <td style="font-family:monospace;font-size:12px;">${row.barcode}</td>
-                <td>${row.user||''}</td><td>${row.branch||''}</td><td>${row.session_name||''}</td>
+                <td>${row.user || ''}</td><td>${row.branch || ''}</td><td>${row.session_name || ''}</td>
                 <td style="color:#4ade80;font-weight:600;">${row.good}</td>
                 <td style="color:#f87171;font-weight:600;">${row.damaged}</td>
                 <td style="color:#facc15;font-weight:700;">${row.flagged > 0 ? '🚩 Yes' : ''}</td>
-                <td style="color:#94a3b8;font-size:12px;">${row.reason||''}</td>
+                <td style="color:#94a3b8;font-size:12px;">${row.reason || ''}</td>
                 <td style="color:#64748b;font-size:12px;">${row.first}</td><td style="color:#64748b;font-size:12px;">${row.last}</td>
                 <td>
                     <button class="btn-icon" onclick="setOdooMarkAdmin('${row.barcode}')" title="Mark as entered">✅</button>
@@ -488,177 +1011,179 @@ function renderScans() {
                     <button class="btn btn-warn btn-sm" onclick="toggleAdminFlag('${row.barcode}','${row.user}','${row.branch}','${row.session_name}')">🚩</button>
                     {% endif %}
                 </td></tr>`;
-        });
-        tbody.innerHTML = html;
-    }
-}
+                });
+                tbody.innerHTML = html;
+            }
+        }
 
-function toggleAllCheckboxes(source) {
-    document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = source.checked);
-}
+        function toggleAllCheckboxes(source) {
+            document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = source.checked);
+        }
 
-function deleteSelected() {
-    const checkboxes = document.querySelectorAll('.row-checkbox:checked');
-    if (checkboxes.length === 0) return showModal('alert', 'Nothing Selected', 'Select at least one entry to delete.');
-    const mode = document.getElementById('viewMode').value;
-    let entries = [];
-    checkboxes.forEach(cb => {
-        entries.push(mode === 'master'
-            ? { barcode: cb.dataset.barcode, branch: document.getElementById('masterBranch').value, session_name: document.getElementById('masterSession').value }
-            : { barcode: cb.dataset.barcode, user: cb.dataset.user, branch: cb.dataset.branch, session_name: cb.dataset.session });
-    });
-    showModal('prompt-password', `Delete ${entries.length} entr${entries.length===1?'y':'ies'}?`, 'Enter your admin password to confirm permanent deletion:', pw => {
-        fetch('/admin/delete_entries', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ mode, password: pw, entries })
-        }).then(r => r.json()).then(res => {
-            if (res.error) showModal('alert', 'Error', 'Deletion failed: ' + res.error);
-            else { showModal('alert', 'Done', `${entries.length} entr${entries.length===1?'y':'ies'} deleted successfully.`); loadScans(); }
-        });
-    });
-}
+        function deleteSelected() {
+            const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+            if (checkboxes.length === 0) return showModal('alert', 'Nothing Selected', 'Select at least one entry to delete.');
+            const mode = document.getElementById('viewMode').value;
+            let entries = [];
+            checkboxes.forEach(cb => {
+                entries.push(mode === 'master'
+                    ? { barcode: cb.dataset.barcode, branch: document.getElementById('masterBranch').value, session_name: document.getElementById('masterSession').value }
+                    : { barcode: cb.dataset.barcode, user: cb.dataset.user, branch: cb.dataset.branch, session_name: cb.dataset.session });
+            });
+            showModal('prompt-password', `Delete ${entries.length} entr${entries.length === 1 ? 'y' : 'ies'}?`, 'Enter your admin password to confirm permanent deletion:', pw => {
+                fetch('/admin/delete_entries', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mode, password: pw, entries })
+                }).then(r => r.json()).then(res => {
+                    if (res.error) showModal('alert', 'Error', 'Deletion failed: ' + res.error);
+                    else { showModal('alert', 'Done', `${entries.length} entr${entries.length === 1 ? 'y' : 'ies'} deleted successfully.`); loadScans(); }
+                });
+            });
+        }
 
-function exportCSV() {
-    const mode = document.getElementById('viewMode').value;
-    const branch = document.getElementById('masterBranch').value;
-    const session_name = document.getElementById('masterSession').value;
-    window.location.href = `/admin/export_csv?mode=${mode}&branch=${encodeURIComponent(branch)}&session_name=${encodeURIComponent(session_name)}`;
-}
+        function exportCSV() {
+            const mode = document.getElementById('viewMode').value;
+            const branch = document.getElementById('masterBranch').value;
+            const session_name = document.getElementById('masterSession').value;
+            window.location.href = `/admin/export_csv?mode=${mode}&branch=${encodeURIComponent(branch)}&session_name=${encodeURIComponent(session_name)}`;
+        }
 
-function saveSettings() {
-    fetch('/admin/settings', {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ global_branch: document.getElementById('global-branch').value, global_session: document.getElementById('global-session').value })
-    }).then(() => showModal('alert', 'Saved', 'Global settings saved. Users will see this next time they load the page.'));
-}
+        function saveSettings() {
+            fetch('/admin/settings', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ global_branch: document.getElementById('global-branch').value, global_session: document.getElementById('global-session').value })
+            }).then(() => showModal('alert', 'Saved', 'Global settings saved. Users will see this next time they load the page.'));
+        }
 
-function promptAdjust(barcode, user, branch, session_name, type) {
-    showModal('prompt', `Adjust ${type} count`, `Enter a positive number to add or negative to subtract <strong>${type}</strong> items for <strong>${barcode}</strong>:`, val => {
-        const diff = parseInt(val);
-        if (!val || isNaN(diff)) return;
-        adjustCount(barcode, user, branch, session_name, type, diff);
-    });
-}
+        function promptAdjust(barcode, user, branch, session_name, type) {
+            showModal('prompt', `Adjust ${type} count`, `Enter a positive number to add or negative to subtract <strong>${type}</strong> items for <strong>${barcode}</strong>:`, val => {
+                const diff = parseInt(val);
+                if (!val || isNaN(diff)) return;
+                adjustCount(barcode, user, branch, session_name, type, diff);
+            });
+        }
 
-function adjustCount(barcode, user, branch, session_name, type, diff) {
-    if (!diff || isNaN(diff)) return;
-    fetch('/admin/adjust_count', {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ barcode, user, branch, session_name, type, diff })
-    }).then(() => loadScans());
-}
+        function adjustCount(barcode, user, branch, session_name, type, diff) {
+            if (!diff || isNaN(diff)) return;
+            fetch('/admin/adjust_count', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ barcode, user, branch, session_name, type, diff })
+            }).then(() => loadScans());
+        }
 
-function toggleAdminFlag(barcode, user, branch, session_name) {
-    fetch('/admin/toggle_flag', {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ barcode, user, branch, session_name })
-    }).then(() => loadScans());
-}
+        function toggleAdminFlag(barcode, user, branch, session_name) {
+            fetch('/admin/toggle_flag', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ barcode, user, branch, session_name })
+            }).then(() => loadScans());
+        }
 
-function addUser() {
-    const username = document.getElementById('new-user').value.trim();
-    const password = document.getElementById('new-pass').value;
-    const role = document.getElementById('new-role').value;
-    if (!username || !password) return showModal('alert', 'Missing Fields', 'Please fill in both username and password.');
-    fetch('/add_user', {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ username, password, role })
-    }).then(r => r.text()).then(res => {
-        if (res === 'exists') showModal('alert', 'User Exists', `Username <strong>${username}</strong> already exists.`);
-        else location.reload();
-    });
-}
+        function addUser() {
+            const username = document.getElementById('new-user').value.trim();
+            const password = document.getElementById('new-pass').value;
+            const role = document.getElementById('new-role').value;
+            if (!username || !password) return showModal('alert', 'Missing Fields', 'Please fill in both username and password.');
+            fetch('/add_user', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, role })
+            }).then(r => r.text()).then(res => {
+                if (res === 'exists') showModal('alert', 'User Exists', `Username <strong>${username}</strong> already exists.`);
+                else location.reload();
+            });
+        }
 
-function deleteUser(username) {
-    showModal('confirm', 'Delete User', `Are you sure you want to delete user <strong>${username}</strong>? This cannot be undone.`, () => {
-        fetch('/delete_user/'+username, {method: 'DELETE'}).then(() => location.reload());
-    });
-}
+        function deleteUser(username) {
+            showModal('confirm', 'Delete User', `Are you sure you want to delete user <strong>${username}</strong>? This cannot be undone.`, () => {
+                fetch('/delete_user/' + username, { method: 'DELETE' }).then(() => location.reload());
+            });
+        }
 
-function forceLogoutUser(username) {
-    showModal('confirm', 'Force Logout', `Force logout <strong>${username}</strong> from all their devices?`, () => {
-        fetch('/force_logout/'+username, {method: 'POST'}).then(() => showModal('alert', 'Done', `${username} has been logged out from all devices.`));
-    });
-}
+        function forceLogoutUser(username) {
+            showModal('confirm', 'Force Logout', `Force logout <strong>${username}</strong> from all their devices?`, () => {
+                fetch('/force_logout/' + username, { method: 'POST' }).then(() => showModal('alert', 'Done', `${username} has been logged out from all devices.`));
+            });
+        }
 
-function changePassword(username) {
-    showModal('prompt', 'Change Password', `Enter new password for <strong>${username}</strong>:`, pw => {
-        fetch('/user_password', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({username, password: pw})
-        }).then(() => showModal('alert', 'Done', `Password for <strong>${username}</strong> has been updated.`));
-    });
-}
+        function changePassword(username) {
+            showModal('prompt', 'Change Password', `Enter new password for <strong>${username}</strong>:`, pw => {
+                fetch('/user_password', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password: pw })
+                }).then(() => showModal('alert', 'Done', `Password for <strong>${username}</strong> has been updated.`));
+            });
+        }
 
-function addBranch() {
-    const name = document.getElementById('new-branch').value.trim();
-    if (!name) return showModal('alert', 'Missing Field', 'Please enter a branch name.');
-    fetch('/add_branch', {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({name})
-    }).then(() => location.reload());
-}
+        function addBranch() {
+            const name = document.getElementById('new-branch').value.trim();
+            if (!name) return showModal('alert', 'Missing Field', 'Please enter a branch name.');
+            fetch('/add_branch', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            }).then(() => location.reload());
+        }
 
-function deleteBranch(name) {
-    showModal('confirm', 'Delete Branch', `Are you sure you want to delete branch <strong>${name}</strong>?`, () => {
-        fetch('/delete_branch/'+name, {method: 'DELETE'}).then(() => location.reload());
-    });
-}
+        function deleteBranch(name) {
+            showModal('confirm', 'Delete Branch', `Are you sure you want to delete branch <strong>${name}</strong>?`, () => {
+                fetch('/delete_branch/' + name, { method: 'DELETE' }).then(() => location.reload());
+            });
+        }
 
-// ---- MODAL SYSTEM ----
-function showModal(type, title, message, callback) {
-    const ov = document.getElementById('modalOverlay');
-    ov.querySelector('.modal-title').innerText = title;
-    ov.querySelector('.modal-body').innerHTML = message;
-    const actions = ov.querySelector('.modal-actions');
-    const inp = ov.querySelector('.modal-input');
-    inp.style.display = 'none';
-    inp.value = '';
-    inp.type = 'text';
-    actions.innerHTML = '';
-    ov._cb = callback || null;
+        // ---- MODAL SYSTEM ----
+        function showModal(type, title, message, callback) {
+            const ov = document.getElementById('modalOverlay');
+            ov.querySelector('.modal-title').innerText = title;
+            ov.querySelector('.modal-body').innerHTML = message;
+            const actions = ov.querySelector('.modal-actions');
+            const inp = ov.querySelector('.modal-input');
+            inp.style.display = 'none';
+            inp.value = '';
+            inp.type = 'text';
+            actions.innerHTML = '';
+            ov._cb = callback || null;
 
-    if (type === 'alert') {
-        actions.innerHTML = `<button class="mbtn mbtn-primary" onclick="closeModal()">OK</button>`;
-    } else if (type === 'confirm') {
-        actions.innerHTML = `<button class="mbtn mbtn-secondary" onclick="closeModal()">Cancel</button>
+            if (type === 'alert') {
+                actions.innerHTML = `<button class="mbtn mbtn-primary" onclick="closeModal()">OK</button>`;
+            } else if (type === 'confirm') {
+                actions.innerHTML = `<button class="mbtn mbtn-secondary" onclick="closeModal()">Cancel</button>
             <button class="mbtn mbtn-danger" onclick="closeModal(true)">Confirm</button>`;
-    } else if (type === 'prompt' || type === 'prompt-password') {
-        inp.style.display = 'block';
-        if (type === 'prompt-password') inp.type = 'password';
-        inp.placeholder = type === 'prompt-password' ? 'Admin password' : 'Enter value';
-        actions.innerHTML = `<button class="mbtn mbtn-secondary" onclick="closeModal()">Cancel</button>
+            } else if (type === 'prompt' || type === 'prompt-password') {
+                inp.style.display = 'block';
+                if (type === 'prompt-password') inp.type = 'password';
+                inp.placeholder = type === 'prompt-password' ? 'Admin password' : 'Enter value';
+                actions.innerHTML = `<button class="mbtn mbtn-secondary" onclick="closeModal()">Cancel</button>
             <button class="mbtn mbtn-primary" onclick="closeModal(true)">Submit</button>`;
-        setTimeout(() => inp.focus(), 80);
-        inp.onkeydown = e => { if(e.key==='Enter') closeModal(true); };
-    }
-    ov.style.display = 'flex';
-}
+                setTimeout(() => inp.focus(), 80);
+                inp.onkeydown = e => { if (e.key === 'Enter') closeModal(true); };
+            }
+            ov.style.display = 'flex';
+        }
 
-function closeModal(confirmed) {
-    const ov = document.getElementById('modalOverlay');
-    ov.style.display = 'none';
-    if (confirmed && ov._cb) {
-        const inp = ov.querySelector('.modal-input');
-        const val = inp.style.display !== 'none' ? inp.value : true;
-        ov._cb(val);
-    }
-    ov._cb = null;
-}
+        function closeModal(confirmed) {
+            const ov = document.getElementById('modalOverlay');
+            ov.style.display = 'none';
+            if (confirmed && ov._cb) {
+                const inp = ov.querySelector('.modal-input');
+                const val = inp.style.display !== 'none' ? inp.value : true;
+                ov._cb(val);
+            }
+            ov._cb = null;
+        }
 
-loadScans();
-loadStats();
-</script>
+        loadScans();
+        loadStats();
+    </script>
 
-<!-- Modal -->
-<div id="modalOverlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.65);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);z-index:10000;justify-content:center;align-items:center;">
-    <div class="modal-box">
-        <div class="modal-title"></div>
-        <div class="modal-body"></div>
-        <input class="modal-input" style="display:none;">
-        <div class="modal-actions"></div>
+    <!-- Modal -->
+    <div id="modalOverlay"
+        style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.65);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);z-index:10000;justify-content:center;align-items:center;">
+        <div class="modal-box">
+            <div class="modal-title"></div>
+            <div class="modal-body"></div>
+            <input class="modal-input" style="display:none;">
+            <div class="modal-actions"></div>
+        </div>
     </div>
-</div>
 
 </body>
+
 </html>
