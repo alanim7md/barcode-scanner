@@ -4,10 +4,11 @@ from datetime import datetime
 import io
 import csv
 import uuid
+import os
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-app.secret_key = "secret123"
+app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24).hex()
 
 def get_gmt3_time():
     from datetime import timezone, timedelta
@@ -15,6 +16,25 @@ def get_gmt3_time():
 
 DB = "database.db"
 USERS_DB = "users.db"
+
+# ---------- BARCODE SUFFIX HELPERS ----------
+SUFFIX_DAMAGED = "__DAMAGED"
+SUFFIX_FLAGGED = "__FLAGGED"
+
+def clean_barcode(barcode):
+    """Strip damage/flag suffixes to get the raw barcode."""
+    return barcode.replace(SUFFIX_DAMAGED, '').replace(SUFFIX_FLAGGED, '')
+
+def barcode_variants(barcode):
+    """Return (clean, damaged, flagged) tuple for SQL queries."""
+    clean = clean_barcode(barcode)
+    return clean, clean + SUFFIX_DAMAGED, clean + SUFFIX_FLAGGED
+
+# SQL fragment for grouping queries — reused across summary/admin/export
+SQL_CLEAN_BARCODE = f"REPLACE(REPLACE(barcode,'{SUFFIX_DAMAGED}',''),'{SUFFIX_FLAGGED}','')"
+SQL_GOOD_COUNT = f"SUM(CASE WHEN barcode NOT LIKE '%{SUFFIX_DAMAGED}' AND barcode NOT LIKE '%{SUFFIX_FLAGGED}' THEN 1 ELSE 0 END)"
+SQL_DAMAGED_COUNT = f"SUM(CASE WHEN barcode LIKE '%{SUFFIX_DAMAGED}' THEN 1 ELSE 0 END)"
+SQL_FLAGGED_COUNT = f"SUM(CASE WHEN barcode LIKE '%{SUFFIX_FLAGGED}' THEN 1 ELSE 0 END)"
 
 # ---------- DB HELPER ----------
 def get_db():
@@ -215,76 +235,32 @@ def insert_scans_bulk(barcode, qty, is_damaged=False, is_flagged=False, session_
         session_name = request.json.get("session_name", "")
     if branch is None:
         branch = request.json.get("branch")
-        
+
     actual_barcode = barcode
-    if is_damaged: actual_barcode += "__DAMAGED"
-        
+    if is_damaged:
+        actual_barcode += SUFFIX_DAMAGED
+
+    flag_reason = ""
+    if is_flagged:
+        actual_barcode += SUFFIX_FLAGGED
+        flag_reason = "Manual Flag"
+
     user = session.get("user")
     ts = get_gmt3_time()
-    
+
     conn = get_db()
     c = conn.cursor()
-    
-    clean_barcode = barcode.replace('__DAMAGED', '').replace('__FLAGGED', '')
-    
-    # 1. Cross-Session Check
-    c.execute("""
-        SELECT DISTINCT session_name 
-        FROM scans 
-        WHERE (barcode = ? OR barcode = ? OR barcode = ?) 
-        AND session_name != ? AND session_name != ''
-    """, (clean_barcode, clean_barcode + "__DAMAGED", clean_barcode + "__FLAGGED", session_name))
-    collision_row = c.fetchone()
-    
-    # 2. Multi-User Collision Check
-    c.execute("""
-        SELECT DISTINCT user 
-        FROM scans 
-        WHERE (barcode = ? OR barcode = ? OR barcode = ?) 
-        AND session_name = ? AND user != ?
-    """, (clean_barcode, clean_barcode + "__DAMAGED", clean_barcode + "__FLAGGED", session_name, user))
-    user_collision_row = c.fetchone()
-    
-    warning_msg = None
-    old_session = None
-    other_user = None
-    auto_flag = False
-    flag_reason = ""
-    
-    if collision_row:
-        old_session = collision_row[0]
-        warning_msg = "cross_session"
-        auto_flag = True
-        flag_reason = f"Cross-Session ({old_session})"
-    elif user_collision_row:
-        other_user = user_collision_row[0]
-        warning_msg = "user_collision"
-        auto_flag = True
-        flag_reason = f"User Collision ({other_user})"
-        
-    if is_flagged: 
-        actual_barcode += "__FLAGGED"
-        flag_reason = "Manual Flag"
-        auto_flag = True
-    
-    rows = [(actual_barcode, ts, user, branch, session_name, flag_reason if auto_flag else "") for _ in range(qty)]
+
+    rows = [(actual_barcode, ts, user, branch, session_name, flag_reason) for _ in range(qty)]
     c.executemany("""
         INSERT INTO scans (barcode, timestamp, user, branch, session_name, flag_reason)
         VALUES (?, ?, ?, ?, ?, ?)
     """, rows)
-    
-    if auto_flag:
-        c.execute("SELECT COUNT(*) FROM scans WHERE barcode=? AND session_name=?", (clean_barcode + "__FLAGGED", session_name))
-        if c.fetchone()[0] == 0:
-            c.execute("""
-                INSERT INTO scans (barcode, timestamp, user, branch, session_name, flag_reason) 
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (clean_barcode + "__FLAGGED", ts, user, branch, session_name, flag_reason))
-            
+
     conn.commit()
     conn.close()
-    
-    return {"status": "ok", "warning": warning_msg, "old_session": old_session, "other_user": other_user}
+
+    return {"status": "ok"}
 
 @app.route("/scan", methods=["POST"])
 def scan():
@@ -310,14 +286,15 @@ def flag_item():
     
     conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT COUNT(*) FROM scans WHERE barcode=? AND session_name=? AND user=?", (barcode + "__FLAGGED", session_name, user))
+    flagged_bc = barcode + SUFFIX_FLAGGED
+    c.execute("SELECT COUNT(*) FROM scans WHERE barcode=? AND session_name=? AND user=?", (flagged_bc, session_name, user))
     is_flagged = c.fetchone()[0] > 0
     
     if is_flagged:
-        c.execute("DELETE FROM scans WHERE barcode=? AND session_name=? AND user=?", (barcode + "__FLAGGED", session_name, user))
+        c.execute("DELETE FROM scans WHERE barcode=? AND session_name=? AND user=?", (flagged_bc, session_name, user))
     else:
         c.execute("INSERT INTO scans (barcode, timestamp, user, branch, session_name, flag_reason) VALUES (?, ?, ?, ?, ?, ?)", 
-                 (barcode + "__FLAGGED", get_gmt3_time(), user, branch, session_name, "Manual Flag"))
+                 (flagged_bc, get_gmt3_time(), user, branch, session_name, "Manual Flag"))
     conn.commit()
     conn.close()
     return jsonify({"status":"ok"})
@@ -327,51 +304,23 @@ def sync():
     scans = request.json.get("scans", [])
     if not scans:
         return jsonify({"status": "ok"})
-        
-    rows = [((s.get("barcode") or "").strip().upper(), s.get("timestamp"), s.get("user"), s.get("branch"), s.get("session_name")) for s in scans]
+
+    rows = [
+        (
+            (s.get("barcode") or "").strip().upper(),
+            s.get("timestamp"),
+            s.get("user"),
+            s.get("branch"),
+            s.get("session_name")
+        )
+        for s in scans
+    ]
     conn = get_db()
     c = conn.cursor()
     c.executemany("""
         INSERT OR IGNORE INTO scans (barcode, timestamp, user, branch, session_name)
         VALUES (?, ?, ?, ?, ?)
     """, rows)
-    
-    for s in scans:
-        barcode = (s.get("barcode") or "").strip().upper()
-        session_name = s.get("session_name")
-        user = s.get("user")
-        clean_barcode = barcode.replace('__DAMAGED', '').replace('__FLAGGED', '')
-        
-        c.execute("""
-            SELECT session_name FROM scans 
-            WHERE (barcode=? OR barcode=? OR barcode=?) 
-            AND session_name!=? AND session_name!=''
-            LIMIT 1
-        """, (clean_barcode, clean_barcode + "__DAMAGED", clean_barcode + "__FLAGGED", session_name))
-        cross_row = c.fetchone()
-        
-        c.execute("""
-            SELECT user FROM scans 
-            WHERE (barcode=? OR barcode=? OR barcode=?) 
-            AND session_name=? AND user!=?
-            LIMIT 1
-        """, (clean_barcode, clean_barcode + "__DAMAGED", clean_barcode + "__FLAGGED", session_name, user))
-        user_row = c.fetchone()
-        
-        flag_reason = ""
-        if cross_row:
-            flag_reason = f"Cross-Session ({cross_row[0]})"
-        elif user_row:
-            flag_reason = f"User Collision ({user_row[0]})"
-            
-        if flag_reason:
-            c.execute("SELECT COUNT(*) FROM scans WHERE barcode=? AND session_name=?", (clean_barcode + "__FLAGGED", session_name))
-            if c.fetchone()[0] == 0:
-                c.execute("""
-                    INSERT INTO scans (barcode, timestamp, user, branch, session_name, flag_reason) 
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """, (clean_barcode + "__FLAGGED", get_gmt3_time(), user, s.get("branch"), session_name, flag_reason))
-                
     conn.commit()
     conn.close()
     return jsonify({"status": "ok"})
@@ -402,14 +351,14 @@ def summary():
     conn = get_db()
     c = conn.cursor()
 
-    c.execute("""
+    c.execute(f"""
         SELECT 
-            REPLACE(REPLACE(barcode,'__DAMAGED',''),'__FLAGGED',''),
-            SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' AND barcode NOT LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
-            SUM(CASE WHEN barcode LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
+            {SQL_CLEAN_BARCODE},
+            {SQL_GOOD_COUNT},
+            {SQL_DAMAGED_COUNT},
             MIN(timestamp),
             MAX(timestamp),
-            SUM(CASE WHEN barcode LIKE '%__FLAGGED' THEN 1 ELSE 0 END)
+            {SQL_FLAGGED_COUNT}
         FROM scans
         WHERE user=? AND session_name=?
         GROUP BY 1
@@ -481,10 +430,11 @@ def user_delete_scan():
     
     conn = get_db()
     c = conn.cursor()
+    bc_clean, bc_damaged, bc_flagged = barcode_variants(barcode)
     c.execute("""
         DELETE FROM scans 
         WHERE (barcode=? OR barcode=? OR barcode=?) AND user=? AND session_name=?
-    """, (barcode, barcode + "__DAMAGED", barcode + "__FLAGGED", session.get("user"), session_name))
+    """, (bc_clean, bc_damaged, bc_flagged, session.get("user"), session_name))
     conn.commit()
     conn.close()
     return jsonify({"status": "ok"})
@@ -496,15 +446,15 @@ def user_history():
     session_name = request.args.get("session_name", "")
     date = request.args.get("date", "")
     
-    query = """
+    query = f"""
         SELECT 
-            REPLACE(REPLACE(barcode,'__DAMAGED',''),'__FLAGGED',''),
+            {SQL_CLEAN_BARCODE},
             branch,
             session_name,
-            SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' AND barcode NOT LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
-            SUM(CASE WHEN barcode LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
+            {SQL_GOOD_COUNT},
+            {SQL_DAMAGED_COUNT},
             MAX(timestamp),
-            SUM(CASE WHEN barcode LIKE '%__FLAGGED' THEN 1 ELSE 0 END)
+            {SQL_FLAGGED_COUNT}
         FROM scans
         WHERE user=?
     """
@@ -561,17 +511,17 @@ def admin_scans_data():
     # Grouped view
     conn = get_db()
     c = conn.cursor()
-    c.execute("""
+    c.execute(f"""
         SELECT 
-            REPLACE(REPLACE(barcode,'__DAMAGED',''),'__FLAGGED',''),
+            {SQL_CLEAN_BARCODE},
             user,
             branch,
             session_name,
-            SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' AND barcode NOT LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
-            SUM(CASE WHEN barcode LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
+            {SQL_GOOD_COUNT},
+            {SQL_DAMAGED_COUNT},
             MIN(timestamp),
             MAX(timestamp),
-            SUM(CASE WHEN barcode LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
+            {SQL_FLAGGED_COUNT},
             GROUP_CONCAT(DISTINCT flag_reason)
         FROM scans
         GROUP BY 1, 2, 3, 4
@@ -600,15 +550,15 @@ def admin_master_scans():
     conn = get_db()
     c = conn.cursor()
     
-    query = """
+    query = f"""
         SELECT 
-            REPLACE(REPLACE(barcode,'__DAMAGED',''),'__FLAGGED',''),
-            SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' AND barcode NOT LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
-            SUM(CASE WHEN barcode LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
+            {SQL_CLEAN_BARCODE},
+            {SQL_GOOD_COUNT},
+            {SQL_DAMAGED_COUNT},
             MIN(timestamp),
             MAX(timestamp),
             GROUP_CONCAT(DISTINCT user),
-            SUM(CASE WHEN barcode LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
+            {SQL_FLAGGED_COUNT},
             GROUP_CONCAT(DISTINCT flag_reason)
         FROM scans
         WHERE 1=1
@@ -650,11 +600,11 @@ def admin_export_csv():
     writer = csv.writer(output)
     if mode == "master":
         writer.writerow(["Barcode", "Good", "Damaged", "Flagged", "First Scan", "Last Scan"])
-        c.execute("""
-            SELECT REPLACE(REPLACE(barcode,'__DAMAGED',''),'__FLAGGED',''),
-                   SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' AND barcode NOT LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
-                   SUM(CASE WHEN barcode LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
-                   SUM(CASE WHEN barcode LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
+        c.execute(f"""
+            SELECT {SQL_CLEAN_BARCODE},
+                   {SQL_GOOD_COUNT},
+                   {SQL_DAMAGED_COUNT},
+                   {SQL_FLAGGED_COUNT},
                    MIN(timestamp),
                    MAX(timestamp)
             FROM scans WHERE branch=? AND session_name=? GROUP BY 1 ORDER BY MAX(timestamp) DESC
@@ -662,11 +612,11 @@ def admin_export_csv():
         for r in c.fetchall(): writer.writerow(r)
     else:
         writer.writerow(["Barcode", "User", "Branch", "Session", "Good", "Damaged", "Flagged", "First Scan", "Last Scan"])
-        c.execute("""
-            SELECT REPLACE(REPLACE(barcode,'__DAMAGED',''),'__FLAGGED',''), user, branch, session_name,
-                   SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' AND barcode NOT LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
-                   SUM(CASE WHEN barcode LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
-                   SUM(CASE WHEN barcode LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
+        c.execute(f"""
+            SELECT {SQL_CLEAN_BARCODE}, user, branch, session_name,
+                   {SQL_GOOD_COUNT},
+                   {SQL_DAMAGED_COUNT},
+                   {SQL_FLAGGED_COUNT},
                    MIN(timestamp),
                    MAX(timestamp)
             FROM scans GROUP BY 1, 2, 3, 4 ORDER BY MAX(timestamp) DESC
@@ -684,13 +634,13 @@ def admin_stats():
     c.execute("SELECT COUNT(*) FROM scans")
     total_scans = c.fetchone()[0]
     
-    c.execute("SELECT COUNT(DISTINCT REPLACE(REPLACE(barcode,'__DAMAGED',''),'__FLAGGED','')) FROM scans")
+    c.execute(f"SELECT COUNT(DISTINCT {SQL_CLEAN_BARCODE}) FROM scans")
     unique_barcodes = c.fetchone()[0]
     
     c.execute("SELECT COUNT(DISTINCT user) FROM scans")
     active_users = c.fetchone()[0]
     
-    c.execute("SELECT COUNT(*) FROM scans WHERE barcode LIKE '%__FLAGGED'")
+    c.execute(f"SELECT COUNT(*) FROM scans WHERE barcode LIKE '%{SUFFIX_FLAGGED}'")
     flagged_items = c.fetchone()[0]
     
     conn.close()
@@ -782,9 +732,9 @@ def admin_adjust_count():
     data = request.json
     barcode = data["barcode"].strip().upper()
     if data["type"] == "damaged":
-        barcode += "__DAMAGED"
+        barcode += SUFFIX_DAMAGED
     elif data["type"] == "flagged":
-        barcode += "__FLAGGED"
+        barcode += SUFFIX_FLAGGED
         
     diff = int(data["diff"])
     
@@ -821,23 +771,19 @@ def admin_toggle_flag():
     
     conn = get_db()
     c = conn.cursor()
+    flagged_bc = barcode + SUFFIX_FLAGGED
     
-    if target_user and target_user != "null":
-        c.execute("SELECT COUNT(*) FROM scans WHERE barcode=? AND session_name=? AND user=?", (barcode + "__FLAGGED", session_name, target_user))
-        is_flagged = c.fetchone()[0] > 0
-        if is_flagged:
-            c.execute("DELETE FROM scans WHERE barcode=? AND session_name=? AND user=?", (barcode + "__FLAGGED", session_name, target_user))
-        else:
-            c.execute("INSERT INTO scans (barcode, timestamp, user, branch, session_name, flag_reason) VALUES (?, ?, ?, ?, ?, ?)", 
-                     (barcode + "__FLAGGED", get_gmt3_time(), target_user, branch, session_name, "Admin Manual Flag"))
+    # Check if ANY flag exists for this barcode
+    c.execute("SELECT COUNT(*) FROM scans WHERE barcode=?", (flagged_bc,))
+    is_flagged = c.fetchone()[0] > 0
+    
+    if is_flagged:
+        # If it's flagged, delete ALL flag records for this barcode (removes auto-flags too)
+        c.execute("DELETE FROM scans WHERE barcode=?", (flagged_bc,))
     else:
-        c.execute("SELECT COUNT(*) FROM scans WHERE barcode=? AND session_name=? AND branch=?", (barcode + "__FLAGGED", session_name, branch))
-        is_flagged = c.fetchone()[0] > 0
-        if is_flagged:
-            c.execute("DELETE FROM scans WHERE barcode=? AND session_name=? AND branch=?", (barcode + "__FLAGGED", session_name, branch))
-        else:
-            c.execute("INSERT INTO scans (barcode, timestamp, user, branch, session_name, flag_reason) VALUES (?, ?, ?, ?, ?, ?)", 
-                     (barcode + "__FLAGGED", get_gmt3_time(), session.get("user"), branch, session_name, "Admin Manual Flag"))
+        # Otherwise, insert a manual admin flag
+        c.execute("INSERT INTO scans (barcode, timestamp, user, branch, session_name, flag_reason) VALUES (?, ?, ?, ?, ?, ?)", 
+                 (flagged_bc, get_gmt3_time(), target_user or session.get("user", "admin"), branch or 'N/A', session_name or 'N/A', "Admin Manual Flag"))
             
     conn.commit()
     conn.close()
@@ -872,16 +818,17 @@ def admin_delete_entries():
         
     for entry in entries:
         barcode = (entry.get("barcode") or "").strip().upper()
+        bc_clean, bc_damaged, bc_flagged = barcode_variants(barcode)
         if mode == "master":
             c.execute("""
                 DELETE FROM scans 
                 WHERE (barcode=? OR barcode=? OR barcode=?) AND branch=? AND session_name=?
-            """, (barcode, barcode + "__DAMAGED", barcode + "__FLAGGED", entry.get("branch"), entry.get("session_name")))
+            """, (bc_clean, bc_damaged, bc_flagged, entry.get("branch"), entry.get("session_name")))
         else:
             c.execute("""
                 DELETE FROM scans 
                 WHERE (barcode=? OR barcode=? OR barcode=?) AND user=? AND branch=? AND session_name=?
-            """, (barcode, barcode + "__DAMAGED", barcode + "__FLAGGED", entry.get("user"), entry.get("branch"), entry.get("session_name")))
+            """, (bc_clean, bc_damaged, bc_flagged, entry.get("user"), entry.get("branch"), entry.get("session_name")))
             
     conn.commit()
     conn.close()

@@ -555,15 +555,7 @@ function scanItem(barcode, qty=1, isDamaged=false) {
             if (res.ok) { return res.json(); }
             throw new Error("Server error");
         }).then(data => {
-            if (data.warning === "cross_session") {
-                showToast(`⚠️ WARNING: This item was also counted in session: ${data.old_session}. It has been auto-flagged.`, "error");
-                errorBeep();
-            } else if (data.warning === "user_collision") {
-                showToast(`⚠️ WARNING: This item was already counted by ${data.other_user}! It has been auto-flagged.`, "error");
-                errorBeep();
-            } else {
-                beep();
-            }
+            beep();
             updateCount();
             loadSummary(barcode);
             updateSyncStatus(true);
@@ -749,15 +741,16 @@ function loadSummary(highlightBarcode=null) {
 }
 
 function deleteSummaryItem(barcode) {
-    if(!confirm(`Are you sure you want to delete ALL scans for ${barcode} in this session?`)) return;
-    const session_name = document.getElementById('sessionName').value;
-    fetch('/user/delete_scan', {
-        method: 'DELETE', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ barcode, session_name })
-    }).then(() => {
-        updateCount();
-        loadSummary();
-        loadHistory();
+    showConfirm(`Are you sure you want to delete ALL scans for <strong>${barcode}</strong> in this session?`, () => {
+        const session_name = document.getElementById('sessionName').value;
+        fetch('/user/delete_scan', {
+            method: 'DELETE', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ barcode, session_name })
+        }).then(() => {
+            updateCount();
+            loadSummary();
+            loadHistory();
+        });
     });
 }
 
@@ -908,7 +901,78 @@ function toggleCamera() {
 updateCount();
 loadSummary();
 loadHistory();
+
+// ---- MODAL SYSTEM ----
+function showAlert(message, callback) {
+    const overlay = document.getElementById('modalOverlay');
+    const body = document.getElementById('modalBody');
+    const actions = document.getElementById('modalActions');
+    body.innerHTML = `<p style="margin:0;line-height:1.6;">${message}</p>`;
+    actions.innerHTML = `<button class="modal-btn modal-btn-primary" onclick="closeModal()">OK</button>`;
+    overlay.style.display = 'flex';
+    overlay._callback = callback || null;
+}
+
+function showConfirm(message, onConfirm) {
+    const overlay = document.getElementById('modalOverlay');
+    const body = document.getElementById('modalBody');
+    const actions = document.getElementById('modalActions');
+    body.innerHTML = `<p style="margin:0;line-height:1.6;">${message}</p>`;
+    actions.innerHTML = `
+        <button class="modal-btn modal-btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="modal-btn modal-btn-danger" onclick="closeModal(); (${onConfirm.toString()})()">Confirm</button>
+    `;
+    overlay.style.display = 'flex';
+}
+
+function showPrompt(message, onSubmit, inputType='text') {
+    const overlay = document.getElementById('modalOverlay');
+    const body = document.getElementById('modalBody');
+    const actions = document.getElementById('modalActions');
+    body.innerHTML = `<p style="margin:0 0 15px 0;line-height:1.6;">${message}</p>
+        <input id="modalInput" type="${inputType}" class="modal-input" autofocus>`;
+    actions.innerHTML = `
+        <button class="modal-btn modal-btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="modal-btn modal-btn-primary" id="modalSubmitBtn">Submit</button>
+    `;
+    overlay.style.display = 'flex';
+    setTimeout(() => document.getElementById('modalInput').focus(), 100);
+    document.getElementById('modalSubmitBtn').onclick = () => {
+        const val = document.getElementById('modalInput').value;
+        closeModal();
+        if (val) onSubmit(val);
+    };
+    document.getElementById('modalInput').onkeydown = (e) => {
+        if (e.key === 'Enter') document.getElementById('modalSubmitBtn').click();
+    };
+}
+
+function closeModal() {
+    const overlay = document.getElementById('modalOverlay');
+    overlay.style.display = 'none';
+    if (overlay._callback) { overlay._callback(); overlay._callback = null; }
+}
 </script>
+
+<!-- Modal Overlay -->
+<div id="modalOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); z-index:10000; justify-content:center; align-items:center;">
+    <div style="background:rgba(30,41,59,0.95); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:30px; max-width:420px; width:90%; box-shadow:0 25px 50px rgba(0,0,0,0.5); animation:fadeUp 0.3s ease;">
+        <div id="modalBody" style="color:#f8fafc; font-size:15px;"></div>
+        <div id="modalActions" style="display:flex; gap:12px; justify-content:flex-end; margin-top:25px;"></div>
+    </div>
+</div>
+
+<style>
+.modal-btn { padding:10px 22px; border:none; border-radius:10px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; font-size:14px; transition:all 0.2s ease; }
+.modal-btn-primary { background:linear-gradient(135deg,#38bdf8,#0284c7); color:white; box-shadow:0 4px 12px rgba(2,132,199,0.4); }
+.modal-btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(2,132,199,0.5); }
+.modal-btn-secondary { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#94a3b8; }
+.modal-btn-secondary:hover { background:rgba(255,255,255,0.12); color:#f8fafc; }
+.modal-btn-danger { background:linear-gradient(135deg,#f87171,#dc2626); color:white; box-shadow:0 4px 12px rgba(220,38,38,0.4); }
+.modal-btn-danger:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(220,38,38,0.5); }
+.modal-input { width:100%; box-sizing:border-box; padding:12px 16px; border-radius:10px; border:1px solid rgba(255,255,255,0.15); background:rgba(15,23,42,0.6); color:#f8fafc; font-size:15px; font-family:'Inter',sans-serif; outline:none; transition:border-color 0.2s; }
+.modal-input:focus { border-color:#38bdf8; box-shadow:0 0 0 3px rgba(56,189,248,0.2); }
+</style>
 
 </body>
 </html>
