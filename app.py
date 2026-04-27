@@ -167,7 +167,6 @@ def check_session_token():
         c = conn.cursor()
         c.execute("SELECT session_token FROM users WHERE username=?", (user,))
         row = c.fetchone()
-        conn.close()
 
         if row and row[0] and row[0] != token:
             session.clear()
