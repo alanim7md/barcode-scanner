@@ -5,6 +5,8 @@ import io
 import csv
 import uuid
 import os
+import urllib.parse
+import os
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
@@ -508,10 +510,12 @@ def admin():
 @app.route("/admin/scans_data")
 def admin_scans_data():
     if session.get("role") not in ["admin", "moderator"]: return "forbidden"
-    # Grouped view
+    date_from = request.args.get("date_from", "")
+    date_to = request.args.get("date_to", "")
     conn = get_db()
     c = conn.cursor()
-    c.execute(f"""
+    
+    query = f"""
         SELECT 
             {SQL_CLEAN_BARCODE},
             user,
@@ -524,9 +528,18 @@ def admin_scans_data():
             {SQL_FLAGGED_COUNT},
             GROUP_CONCAT(DISTINCT flag_reason)
         FROM scans
-        GROUP BY 1, 2, 3, 4
-        ORDER BY MAX(timestamp) DESC
-    """)
+        WHERE 1=1
+    """
+    params = []
+    if date_from:
+        query += " AND timestamp >= ?"
+        params.append(date_from.replace("T", " ") + ":00")
+    if date_to:
+        query += " AND timestamp <= ?"
+        params.append(date_to.replace("T", " ") + ":59")
+    query += " GROUP BY 1, 2, 3, 4 ORDER BY MAX(timestamp) DESC"
+    
+    c.execute(query, tuple(params))
     data = []
     for r in c.fetchall():
         reasons = r[9]
@@ -547,6 +560,8 @@ def admin_master_scans():
     if session.get("role") not in ["admin", "moderator"]: return "forbidden"
     branch = request.args.get("branch", "")
     session_name = request.args.get("session_name", "")
+    date_from = request.args.get("date_from", "")
+    date_to = request.args.get("date_to", "")
     conn = get_db()
     c = conn.cursor()
     
@@ -570,6 +585,12 @@ def admin_master_scans():
     if session_name:
         query += " AND session_name=?"
         params.append(session_name)
+    if date_from:
+        query += " AND timestamp >= ?"
+        params.append(date_from.replace("T", " ") + ":00")
+    if date_to:
+        query += " AND timestamp <= ?"
+        params.append(date_to.replace("T", " ") + ":59")
         
     query += " GROUP BY 1 ORDER BY MAX(timestamp) DESC"
     
@@ -594,36 +615,86 @@ def admin_export_csv():
     mode = request.args.get("mode", "detailed")
     branch = request.args.get("branch", "")
     session_name = request.args.get("session_name", "")
+    date_from = request.args.get("date_from", "")
+    date_to = request.args.get("date_to", "")
     conn = get_db()
     c = conn.cursor()
     output = io.StringIO()
     writer = csv.writer(output)
     if mode == "master":
-        writer.writerow(["Barcode", "Good", "Damaged", "Flagged", "First Scan", "Last Scan"])
-        c.execute(f"""
+        writer.writerow(["Barcode", "Good", "Damaged", "Flagged", "Flag Reason", "First Scan", "Last Scan", "Users"])
+        query = f"""
             SELECT {SQL_CLEAN_BARCODE},
                    {SQL_GOOD_COUNT},
                    {SQL_DAMAGED_COUNT},
                    {SQL_FLAGGED_COUNT},
+                   GROUP_CONCAT(DISTINCT flag_reason),
                    MIN(timestamp),
-                   MAX(timestamp)
-            FROM scans WHERE branch=? AND session_name=? GROUP BY 1 ORDER BY MAX(timestamp) DESC
-        """, (branch, session_name))
-        for r in c.fetchall(): writer.writerow(r)
+                   MAX(timestamp),
+                   GROUP_CONCAT(DISTINCT user)
+            FROM scans WHERE 1=1
+        """
+        params = []
+        if branch:
+            query += " AND branch=?"
+            params.append(branch)
+        if session_name:
+            query += " AND session_name=?"
+            params.append(session_name)
+        if date_from:
+            query += " AND timestamp >= ?"
+            params.append(date_from.replace("T", " ") + ":00")
+        if date_to:
+            query += " AND timestamp <= ?"
+            params.append(date_to.replace("T", " ") + ":59")
+        query += " GROUP BY 1 ORDER BY MAX(timestamp) DESC"
+        c.execute(query, tuple(params))
+        for r in c.fetchall():
+            row = list(r)
+            # Clean flag_reason (index 4)
+            reasons = row[4] or ""
+            valid = [x.strip() for x in reasons.split(',') if x and x.strip()]
+            row[4] = ", ".join(set(valid)) if valid else ""
+            writer.writerow(row)
     else:
-        writer.writerow(["Barcode", "User", "Branch", "Session", "Good", "Damaged", "Flagged", "First Scan", "Last Scan"])
-        c.execute(f"""
+        writer.writerow(["Barcode", "User", "Branch", "Session", "Good", "Damaged", "Flagged", "Flag Reason", "First Scan", "Last Scan"])
+        query = f"""
             SELECT {SQL_CLEAN_BARCODE}, user, branch, session_name,
                    {SQL_GOOD_COUNT},
                    {SQL_DAMAGED_COUNT},
                    {SQL_FLAGGED_COUNT},
+                   GROUP_CONCAT(DISTINCT flag_reason),
                    MIN(timestamp),
                    MAX(timestamp)
-            FROM scans GROUP BY 1, 2, 3, 4 ORDER BY MAX(timestamp) DESC
-        """)
-        for r in c.fetchall(): writer.writerow(r)
+            FROM scans WHERE 1=1
+        """
+        params = []
+        if date_from:
+            query += " AND timestamp >= ?"
+            params.append(date_from.replace("T", " ") + ":00")
+        if date_to:
+            query += " AND timestamp <= ?"
+            params.append(date_to.replace("T", " ") + ":59")
+        query += " GROUP BY 1, 2, 3, 4 ORDER BY MAX(timestamp) DESC"
+        c.execute(query, tuple(params))
+        for r in c.fetchall():
+            row = list(r)
+            # Clean flag_reason (index 7)
+            reasons = row[7] or ""
+            valid = [x.strip() for x in reasons.split(',') if x and x.strip()]
+            row[7] = ", ".join(set(valid)) if valid else ""
+            writer.writerow(row)
     conn.close()
-    return Response(output.getvalue(), mimetype="text/csv", headers={"Content-Disposition": "attachment;filename=scans_export.csv"})
+    
+    # Build filename with context
+    fname_parts = ["scans"]
+    if branch: fname_parts.append(branch.replace(' ', '_'))
+    if session_name: fname_parts.append(session_name.replace(' ', '_'))
+    fname_parts.append(mode)
+    filename = "_".join(fname_parts) + ".csv"
+    encoded_filename = urllib.parse.quote(filename)
+    
+    return Response(output.getvalue(), mimetype="text/csv", headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"})
 
 @app.route("/admin/stats")
 def admin_stats():
@@ -762,32 +833,159 @@ def admin_adjust_count():
 
 @app.route("/admin/toggle_flag", methods=["POST"])
 def admin_toggle_flag():
-    if session.get("role") != "admin": return jsonify({"error": "forbidden"}), 403
+    role = session.get("role")
+    if role not in ["admin", "moderator"]: return jsonify({"error": "forbidden"}), 403
     data = request.json
     barcode = data["barcode"].strip().upper()
     target_user = data.get("user")
+    if target_user == "null": target_user = None
     branch = data.get("branch")
     session_name = data.get("session_name")
+    
+    current_user = session.get("user", "unknown")
+    if role == "moderator":
+        flag_reason = f"Flagged by moderator {current_user}"
+    else:
+        flag_reason = "Admin Manual Flag"
     
     conn = get_db()
     c = conn.cursor()
     flagged_bc = barcode + SUFFIX_FLAGGED
     
-    # Check if ANY flag exists for this barcode
-    c.execute("SELECT COUNT(*) FROM scans WHERE barcode=?", (flagged_bc,))
+    # Check if ANY flag exists for this barcode in this session
+    query = "SELECT COUNT(*) FROM scans WHERE barcode=?"
+    params = [flagged_bc]
+    if session_name and session_name != "null":
+        query += " AND session_name=?"
+        params.append(session_name)
+    c.execute(query, tuple(params))
     is_flagged = c.fetchone()[0] > 0
     
     if is_flagged:
-        # If it's flagged, delete ALL flag records for this barcode (removes auto-flags too)
-        c.execute("DELETE FROM scans WHERE barcode=?", (flagged_bc,))
+        del_query = "DELETE FROM scans WHERE barcode=?"
+        del_params = [flagged_bc]
+        if session_name and session_name != "null":
+            del_query += " AND session_name=?"
+            del_params.append(session_name)
+        c.execute(del_query, tuple(del_params))
     else:
-        # Otherwise, insert a manual admin flag
-        c.execute("INSERT INTO scans (barcode, timestamp, user, branch, session_name, flag_reason) VALUES (?, ?, ?, ?, ?, ?)", 
-                 (flagged_bc, get_gmt3_time(), target_user or session.get("user", "admin"), branch or 'N/A', session_name or 'N/A', "Admin Manual Flag"))
+        if target_user:
+            c.execute("INSERT INTO scans (barcode, timestamp, user, branch, session_name, flag_reason) VALUES (?, ?, ?, ?, ?, ?)", 
+                     (flagged_bc, get_gmt3_time(), target_user, branch or 'N/A', session_name or 'N/A', flag_reason))
+        else:
+            q = "SELECT DISTINCT user FROM scans WHERE (barcode=? OR barcode=?)"
+            p = [barcode, barcode + SUFFIX_DAMAGED]
+            if session_name and session_name != "null":
+                q += " AND session_name=?"
+                p.append(session_name)
+            c.execute(q, tuple(p))
+            users = [r[0] for r in c.fetchall()]
+            if not users:
+                users = [current_user]
+            for u in users:
+                c.execute("INSERT INTO scans (barcode, timestamp, user, branch, session_name, flag_reason) VALUES (?, ?, ?, ?, ?, ?)", 
+                         (flagged_bc, get_gmt3_time(), u, branch or 'N/A', session_name or 'N/A', flag_reason))
             
     conn.commit()
     conn.close()
     return jsonify({"status": "ok"})
+
+@app.route("/admin/delete_session", methods=["POST"])
+def admin_delete_session():
+    if session.get("role") != "admin": return jsonify({"error": "forbidden"}), 403
+    data = request.json
+    password = data.get("password")
+    session_name = data.get("session_name")
+    branch = data.get("branch", "")
+    
+    if not session_name:
+        return jsonify({"error": "No session specified"}), 400
+    
+    # Verify admin password
+    u_conn = get_users_db()
+    u_c = u_conn.cursor()
+    u_c.execute("SELECT password FROM users WHERE username=?", (session.get("user"),))
+    row = u_c.fetchone()
+    u_conn.close()
+    
+    if not row:
+        return jsonify({"error": "Invalid password"}), 401
+    db_password = row[0]
+    is_valid = check_password_hash(db_password, password) if db_password.startswith(('scrypt:', 'pbkdf2:')) else db_password == password
+    if not is_valid:
+        return jsonify({"error": "Invalid password"}), 401
+    
+    conn = get_db()
+    c = conn.cursor()
+    if branch:
+        c.execute("SELECT COUNT(*) FROM scans WHERE session_name=? AND branch=?", (session_name, branch))
+        count = c.fetchone()[0]
+        c.execute("DELETE FROM scans WHERE session_name=? AND branch=?", (session_name, branch))
+    else:
+        c.execute("SELECT COUNT(*) FROM scans WHERE session_name=?", (session_name,))
+        count = c.fetchone()[0]
+        c.execute("DELETE FROM scans WHERE session_name=?", (session_name,))
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "ok", "deleted": count})
+
+@app.route("/admin/session_info")
+def admin_session_info():
+    """Get detailed info about all sessions for session management."""
+    if session.get("role") not in ["admin", "moderator"]: return jsonify({"error": "forbidden"}), 403
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("""
+        SELECT session_name, branch, COUNT(*) as scan_count, 
+               COUNT(DISTINCT user) as user_count,
+               MIN(timestamp) as first_scan, 
+               MAX(timestamp) as last_scan
+        FROM scans 
+        WHERE session_name IS NOT NULL AND session_name != ''
+        GROUP BY session_name, branch
+        ORDER BY MAX(timestamp) DESC
+    """)
+    data = []
+    for r in c.fetchall():
+        data.append({
+            "session_name": r[0], "branch": r[1], "scan_count": r[2],
+            "user_count": r[3], "first_scan": r[4], "last_scan": r[5]
+        })
+    conn.close()
+    return jsonify(data)
+
+@app.route("/admin/reassign_scans", methods=["POST"])
+def admin_reassign_scans():
+    """Reassign scans from one session/branch to another."""
+    if session.get("role") != "admin": return jsonify({"error": "forbidden"}), 403
+    data = request.json
+    from_session = data.get("from_session")
+    from_branch = data.get("from_branch", "")
+    to_session = data.get("to_session")
+    to_branch = data.get("to_branch", "")
+    
+    if not from_session or not to_session:
+        return jsonify({"error": "Missing session names"}), 400
+    
+    conn = get_db()
+    c = conn.cursor()
+    
+    query = "UPDATE scans SET session_name=?"
+    params = [to_session]
+    if to_branch:
+        query += ", branch=?"
+        params.append(to_branch)
+    query += " WHERE session_name=?"
+    params.append(from_session)
+    if from_branch:
+        query += " AND branch=?"
+        params.append(from_branch)
+    
+    c.execute(query, tuple(params))
+    affected = c.rowcount
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "ok", "moved": affected})
 
 @app.route("/admin/delete_entries", methods=["POST"])
 def admin_delete_entries():

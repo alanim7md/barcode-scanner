@@ -247,6 +247,27 @@
             color: #4ade80;
             font-size: 13px;
             font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .pulse-animation {
+            animation: pulse-green 2s infinite;
+        }
+
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+        
+        .pulse-red {
+            animation: pulse-red 2s infinite;
+        }
+        
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
 
         /* --- TABLET & MOBILE RESPONSIVE UPDATES --- */
@@ -293,7 +314,7 @@
         </div>
         <div style="display:flex; align-items:center; gap: 15px;">
             <select id="branchSelector" style="font-size: 14px; padding: 8px 12px; border-radius: 8px;"></select>
-            <input id="sessionName" list="main-session-list" value="" placeholder="Session Name" style="width: 140px; font-size: 14px; padding: 8px 12px; border-radius: 8px;" onchange="updateCount(); loadSummary();">
+            <input id="sessionName" list="main-session-list" value="" placeholder="Session Name" style="width: 140px; font-size: 14px; padding: 8px 12px; border-radius: 8px;" onchange="loadSummary();">
             <datalist id="main-session-list"></datalist>
             <span id="syncStatus" class="status-badge">🟢 Online</span>
         </div>
@@ -427,9 +448,17 @@ function updateSyncStatus(isOnline) {
     if (!isOnline || localScans.length > 0) {
         status.innerText = `🔴 Offline (${localScans.length} unsynced)`;
         status.style.color = '#ef4444';
+        status.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+        status.style.background = 'rgba(239, 68, 68, 0.1)';
+        status.classList.add('pulse-red');
+        status.classList.remove('pulse-animation');
     } else {
         status.innerText = `🟢 Online`;
         status.style.color = '#22c55e';
+        status.style.borderColor = 'rgba(34, 197, 94, 0.2)';
+        status.style.background = 'rgba(34, 197, 94, 0.1)';
+        status.classList.add('pulse-animation');
+        status.classList.remove('pulse-red');
     }
 }
 
@@ -453,6 +482,9 @@ fetch("/settings").then(r=>r.json()).then(settings => {
             sel.value = settings.global_branch;
             sel.disabled = true;
         }
+        
+        loadSummary();
+        loadHistory();
     });
 });
 
@@ -556,7 +588,6 @@ function scanItem(barcode, qty=1, isDamaged=false) {
             throw new Error("Server error");
         }).then(data => {
             beep();
-            updateCount();
             loadSummary(barcode);
             updateSyncStatus(true);
         }).catch(err => {
@@ -600,7 +631,6 @@ setInterval(() => {
                 localScans = [];
                 saveLocal();
                 updateSyncStatus(true);
-                updateCount();
                 loadSummary();
             }
         }).catch(err => updateSyncStatus(false));
@@ -624,7 +654,7 @@ input.addEventListener("keypress", function(e) {
 });
 
 function updateCount() {
-    // Deprecated, now handled by updateCounterDisplay
+    loadSummary();
 }
 
 function updateCounterDisplay() {
@@ -632,6 +662,10 @@ function updateCounterDisplay() {
     const countEl = document.getElementById('count');
     const barcodeDisplay = document.getElementById('lastBarcodeDisplay');
     
+    if (!lastScannedBarcode && currentSummaryData.length > 0) {
+        lastScannedBarcode = currentSummaryData[0].barcode;
+    }
+
     if (lastScannedBarcode) {
         barcodeDisplay.innerText = lastScannedBarcode;
     } else {
@@ -747,7 +781,6 @@ function deleteSummaryItem(barcode) {
             method: 'DELETE', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ barcode, session_name })
         }).then(() => {
-            updateCount();
             loadSummary();
             loadHistory();
         });
@@ -842,7 +875,6 @@ function undoLastScan() {
     if (localScans.length > 0) {
         localScans.pop();
         saveLocal();
-        updateCount();
         loadSummary();
         return;
     }
@@ -855,7 +887,6 @@ function undoLastScan() {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ session_name })
     }).then(r => r.json()).then(() => {
-        updateCount();
         loadSummary();
         loadHistory();
     });
@@ -897,10 +928,6 @@ function toggleCamera() {
         }
     }
 }
-
-updateCount();
-loadSummary();
-loadHistory();
 
 // ---- MODAL SYSTEM ----
 function showAlert(message, callback) {

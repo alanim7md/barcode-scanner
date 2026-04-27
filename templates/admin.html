@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>Admin Panel — The Golden Mile</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -620,6 +623,7 @@
             {% endif %}
             <div class="tab active" onclick="showTab('scans', this)">📋 Scans & Stats</div>
             {% if role == 'admin' %}
+            <div class="tab" onclick="showTab('sessions', this)">📅 Sessions</div>
             <div class="tab" onclick="showTab('users', this)">👥 Users</div>
             <div class="tab" onclick="showTab('branches', this)">🏢 Branches</div>
             <div class="tab" onclick="showTab('settings', this)">⚙️ Settings</div>
@@ -675,30 +679,42 @@
 
             <hr style="border:0; border-top:1px solid rgba(255,255,255,0.06); margin:24px 0;">
 
-            <h3>Scan View</h3>
+            <h3>Scan View <span id="rowCountBadge" style="font-size:12px;font-weight:500;color:#38bdf8;background:rgba(56,189,248,0.1);padding:3px 10px;border-radius:20px;margin-left:8px;"></span></h3>
             <div class="filter-row">
                 <select id="viewMode" onchange="loadScans()">
-                    <option value="detailed">Detailed View (By User)</option>
                     <option value="master">Master Branch View</option>
+                    <option value="detailed">Detailed View (By User)</option>
                 </select>
-                <select id="masterBranch" onchange="loadScans()" style="display:none;">
+                <select id="masterBranch" onchange="loadScans()">
                     <option value="">-- All Branches --</option>
                 </select>
-                <select id="masterSession" onchange="loadScans()" style="display:none;">
+                <select id="masterSession" onchange="loadScans()">
                     <option value="">-- All Sessions --</option>
                 </select>
-                <label
-                    style="display:flex; align-items:center; gap:6px; cursor:pointer; color:#facc15; font-weight:600; background:rgba(250,204,21,0.08); padding:7px 12px; border-radius:9px; border:1px solid rgba(250,204,21,0.2); margin:0;">
+            </div>
+            <div class="filter-row">
+                <div style="display:flex; align-items:center; background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:4px 8px; gap:8px;">
+                    <span style="font-size:14px;margin-left:4px;">📅</span>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <label style="margin:0;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">From</label>
+                        <input type="text" id="dateFrom" placeholder="Select Time..." style="background:transparent;border:none;color:#f8fafc;font-size:13px;width:150px;padding:4px;box-shadow:none;">
+                    </div>
+                    <div style="width:1px;height:16px;background:rgba(255,255,255,0.15);margin:0 2px;"></div>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <label style="margin:0;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">To</label>
+                        <input type="text" id="dateTo" placeholder="Select Time..." style="background:transparent;border:none;color:#f8fafc;font-size:13px;width:150px;padding:4px;box-shadow:none;">
+                    </div>
+                    <button onclick="clearDateRange()" style="background:rgba(239,68,68,0.1);border:none;color:#ef4444;border-radius:6px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-left:2px;transition:all 0.2s ease;" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.1)'" title="Clear Dates">✕</button>
+                </div>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:#facc15;font-weight:600;background:rgba(250,204,21,0.08);padding:7px 12px;border-radius:9px;border:1px solid rgba(250,204,21,0.2);margin:0;">
                     <input type="checkbox" id="showFlaggedOnly" onchange="renderScans()"> Flagged Only
                 </label>
                 <button class="btn btn-ghost" onclick="loadScans()">↻ Refresh</button>
                 <button class="btn btn-primary" onclick="exportCSV()">⬇ Export CSV</button>
                 {% if role == 'admin' %}
-                <button class="btn btn-danger" id="deleteSelectedBtn" onclick="deleteSelected()"
-                    style="display:none;">🗑 Delete Selected</button>
+                <button class="btn btn-danger" id="deleteSelectedBtn" onclick="deleteSelected()" style="display:none;">🗑 Delete Selected</button>
                 {% endif %}
-                <input id="adminSearch" onkeyup="renderScans()" placeholder="Search barcodes..."
-                    style="margin-left:auto; width:180px;">
+                <input id="adminSearch" onkeyup="renderScans()" placeholder="Search barcodes..." style="margin-left:auto;width:180px;">
             </div>
             <div class="table-wrap" id="scansTableWrap">
                 <div class="spinner-wrap" id="scansSpinner">
@@ -788,6 +804,43 @@
             </div>
         </div>
 
+        <div id="sessions" class="tab-content card">
+            <h3>Session Management</h3>
+            <p style="color:#64748b; font-size:14px; margin-top:-10px; margin-bottom:20px;">View, delete, or reassign sessions. Use this to remove sessions created by mistake.</p>
+            <div class="filter-row" style="margin-bottom:16px;">
+                <button class="btn btn-ghost" onclick="loadSessionInfo()">↻ Refresh</button>
+            </div>
+            <div class="table-wrap" id="sessionsTableWrap">
+                <div class="spinner-wrap" id="sessionsSpinner">
+                    <div class="spinner"></div><br>Loading sessions…
+                </div>
+                <table id="sessionsTable" style="display:none;">
+                    <thead>
+                        <tr>
+                            <th>Session Name</th>
+                            <th>Branch</th>
+                            <th>Scans</th>
+                            <th>Users</th>
+                            <th>First Scan</th>
+                            <th>Last Scan</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sessions-tbody"></tbody>
+                </table>
+            </div>
+
+            <h3 style="margin-top:28px;">Reassign Session Data</h3>
+            <p style="color:#64748b; font-size:14px; margin-top:-10px; margin-bottom:20px;">Move all scans from one session to another.</p>
+            <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
+                <div><label>From Session</label><input id="reassign-from" list="session-list" placeholder="Source session"></div>
+                <div><label>From Branch (optional)</label><input id="reassign-from-branch" placeholder="Leave empty for all"></div>
+                <div><label>To Session</label><input id="reassign-to" list="session-list" placeholder="Target session"></div>
+                <div><label>To Branch (optional)</label><input id="reassign-to-branch" placeholder="Leave empty to keep"></div>
+                <button class="btn btn-primary" style="margin-top:22px;" onclick="reassignSession()">↗ Reassign</button>
+            </div>
+        </div>
+
         <div id="settings" class="tab-content card">
             <h3>Global Settings</h3>
             <p style="color:#64748b; font-size:14px; margin-top:-10px; margin-bottom:24px;">Lock all users to a specific
@@ -813,8 +866,15 @@
                 gb.appendChild(new Option(b, b));
             });
             fetch("/settings").then(r => r.json()).then(s => {
-                if (s.global_branch) gb.value = s.global_branch;
-                if (s.global_session) document.getElementById('global-session').value = s.global_session;
+                if (s.global_branch) {
+                    gb.value = s.global_branch;
+                    mb.value = s.global_branch;
+                }
+                if (s.global_session) {
+                    document.getElementById('global-session').value = s.global_session;
+                    document.getElementById('masterSession').value = s.global_session;
+                }
+                loadScans();
             });
         });
 
@@ -838,6 +898,7 @@
             if (el) el.classList.add('active');
             if (id === 'scans') loadScans();
             if (id === 'dashboard') loadStats();
+            if (id === 'sessions') loadSessionInfo();
         }
 
         let timeChartObj = null;
@@ -912,18 +973,28 @@
             const mode = document.getElementById('viewMode').value;
             const mb = document.getElementById('masterBranch');
             const ms = document.getElementById('masterSession');
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
             showSpinner();
+            let dateParams = '';
+            if (dateFrom) dateParams += `&date_from=${encodeURIComponent(dateFrom)}`;
+            if (dateTo) dateParams += `&date_to=${encodeURIComponent(dateTo)}`;
             if (mode === 'master') {
                 mb.style.display = 'inline-block';
                 ms.style.display = 'inline-block';
-                if (!ms.value) ms.value = new Date().toISOString().split('T')[0];
-                fetch(`/admin/master_scans?branch=${encodeURIComponent(mb.value)}&session_name=${encodeURIComponent(ms.value)}`)
+                fetch(`/admin/master_scans?branch=${encodeURIComponent(mb.value)}&session_name=${encodeURIComponent(ms.value)}${dateParams}`)
                     .then(r => r.json()).then(data => { currentAdminData = data; renderScans(); hideSpinner(); });
             } else {
                 mb.style.display = 'none';
                 ms.style.display = 'none';
-                fetch('/admin/scans_data').then(r => r.json()).then(data => { currentAdminData = data; renderScans(); hideSpinner(); });
+                fetch(`/admin/scans_data?${dateParams}`).then(r => r.json()).then(data => { currentAdminData = data; renderScans(); hideSpinner(); });
             }
+        }
+
+        function clearDateRange() {
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value = '';
+            loadScans();
         }
 
         function renderScans() {
@@ -973,11 +1044,11 @@
                 <td style="color:#facc15;font-weight:700;">${row.flagged > 0 ? '🚩 Yes' : ''}</td>
                 <td style="color:#94a3b8;font-size:12px;">${row.reason || ''}</td><td style="color:#64748b;font-size:12px;">${row.first}</td><td style="color:#64748b;font-size:12px;">${row.last}</td>
                 <td><button class="btn-icon" onclick="setOdooMarkAdmin('${row.barcode}')" title="Mark as entered">✅</button>
-                {% if role == 'admin' %}
                 <button class="btn btn-warn btn-sm" onclick="toggleAdminFlag('${row.barcode}','null',document.getElementById('masterBranch').value,document.getElementById('masterSession').value)">🚩</button>
-                {% endif %}</td></tr>`;
+                </td></tr>`;
                 });
                 tbody.innerHTML = html;
+                document.getElementById('rowCountBadge').innerText = `${filtered.length} unique barcodes`;
             } else {
                 thead.innerHTML = `<tr><th><input type="checkbox" onchange="toggleAllCheckboxes(this)"></th>
             <th onclick="doSort('barcode')" style="cursor:pointer">Barcode${s('barcode')}</th>
@@ -1008,11 +1079,12 @@
                     {% if role == 'admin' %}
                     <button class="btn btn-ghost btn-sm" onclick="promptAdjust('${row.barcode}','${row.user}','${row.branch}','${row.session_name}','good')">+/- G</button>
                     <button class="btn btn-ghost btn-sm" onclick="promptAdjust('${row.barcode}','${row.user}','${row.branch}','${row.session_name}','damaged')">+/- D</button>
-                    <button class="btn btn-warn btn-sm" onclick="toggleAdminFlag('${row.barcode}','${row.user}','${row.branch}','${row.session_name}')">🚩</button>
                     {% endif %}
+                    <button class="btn btn-warn btn-sm" onclick="toggleAdminFlag('${row.barcode}','${row.user}','${row.branch}','${row.session_name}')">🚩</button>
                 </td></tr>`;
                 });
                 tbody.innerHTML = html;
+                document.getElementById('rowCountBadge').innerText = `${filtered.length} scan entries`;
             }
         }
 
@@ -1045,7 +1117,89 @@
             const mode = document.getElementById('viewMode').value;
             const branch = document.getElementById('masterBranch').value;
             const session_name = document.getElementById('masterSession').value;
-            window.location.href = `/admin/export_csv?mode=${mode}&branch=${encodeURIComponent(branch)}&session_name=${encodeURIComponent(session_name)}`;
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+            
+            let url = `/admin/export_csv?mode=${mode}&branch=${encodeURIComponent(branch)}&session_name=${encodeURIComponent(session_name)}`;
+            if (dateFrom) url += `&date_from=${encodeURIComponent(dateFrom)}`;
+            if (dateTo) url += `&date_to=${encodeURIComponent(dateTo)}`;
+            
+            window.location.href = url;
+        }
+
+        // ---- SESSION MANAGEMENT ----
+        function loadSessionInfo() {
+            const sp = document.getElementById('sessionsSpinner');
+            const tbl = document.getElementById('sessionsTable');
+            const tbody = document.getElementById('sessions-tbody');
+            if(sp) sp.style.display = 'block';
+            if(tbl) tbl.style.display = 'none';
+            
+            fetch('/admin/session_info')
+                .then(r => r.json())
+                .then(data => {
+                    tbody.innerHTML = '';
+                    data.forEach(row => {
+                        tbody.innerHTML += `<tr>
+                            <td style="font-weight:600;">${row.session_name}</td>
+                            <td>${row.branch || 'None'}</td>
+                            <td>${row.scan_count}</td>
+                            <td>${row.user_count}</td>
+                            <td style="color:#64748b;font-size:12px;">${row.first_scan}</td>
+                            <td style="color:#64748b;font-size:12px;">${row.last_scan}</td>
+                            <td>
+                                <button class="btn btn-danger btn-sm" onclick="deleteSession('${row.session_name}', '${row.branch || ''}')">🗑 Delete</button>
+                            </td>
+                        </tr>`;
+                    });
+                    if(sp) sp.style.display = 'none';
+                    if(tbl) tbl.style.display = 'table';
+                });
+        }
+
+        function deleteSession(session_name, branch) {
+            showModal('prompt-password', `Delete Session`, `Enter admin password to delete session <strong>${session_name}</strong>${branch ? ` for branch ${branch}` : ''}. This will delete ALL scans in this session permanently!`, pw => {
+                fetch('/admin/delete_session', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_name, branch, password: pw })
+                }).then(r => r.json()).then(res => {
+                    if (res.error) showModal('alert', 'Error', 'Deletion failed: ' + res.error);
+                    else {
+                        showModal('alert', 'Done', `Deleted ${res.deleted} scans from session ${session_name}.`);
+                        loadSessionInfo();
+                        loadScans();
+                    }
+                });
+            });
+        }
+
+        function reassignSession() {
+            const from_session = document.getElementById('reassign-from').value.trim();
+            const from_branch = document.getElementById('reassign-from-branch').value.trim();
+            const to_session = document.getElementById('reassign-to').value.trim();
+            const to_branch = document.getElementById('reassign-to-branch').value.trim();
+            
+            if (!from_session || !to_session) {
+                return showModal('alert', 'Error', 'Please provide both source and target session names.');
+            }
+            
+            showModal('confirm', 'Confirm Reassign', `Move all scans from <strong>${from_session}</strong>${from_branch ? ` (${from_branch})` : ''} to <strong>${to_session}</strong>${to_branch ? ` (${to_branch})` : ''}?`, () => {
+                fetch('/admin/reassign_scans', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ from_session, from_branch, to_session, to_branch })
+                }).then(r => r.json()).then(res => {
+                    if (res.error) showModal('alert', 'Error', 'Reassign failed: ' + res.error);
+                    else {
+                        showModal('alert', 'Done', `Successfully moved ${res.moved} scans.`);
+                        document.getElementById('reassign-from').value = '';
+                        document.getElementById('reassign-from-branch').value = '';
+                        document.getElementById('reassign-to').value = '';
+                        document.getElementById('reassign-to-branch').value = '';
+                        loadSessionInfo();
+                        loadScans();
+                    }
+                });
+            });
         }
 
         function saveSettings() {
@@ -1171,6 +1325,36 @@
 
         loadScans();
         loadStats();
+
+        // Initialize flatpickr time range
+        const fpFrom = flatpickr("#dateFrom", {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            onChange: function(selectedDates, dateStr, instance) {
+                if(fpTo.selectedDates.length > 0 && selectedDates[0] > fpTo.selectedDates[0]) {
+                    fpTo.setDate(selectedDates[0]);
+                }
+                loadScans();
+            }
+        });
+        
+        const fpTo = flatpickr("#dateTo", {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            onChange: function(selectedDates, dateStr, instance) {
+                if(fpFrom.selectedDates.length > 0 && selectedDates[0] < fpFrom.selectedDates[0]) {
+                    fpFrom.setDate(selectedDates[0]);
+                }
+                loadScans();
+            }
+        });
+        
+        // Override clearDateRange to clear flatpickr instances
+        function clearDateRange() {
+            fpFrom.clear();
+            fpTo.clear();
+            loadScans();
+        }
     </script>
 
     <!-- Modal -->
