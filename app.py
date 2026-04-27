@@ -238,20 +238,40 @@ def insert_scans_bulk(barcode, qty, is_damaged=False, is_flagged=False, session_
     if branch is None:
         branch = request.json.get("branch")
 
-    actual_barcode = barcode
-    if is_damaged:
-        actual_barcode += SUFFIX_DAMAGED
-
-    flag_reason = ""
-    if is_flagged:
-        actual_barcode += SUFFIX_FLAGGED
-        flag_reason = "Manual Flag"
-
     user = session.get("user")
     ts = get_gmt3_time()
 
     conn = get_db()
     c = conn.cursor()
+
+    # --- Session Collision Detection ---
+    bc_clean, bc_damaged, bc_flagged = barcode_variants(barcode)
+    # Check if this barcode exists in a DIFFERENT session
+    c.execute("""
+        SELECT session_name, branch FROM scans 
+        WHERE (barcode=? OR barcode=? OR barcode=? OR barcode=? OR barcode=? OR barcode LIKE ?) 
+        AND session_name != ? 
+        AND session_name != ''
+        LIMIT 1
+    """, (bc_clean, bc_damaged, bc_flagged, bc_clean + SUFFIX_DAMAGED + SUFFIX_FLAGGED, bc_clean + SUFFIX_FLAGGED + SUFFIX_DAMAGED, f"{bc_clean}%", session_name))
+    collision = c.fetchone()
+    
+    flag_reason = ""
+    if collision:
+        is_flagged = True
+        prev_session = collision[0]
+        prev_branch = collision[1] or "Unknown"
+        flag_reason = f"Session Collision: scanned in {prev_session} ({prev_branch})"
+    elif is_flagged:
+        flag_reason = "Manual Flag"
+
+    actual_barcode = barcode
+    if is_damaged:
+        actual_barcode += SUFFIX_DAMAGED
+    if is_flagged:
+        actual_barcode += SUFFIX_FLAGGED
+
+
 
     rows = [(actual_barcode, ts, user, branch, session_name, flag_reason) for _ in range(qty)]
     c.executemany("""
