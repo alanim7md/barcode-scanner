@@ -34,9 +34,9 @@ def barcode_variants(barcode):
 
 # SQL fragment for grouping queries — reused across summary/admin/export
 SQL_CLEAN_BARCODE = f"REPLACE(REPLACE(barcode,'{SUFFIX_DAMAGED}',''),'{SUFFIX_FLAGGED}','')"
-SQL_GOOD_COUNT = f"SUM(CASE WHEN barcode NOT LIKE '%{SUFFIX_DAMAGED}' AND barcode NOT LIKE '%{SUFFIX_FLAGGED}' THEN 1 ELSE 0 END)"
-SQL_DAMAGED_COUNT = f"SUM(CASE WHEN barcode LIKE '%{SUFFIX_DAMAGED}' THEN 1 ELSE 0 END)"
-SQL_FLAGGED_COUNT = f"SUM(CASE WHEN barcode LIKE '%{SUFFIX_FLAGGED}' THEN 1 ELSE 0 END)"
+SQL_GOOD_COUNT = f"SUM(CASE WHEN barcode NOT LIKE '%{SUFFIX_DAMAGED}%' THEN 1 ELSE 0 END)"
+SQL_DAMAGED_COUNT = f"SUM(CASE WHEN barcode LIKE '%{SUFFIX_DAMAGED}%' THEN 1 ELSE 0 END)"
+SQL_FLAGGED_COUNT = f"SUM(CASE WHEN barcode LIKE '%{SUFFIX_FLAGGED}%' THEN 1 ELSE 0 END)"
 
 # ---------- DB HELPER ----------
 def get_db():
@@ -249,11 +249,11 @@ def insert_scans_bulk(barcode, qty, is_damaged=False, is_flagged=False, session_
     # Check if this barcode exists in a DIFFERENT session
     c.execute("""
         SELECT session_name, branch FROM scans 
-        WHERE (barcode=? OR barcode=? OR barcode=? OR barcode=? OR barcode=? OR barcode LIKE ?) 
+        WHERE (barcode=? OR barcode=? OR barcode=? OR barcode=? OR barcode=?) 
         AND session_name != ? 
         AND session_name != ''
         LIMIT 1
-    """, (bc_clean, bc_damaged, bc_flagged, bc_clean + SUFFIX_DAMAGED + SUFFIX_FLAGGED, bc_clean + SUFFIX_FLAGGED + SUFFIX_DAMAGED, f"{bc_clean}%", session_name))
+    """, (bc_clean, bc_damaged, bc_flagged, bc_clean + SUFFIX_DAMAGED + SUFFIX_FLAGGED, bc_clean + SUFFIX_FLAGGED + SUFFIX_DAMAGED, session_name))
     collision = c.fetchone()
     
     flag_reason = ""
@@ -303,20 +303,34 @@ def damaged():
 def flag_item():
     barcode = request.json["barcode"].strip().upper()
     session_name = request.json.get("session_name")
-    branch = request.json.get("branch")
     user = session.get("user")
     
     conn = get_db()
     c = conn.cursor()
-    flagged_bc = barcode + SUFFIX_FLAGGED
-    c.execute("SELECT COUNT(*) FROM scans WHERE barcode=? AND session_name=? AND user=?", (flagged_bc, session_name, user))
+    bc_clean = clean_barcode(barcode)
+    
+    # Check if there are any flagged records for this barcode
+    c.execute("""
+        SELECT COUNT(*) FROM scans 
+        WHERE (barcode=? OR barcode=?) AND session_name=? AND user=?
+    """, (bc_clean + SUFFIX_FLAGGED, bc_clean + SUFFIX_DAMAGED + SUFFIX_FLAGGED, session_name, user))
     is_flagged = c.fetchone()[0] > 0
     
     if is_flagged:
-        c.execute("DELETE FROM scans WHERE barcode=? AND session_name=? AND user=?", (flagged_bc, session_name, user))
+        # Unflag
+        c.execute("""
+            UPDATE scans 
+            SET barcode = REPLACE(barcode, ?, ''), flag_reason = ''
+            WHERE (barcode=? OR barcode=?) AND session_name=? AND user=?
+        """, (SUFFIX_FLAGGED, bc_clean + SUFFIX_FLAGGED, bc_clean + SUFFIX_DAMAGED + SUFFIX_FLAGGED, session_name, user))
     else:
-        c.execute("INSERT INTO scans (barcode, timestamp, user, branch, session_name, flag_reason) VALUES (?, ?, ?, ?, ?, ?)", 
-                 (flagged_bc, get_gmt3_time(), user, branch, session_name, "Manual Flag"))
+        # Flag
+        c.execute("""
+            UPDATE scans 
+            SET barcode = barcode || ?, flag_reason = 'Manual Flag'
+            WHERE (barcode=? OR barcode=?) AND session_name=? AND user=?
+        """, (SUFFIX_FLAGGED, bc_clean, bc_clean + SUFFIX_DAMAGED, session_name, user))
+        
     conn.commit()
     conn.close()
     return jsonify({"status":"ok"})
@@ -452,11 +466,25 @@ def user_delete_scan():
     
     conn = get_db()
     c = conn.cursor()
-    bc_clean, bc_damaged, bc_flagged = barcode_variants(barcode)
+    bc_clean = clean_barcode(barcode)
     c.execute("""
         DELETE FROM scans 
-        WHERE (barcode=? OR barcode=? OR barcode=?) AND user=? AND session_name=?
-    """, (bc_clean, bc_damaged, bc_flagged, session.get("user"), session_name))
+        WHERE (
+            barcode=? OR 
+            barcode=? OR 
+            barcode=? OR 
+            barcode=? OR 
+            barcode=?
+        ) AND user=? AND session_name=?
+    """, (
+        bc_clean, 
+        bc_clean + SUFFIX_DAMAGED, 
+        bc_clean + SUFFIX_FLAGGED, 
+        bc_clean + SUFFIX_DAMAGED + SUFFIX_FLAGGED, 
+        bc_clean + SUFFIX_FLAGGED + SUFFIX_DAMAGED, 
+        session.get("user"), 
+        session_name
+    ))
     conn.commit()
     conn.close()
     return jsonify({"status": "ok"})
@@ -731,7 +759,7 @@ def admin_stats():
     c.execute("SELECT COUNT(DISTINCT user) FROM scans")
     active_users = c.fetchone()[0]
     
-    c.execute(f"SELECT COUNT(*) FROM scans WHERE barcode LIKE '%{SUFFIX_FLAGGED}'")
+    c.execute(f"SELECT COUNT(*) FROM scans WHERE barcode LIKE '%{SUFFIX_FLAGGED}%'")
     flagged_items = c.fetchone()[0]
     
     conn.close()

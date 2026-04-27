@@ -679,7 +679,9 @@
 
             <hr style="border:0; border-top:1px solid rgba(255,255,255,0.06); margin:24px 0;">
 
-            <h3>Scan View <span id="rowCountBadge" style="font-size:12px;font-weight:500;color:#38bdf8;background:rgba(56,189,248,0.1);padding:3px 10px;border-radius:20px;margin-left:8px;"></span></h3>
+            <h3>Scan View <span id="rowCountBadge"
+                    style="font-size:12px;font-weight:500;color:#38bdf8;background:rgba(56,189,248,0.1);padding:3px 10px;border-radius:20px;margin-left:8px;"></span>
+            </h3>
             <div class="filter-row">
                 <select id="viewMode" onchange="loadScans()">
                     <option value="master">Master Branch View</option>
@@ -693,28 +695,39 @@
                 </select>
             </div>
             <div class="filter-row">
-                <div style="display:flex; align-items:center; background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:4px 8px; gap:8px;">
+                <div
+                    style="display:flex; align-items:center; background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:4px 8px; gap:8px;">
                     <span style="font-size:14px;margin-left:4px;">📅</span>
                     <div style="display:flex; align-items:center; gap:6px;">
-                        <label style="margin:0;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">From</label>
-                        <input type="text" id="dateFrom" placeholder="Select Time..." style="background:transparent;border:none;color:#f8fafc;font-size:13px;width:150px;padding:4px;box-shadow:none;">
+                        <label
+                            style="margin:0;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">From</label>
+                        <input type="text" id="dateFrom" placeholder="Select Time..."
+                            style="background:transparent;border:none;color:#f8fafc;font-size:13px;width:150px;padding:4px;box-shadow:none;">
                     </div>
                     <div style="width:1px;height:16px;background:rgba(255,255,255,0.15);margin:0 2px;"></div>
                     <div style="display:flex; align-items:center; gap:6px;">
-                        <label style="margin:0;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">To</label>
-                        <input type="text" id="dateTo" placeholder="Select Time..." style="background:transparent;border:none;color:#f8fafc;font-size:13px;width:150px;padding:4px;box-shadow:none;">
+                        <label
+                            style="margin:0;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">To</label>
+                        <input type="text" id="dateTo" placeholder="Select Time..."
+                            style="background:transparent;border:none;color:#f8fafc;font-size:13px;width:150px;padding:4px;box-shadow:none;">
                     </div>
-                    <button onclick="clearDateRange()" style="background:rgba(239,68,68,0.1);border:none;color:#ef4444;border-radius:6px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-left:2px;transition:all 0.2s ease;" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.1)'" title="Clear Dates">✕</button>
+                    <button onclick="clearDateRange()"
+                        style="background:rgba(239,68,68,0.1);border:none;color:#ef4444;border-radius:6px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-left:2px;transition:all 0.2s ease;"
+                        onmouseover="this.style.background='rgba(239,68,68,0.2)'"
+                        onmouseout="this.style.background='rgba(239,68,68,0.1)'" title="Clear Dates">✕</button>
                 </div>
-                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:#facc15;font-weight:600;background:rgba(250,204,21,0.08);padding:7px 12px;border-radius:9px;border:1px solid rgba(250,204,21,0.2);margin:0;">
+                <label
+                    style="display:flex;align-items:center;gap:6px;cursor:pointer;color:#facc15;font-weight:600;background:rgba(250,204,21,0.08);padding:7px 12px;border-radius:9px;border:1px solid rgba(250,204,21,0.2);margin:0;">
                     <input type="checkbox" id="showFlaggedOnly" onchange="renderScans()"> Flagged Only
                 </label>
                 <button class="btn btn-ghost" onclick="loadScans()">↻ Refresh</button>
                 <button class="btn btn-primary" onclick="exportCSV()">⬇ Export CSV</button>
                 {% if role == 'admin' %}
-                <button class="btn btn-danger" id="deleteSelectedBtn" onclick="deleteSelected()" style="display:none;">🗑 Delete Selected</button>
+                <button class="btn btn-danger" id="deleteSelectedBtn" onclick="deleteSelected()"
+                    style="display:none;">🗑 Delete Selected</button>
                 {% endif %}
-                <input id="adminSearch" onkeyup="renderScans()" placeholder="Search barcodes..." style="margin-left:auto;width:180px;">
+                <input id="adminSearch" onkeyup="renderScans()" placeholder="Search barcodes..."
+                    style="margin-left:auto;width:180px;">
             </div>
             <div class="table-wrap" id="scansTableWrap">
                 <div class="spinner-wrap" id="scansSpinner">
@@ -806,7 +819,8 @@
 
         <div id="sessions" class="tab-content card">
             <h3>Session Management</h3>
-            <p style="color:#64748b; font-size:14px; margin-top:-10px; margin-bottom:20px;">View, delete, or reassign sessions. Use this to remove sessions created by mistake.</p>
+            <p style="color:#64748b; font-size:14px; margin-top:-10px; margin-bottom:20px;">View, delete, or reassign
+                sessions. Use this to remove sessions created by mistake.</p>
             <div class="filter-row" style="margin-bottom:16px;">
                 <button class="btn btn-ghost" onclick="loadSessionInfo()">↻ Refresh</button>
             </div>
@@ -831,12 +845,17 @@
             </div>
 
             <h3 style="margin-top:28px;">Reassign Session Data</h3>
-            <p style="color:#64748b; font-size:14px; margin-top:-10px; margin-bottom:20px;">Move all scans from one session to another.</p>
+            <p style="color:#64748b; font-size:14px; margin-top:-10px; margin-bottom:20px;">Move all scans from one
+                session to another.</p>
             <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
-                <div><label>From Session</label><input id="reassign-from" list="session-list" placeholder="Source session"></div>
-                <div><label>From Branch (optional)</label><input id="reassign-from-branch" placeholder="Leave empty for all"></div>
-                <div><label>To Session</label><input id="reassign-to" list="session-list" placeholder="Target session"></div>
-                <div><label>To Branch (optional)</label><input id="reassign-to-branch" placeholder="Leave empty to keep"></div>
+                <div><label>From Session</label><input id="reassign-from" list="session-list"
+                        placeholder="Source session"></div>
+                <div><label>From Branch (optional)</label><input id="reassign-from-branch"
+                        placeholder="Leave empty for all"></div>
+                <div><label>To Session</label><input id="reassign-to" list="session-list" placeholder="Target session">
+                </div>
+                <div><label>To Branch (optional)</label><input id="reassign-to-branch"
+                        placeholder="Leave empty to keep"></div>
                 <button class="btn btn-primary" style="margin-top:22px;" onclick="reassignSession()">↗ Reassign</button>
             </div>
         </div>
@@ -1119,11 +1138,11 @@
             const session_name = document.getElementById('masterSession').value;
             const dateFrom = document.getElementById('dateFrom').value;
             const dateTo = document.getElementById('dateTo').value;
-            
+
             let url = `/admin/export_csv?mode=${mode}&branch=${encodeURIComponent(branch)}&session_name=${encodeURIComponent(session_name)}`;
             if (dateFrom) url += `&date_from=${encodeURIComponent(dateFrom)}`;
             if (dateTo) url += `&date_to=${encodeURIComponent(dateTo)}`;
-            
+
             window.location.href = url;
         }
 
@@ -1132,9 +1151,9 @@
             const sp = document.getElementById('sessionsSpinner');
             const tbl = document.getElementById('sessionsTable');
             const tbody = document.getElementById('sessions-tbody');
-            if(sp) sp.style.display = 'block';
-            if(tbl) tbl.style.display = 'none';
-            
+            if (sp) sp.style.display = 'block';
+            if (tbl) tbl.style.display = 'none';
+
             fetch('/admin/session_info')
                 .then(r => r.json())
                 .then(data => {
@@ -1152,8 +1171,8 @@
                             </td>
                         </tr>`;
                     });
-                    if(sp) sp.style.display = 'none';
-                    if(tbl) tbl.style.display = 'table';
+                    if (sp) sp.style.display = 'none';
+                    if (tbl) tbl.style.display = 'table';
                 });
         }
 
@@ -1178,11 +1197,11 @@
             const from_branch = document.getElementById('reassign-from-branch').value.trim();
             const to_session = document.getElementById('reassign-to').value.trim();
             const to_branch = document.getElementById('reassign-to-branch').value.trim();
-            
+
             if (!from_session || !to_session) {
                 return showModal('alert', 'Error', 'Please provide both source and target session names.');
             }
-            
+
             showModal('confirm', 'Confirm Reassign', `Move all scans from <strong>${from_session}</strong>${from_branch ? ` (${from_branch})` : ''} to <strong>${to_session}</strong>${to_branch ? ` (${to_branch})` : ''}?`, () => {
                 fetch('/admin/reassign_scans', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1330,25 +1349,25 @@
         const fpFrom = flatpickr("#dateFrom", {
             enableTime: true,
             dateFormat: "Y-m-d H:i",
-            onChange: function(selectedDates, dateStr, instance) {
-                if(fpTo.selectedDates.length > 0 && selectedDates[0] > fpTo.selectedDates[0]) {
+            onChange: function (selectedDates, dateStr, instance) {
+                if (fpTo.selectedDates.length > 0 && selectedDates[0] > fpTo.selectedDates[0]) {
                     fpTo.setDate(selectedDates[0]);
                 }
                 loadScans();
             }
         });
-        
+
         const fpTo = flatpickr("#dateTo", {
             enableTime: true,
             dateFormat: "Y-m-d H:i",
-            onChange: function(selectedDates, dateStr, instance) {
-                if(fpFrom.selectedDates.length > 0 && selectedDates[0] < fpFrom.selectedDates[0]) {
+            onChange: function (selectedDates, dateStr, instance) {
+                if (fpFrom.selectedDates.length > 0 && selectedDates[0] < fpFrom.selectedDates[0]) {
                     fpFrom.setDate(selectedDates[0]);
                 }
                 loadScans();
             }
         });
-        
+
         // Override clearDateRange to clear flatpickr instances
         function clearDateRange() {
             fpFrom.clear();

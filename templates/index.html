@@ -947,9 +947,13 @@ function showConfirm(message, onConfirm) {
     body.innerHTML = `<p style="margin:0;line-height:1.6;">${message}</p>`;
     actions.innerHTML = `
         <button class="modal-btn modal-btn-secondary" onclick="closeModal()">Cancel</button>
-        <button class="modal-btn modal-btn-danger" onclick="closeModal(); (${onConfirm.toString()})()">Confirm</button>
+        <button class="modal-btn modal-btn-danger" id="modalConfirmBtn">Confirm</button>
     `;
     overlay.style.display = 'flex';
+    document.getElementById('modalConfirmBtn').onclick = () => {
+        closeModal();
+        if (onConfirm) onConfirm();
+    };
 }
 
 function showPrompt(message, onSubmit, inputType='text') {
