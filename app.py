@@ -54,11 +54,9 @@ def get_users_db():
     return conn
 
 # ---------- DB INIT ----------
-def init_db():
+def init_main_db():
     conn = get_db()
     c = conn.cursor()
-
-    # Users table removed from here, moving to users.db below
 
     c.execute("""
         CREATE TABLE IF NOT EXISTS branches (
@@ -105,10 +103,6 @@ def init_db():
         )
     """)
 
-    # Seed admin is moved to users.db setup
-
-    # ----- CREATE INDEXES FOR EXTREME SPEED -----
-    # These make searching, grouping, and sorting instantly fast even with millions of rows
     c.execute("CREATE INDEX IF NOT EXISTS idx_scans_barcode ON scans(barcode)")
     c.execute("CREATE INDEX IF NOT EXISTS idx_scans_user_session ON scans(user, session_name)")
     c.execute("CREATE INDEX IF NOT EXISTS idx_scans_branch_session ON scans(branch, session_name)")
@@ -122,7 +116,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-    # Setup Users DB
+def init_users_db():
     u_conn = get_users_db()
     u_c = u_conn.cursor()
     u_c.execute("""
@@ -151,11 +145,13 @@ def init_db():
     u_conn.close()
 
 try:
-    init_db()
+    init_main_db()
 except sqlite3.OperationalError:
-    # This happens when multiple uWSGI workers start at the exact same time on PythonAnywhere
-    # and race to execute CREATE/ALTER TABLE statements. One worker wins, the others hit a lock.
-    # Ignoring the error allows the worker to start up successfully.
+    pass
+
+try:
+    init_users_db()
+except sqlite3.OperationalError:
     pass
 
 @app.before_request
@@ -181,9 +177,12 @@ def check_session_token():
                 return jsonify({"error": "logged_out", "redirect": "/login"}), 401
             return redirect("/login")
             
-        # Update last_active
-        c.execute("UPDATE users SET last_active=? WHERE username=?", (get_gmt3_time(), user))
-        conn.commit()
+        # Update last_active safely
+        try:
+            c.execute("UPDATE users SET last_active=? WHERE username=?", (get_gmt3_time(), user))
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
         conn.close()
 
 # ---------- LOGIN ----------
