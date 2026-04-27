@@ -138,6 +138,11 @@ def init_db():
     except sqlite3.OperationalError:
         pass
         
+    try:
+        u_c.execute("ALTER TABLE users ADD COLUMN last_active TEXT")
+    except sqlite3.OperationalError:
+        pass
+        
     u_c.execute("SELECT COUNT(*) FROM users")
     if u_c.fetchone()[0] == 0:
         u_c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", 
@@ -168,13 +173,18 @@ def check_session_token():
         row = c.fetchone()
         conn.close()
 
-        # If user has a token in DB and it doesn't match the one in session, log them out
         if row and row[0] and row[0] != token:
             session.clear()
+            conn.close()
             if request.path.startswith('/api/') or request.method == 'POST':
                 from flask import jsonify
                 return jsonify({"error": "logged_out", "redirect": "/login"}), 401
             return redirect("/login")
+            
+        # Update last_active
+        c.execute("UPDATE users SET last_active=? WHERE username=?", (get_gmt3_time(), user))
+        conn.commit()
+        conn.close()
 
 # ---------- LOGIN ----------
 @app.route("/login", methods=["GET","POST"])
@@ -217,6 +227,13 @@ def login():
 
 @app.route("/logout")
 def logout():
+    user = session.get("user")
+    if user:
+        conn = get_users_db()
+        c = conn.cursor()
+        c.execute("UPDATE users SET session_token=NULL, last_active=NULL WHERE username=?", (user,))
+        conn.commit()
+        conn.close()
     session.clear()
     return redirect("/login")
 
@@ -257,11 +274,21 @@ def insert_scans_bulk(barcode, qty, is_damaged=False, is_flagged=False, session_
     collision = c.fetchone()
     
     flag_reason = ""
+    warning_msg = None
     if collision:
         is_flagged = True
         prev_session = collision[0]
         prev_branch = collision[1] or "Unknown"
         flag_reason = f"Session Collision: scanned in {prev_session} ({prev_branch})"
+        
+        # Check if already scanned in current session
+        c.execute("""
+            SELECT COUNT(*) FROM scans 
+            WHERE (barcode=? OR barcode=? OR barcode=? OR barcode=? OR barcode=?) 
+            AND session_name = ?
+        """, (bc_clean, bc_damaged, bc_flagged, bc_clean + SUFFIX_DAMAGED + SUFFIX_FLAGGED, bc_clean + SUFFIX_FLAGGED + SUFFIX_DAMAGED, session_name))
+        if c.fetchone()[0] == 0:
+            warning_msg = f"Collision! Barcode previously scanned in session '{prev_session}' ({prev_branch})."
     elif is_flagged:
         flag_reason = "Manual Flag"
 
@@ -282,7 +309,7 @@ def insert_scans_bulk(barcode, qty, is_damaged=False, is_flagged=False, session_
     conn.commit()
     conn.close()
 
-    return {"status": "ok"}
+    return {"status": "ok", "warning": warning_msg} if warning_msg else {"status": "ok"}
 
 @app.route("/scan", methods=["POST"])
 def scan():
@@ -747,22 +774,50 @@ def admin_export_csv():
 @app.route("/admin/stats")
 def admin_stats():
     if session.get("role") not in ["admin", "moderator"]: return "forbidden"
+    
+    branch = request.args.get("branch", "")
+    session_name = request.args.get("session_name", "")
+    date_from = request.args.get("date_from", "")
+    date_to = request.args.get("date_to", "")
+    
+    where_clauses = ["1=1"]
+    params = []
+    
+    if branch:
+        where_clauses.append("branch=?")
+        params.append(branch)
+    if session_name:
+        where_clauses.append("session_name=?")
+        params.append(session_name)
+    if date_from:
+        where_clauses.append("timestamp >= ?")
+        params.append(date_from.replace("T", " ") + ":00")
+    if date_to:
+        where_clauses.append("timestamp <= ?")
+        params.append(date_to.replace("T", " ") + ":59")
+        
+    where_sql = " AND ".join(where_clauses)
+    
     conn = get_db()
     c = conn.cursor()
     
-    c.execute("SELECT COUNT(*) FROM scans")
+    c.execute(f"SELECT COUNT(*) FROM scans WHERE {where_sql}", tuple(params))
     total_scans = c.fetchone()[0]
     
-    c.execute(f"SELECT COUNT(DISTINCT {SQL_CLEAN_BARCODE}) FROM scans")
+    c.execute(f"SELECT COUNT(DISTINCT {SQL_CLEAN_BARCODE}) FROM scans WHERE {where_sql}", tuple(params))
     unique_barcodes = c.fetchone()[0]
     
-    c.execute("SELECT COUNT(DISTINCT user) FROM scans")
-    active_users = c.fetchone()[0]
-    
-    c.execute(f"SELECT COUNT(*) FROM scans WHERE barcode LIKE '%{SUFFIX_FLAGGED}%'")
+    c.execute(f"SELECT COUNT(DISTINCT {SQL_CLEAN_BARCODE}) FROM scans WHERE barcode LIKE '%{SUFFIX_FLAGGED}%' AND {where_sql}", tuple(params))
     flagged_items = c.fetchone()[0]
     
     conn.close()
+    
+    # Active Users
+    u_conn = get_users_db()
+    u_c = u_conn.cursor()
+    u_c.execute("SELECT COUNT(*) FROM users WHERE session_token IS NOT NULL AND last_active >= datetime('now', '+3 hours', '-20 minutes')")
+    active_users = u_c.fetchone()[0]
+    u_conn.close()
     
     return jsonify({
         "total_scans": total_scans,

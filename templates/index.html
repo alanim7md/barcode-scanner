@@ -588,6 +588,10 @@ function scanItem(barcode, qty=1, isDamaged=false) {
             throw new Error("Server error");
         }).then(data => {
             beep();
+            if (data.warning) {
+                showAlert(data.warning);
+                errorBeep();
+            }
             loadSummary(barcode);
             updateSyncStatus(true);
         }).catch(err => {

@@ -924,7 +924,16 @@
         let statusChartObj = null;
 
         function loadStats() {
-            fetch('/admin/stats')
+            const branch = document.getElementById('masterBranch') ? document.getElementById('masterBranch').value : '';
+            const session_name = document.getElementById('masterSession') ? document.getElementById('masterSession').value : '';
+            const dateFrom = document.getElementById('dateFrom') ? document.getElementById('dateFrom').value : '';
+            const dateTo = document.getElementById('dateTo') ? document.getElementById('dateTo').value : '';
+            
+            let url = `/admin/stats?branch=${encodeURIComponent(branch)}&session_name=${encodeURIComponent(session_name)}`;
+            if (dateFrom) url += `&date_from=${encodeURIComponent(dateFrom)}`;
+            if (dateTo) url += `&date_to=${encodeURIComponent(dateTo)}`;
+
+            fetch(url)
                 .then(r => r.json())
                 .then(data => {
                     if (data.forbidden) return;
@@ -1008,6 +1017,7 @@
                 ms.style.display = 'none';
                 fetch(`/admin/scans_data?${dateParams}`).then(r => r.json()).then(data => { currentAdminData = data; renderScans(); hideSpinner(); });
             }
+            loadStats();
         }
 
         function clearDateRange() {
