@@ -162,27 +162,32 @@ def check_session_token():
     user = session.get("user")
     token = session.get("session_token")
 
-    if user:
-        conn = get_users_db()
-        c = conn.cursor()
-        c.execute("SELECT session_token FROM users WHERE username=?", (user,))
-        row = c.fetchone()
+    if not user or not token:
+        if request.path.startswith('/api/') or request.path in ['/scan', '/manual', '/damaged', '/sync', '/flag_item', '/undo', '/branches', '/sessions'] or request.method == 'POST':
+            from flask import jsonify
+            return jsonify({"error": "unauthorized", "redirect": "/login"}), 401
+        return redirect("/login")
 
-        if row and row[0] and row[0] != token:
-            session.clear()
-            conn.close()
-            if request.path.startswith('/api/') or request.method == 'POST':
-                from flask import jsonify
-                return jsonify({"error": "logged_out", "redirect": "/login"}), 401
-            return redirect("/login")
-            
-        # Update last_active safely
-        try:
-            c.execute("UPDATE users SET last_active=? WHERE username=?", (get_gmt3_time(), user))
-            conn.commit()
-        except sqlite3.OperationalError:
-            pass
+    conn = get_users_db()
+    c = conn.cursor()
+    c.execute("SELECT session_token FROM users WHERE username=?", (user,))
+    row = c.fetchone()
+
+    if not row or row[0] != token:
+        session.clear()
         conn.close()
+        if request.path.startswith('/api/') or request.path in ['/scan', '/manual', '/damaged', '/sync', '/flag_item', '/undo', '/branches', '/sessions'] or request.method == 'POST':
+            from flask import jsonify
+            return jsonify({"error": "logged_out", "redirect": "/login"}), 401
+        return redirect("/login")
+        
+    # Update last_active safely
+    try:
+        c.execute("UPDATE users SET last_active=? WHERE username=?", (get_gmt3_time(), user))
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
+    conn.close()
 
 # ---------- LOGIN ----------
 @app.route("/login", methods=["GET","POST"])
@@ -951,42 +956,44 @@ def admin_toggle_flag():
     
     conn = get_db()
     c = conn.cursor()
-    flagged_bc = barcode + SUFFIX_FLAGGED
+    bc_clean = clean_barcode(barcode)
     
     # Check if ANY flag exists for this barcode in this session
-    query = "SELECT COUNT(*) FROM scans WHERE barcode=?"
-    params = [flagged_bc]
+    query = "SELECT COUNT(*) FROM scans WHERE (barcode=? OR barcode=?)"
+    params = [bc_clean + SUFFIX_FLAGGED, bc_clean + SUFFIX_DAMAGED + SUFFIX_FLAGGED]
     if session_name and session_name != "null":
         query += " AND session_name=?"
         params.append(session_name)
+    if target_user:
+        query += " AND user=?"
+        params.append(target_user)
+        
     c.execute(query, tuple(params))
     is_flagged = c.fetchone()[0] > 0
     
     if is_flagged:
-        del_query = "DELETE FROM scans WHERE barcode=?"
-        del_params = [flagged_bc]
+        # Unflag
+        up_query = "UPDATE scans SET barcode = REPLACE(barcode, ?, ''), flag_reason = '' WHERE (barcode=? OR barcode=?)"
+        up_params = [SUFFIX_FLAGGED, bc_clean + SUFFIX_FLAGGED, bc_clean + SUFFIX_DAMAGED + SUFFIX_FLAGGED]
         if session_name and session_name != "null":
-            del_query += " AND session_name=?"
-            del_params.append(session_name)
-        c.execute(del_query, tuple(del_params))
-    else:
+            up_query += " AND session_name=?"
+            up_params.append(session_name)
         if target_user:
-            c.execute("INSERT INTO scans (barcode, timestamp, user, branch, session_name, flag_reason) VALUES (?, ?, ?, ?, ?, ?)", 
-                     (flagged_bc, get_gmt3_time(), target_user, branch or 'N/A', session_name or 'N/A', flag_reason))
-        else:
-            q = "SELECT DISTINCT user FROM scans WHERE (barcode=? OR barcode=?)"
-            p = [barcode, barcode + SUFFIX_DAMAGED]
-            if session_name and session_name != "null":
-                q += " AND session_name=?"
-                p.append(session_name)
-            c.execute(q, tuple(p))
-            users = [r[0] for r in c.fetchall()]
-            if not users:
-                users = [current_user]
-            for u in users:
-                c.execute("INSERT INTO scans (barcode, timestamp, user, branch, session_name, flag_reason) VALUES (?, ?, ?, ?, ?, ?)", 
-                         (flagged_bc, get_gmt3_time(), u, branch or 'N/A', session_name or 'N/A', flag_reason))
-            
+            up_query += " AND user=?"
+            up_params.append(target_user)
+        c.execute(up_query, tuple(up_params))
+    else:
+        # Flag
+        up_query = "UPDATE scans SET barcode = barcode || ?, flag_reason = ? WHERE (barcode=? OR barcode=?)"
+        up_params = [SUFFIX_FLAGGED, flag_reason, bc_clean, bc_clean + SUFFIX_DAMAGED]
+        if session_name and session_name != "null":
+            up_query += " AND session_name=?"
+            up_params.append(session_name)
+        if target_user:
+            up_query += " AND user=?"
+            up_params.append(target_user)
+        c.execute(up_query, tuple(up_params))
+        
     conn.commit()
     conn.close()
     return jsonify({"status": "ok"})

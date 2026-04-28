@@ -877,6 +877,18 @@
     </div>
 
     <script>
+        function escapeHTML(str) {
+            if (str === null || str === undefined) return '';
+            return String(str).replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
+        }
         fetch("/branches").then(r => r.json()).then(data => {
             const mb = document.getElementById('masterBranch');
             const gb = document.getElementById('global-branch');
@@ -1066,14 +1078,14 @@
                 filtered.forEach(row => {
                     const marked = row.barcode === odooMarkedBarcodeAdmin;
                     html += `<tr${marked ? ' style="background:rgba(34,197,94,0.12);border-left:3px solid #22c55e"' : ''}>
-                <td><input type="checkbox" class="row-checkbox" data-barcode="${row.barcode}"></td>
-                <td style="font-family:monospace;font-size:12px;">${row.barcode}</td><td>${row.users || ''}</td>
+                <td><input type="checkbox" class="row-checkbox" data-barcode="${escapeHTML(row.barcode)}"></td>
+                <td style="font-family:monospace;font-size:12px;">${escapeHTML(row.barcode)}</td><td>${escapeHTML(row.users) || ''}</td>
                 <td style="color:#4ade80;font-weight:600;">${row.good}</td>
                 <td style="color:#f87171;font-weight:600;">${row.damaged}</td>
                 <td style="color:#facc15;font-weight:700;">${row.flagged > 0 ? '🚩 Yes' : ''}</td>
-                <td style="color:#94a3b8;font-size:12px;">${row.reason || ''}</td><td style="color:#64748b;font-size:12px;">${row.first}</td><td style="color:#64748b;font-size:12px;">${row.last}</td>
-                <td><button class="btn-icon" onclick="setOdooMarkAdmin('${row.barcode}')" title="Mark as entered">✅</button>
-                <button class="btn btn-warn btn-sm" onclick="toggleAdminFlag('${row.barcode}','null',document.getElementById('masterBranch').value,document.getElementById('masterSession').value)">🚩</button>
+                <td style="color:#94a3b8;font-size:12px;">${escapeHTML(row.reason) || ''}</td><td style="color:#64748b;font-size:12px;">${escapeHTML(row.first)}</td><td style="color:#64748b;font-size:12px;">${escapeHTML(row.last)}</td>
+                <td><button class="btn-icon" onclick="setOdooMarkAdmin('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}')" title="Mark as entered">✅</button>
+                <button class="btn btn-warn btn-sm" onclick="toggleAdminFlag('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}','null',document.getElementById('masterBranch').value,document.getElementById('masterSession').value)">🚩</button>
                 </td></tr>`;
                 });
                 tbody.innerHTML = html;
@@ -1095,21 +1107,21 @@
                 filtered.forEach(row => {
                     const marked = row.barcode === odooMarkedBarcodeAdmin;
                     html += `<tr${marked ? ' style="background:rgba(34,197,94,0.12);border-left:3px solid #22c55e"' : ''}>
-                <td><input type="checkbox" class="row-checkbox" data-barcode="${row.barcode}" data-user="${row.user}" data-branch="${row.branch}" data-session="${row.session_name}"></td>
-                <td style="font-family:monospace;font-size:12px;">${row.barcode}</td>
-                <td>${row.user || ''}</td><td>${row.branch || ''}</td><td>${row.session_name || ''}</td>
+                <td><input type="checkbox" class="row-checkbox" data-barcode="${escapeHTML(row.barcode)}" data-user="${escapeHTML(row.user)}" data-branch="${escapeHTML(row.branch)}" data-session="${escapeHTML(row.session_name)}"></td>
+                <td style="font-family:monospace;font-size:12px;">${escapeHTML(row.barcode)}</td>
+                <td>${escapeHTML(row.user) || ''}</td><td>${escapeHTML(row.branch) || ''}</td><td>${escapeHTML(row.session_name) || ''}</td>
                 <td style="color:#4ade80;font-weight:600;">${row.good}</td>
                 <td style="color:#f87171;font-weight:600;">${row.damaged}</td>
                 <td style="color:#facc15;font-weight:700;">${row.flagged > 0 ? '🚩 Yes' : ''}</td>
-                <td style="color:#94a3b8;font-size:12px;">${row.reason || ''}</td>
-                <td style="color:#64748b;font-size:12px;">${row.first}</td><td style="color:#64748b;font-size:12px;">${row.last}</td>
+                <td style="color:#94a3b8;font-size:12px;">${escapeHTML(row.reason) || ''}</td>
+                <td style="color:#64748b;font-size:12px;">${escapeHTML(row.first)}</td><td style="color:#64748b;font-size:12px;">${escapeHTML(row.last)}</td>
                 <td>
-                    <button class="btn-icon" onclick="setOdooMarkAdmin('${row.barcode}')" title="Mark as entered">✅</button>
+                    <button class="btn-icon" onclick="setOdooMarkAdmin('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}')" title="Mark as entered">✅</button>
                     {% if role == 'admin' %}
-                    <button class="btn btn-ghost btn-sm" onclick="promptAdjust('${row.barcode}','${row.user}','${row.branch}','${row.session_name}','good')">+/- G</button>
-                    <button class="btn btn-ghost btn-sm" onclick="promptAdjust('${row.barcode}','${row.user}','${row.branch}','${row.session_name}','damaged')">+/- D</button>
+                    <button class="btn btn-ghost btn-sm" onclick="promptAdjust('${escapeHTML(row.barcode)}','${escapeHTML(row.user).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.branch).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.session_name).replace(/&#39;/g, "\\\'")}','good')">+/- G</button>
+                    <button class="btn btn-ghost btn-sm" onclick="promptAdjust('${escapeHTML(row.barcode)}','${escapeHTML(row.user).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.branch).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.session_name).replace(/&#39;/g, "\\\'")}','damaged')">+/- D</button>
                     {% endif %}
-                    <button class="btn btn-warn btn-sm" onclick="toggleAdminFlag('${row.barcode}','${row.user}','${row.branch}','${row.session_name}')">🚩</button>
+                    <button class="btn btn-warn btn-sm" onclick="toggleAdminFlag('${escapeHTML(row.barcode)}','${escapeHTML(row.user).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.branch).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.session_name).replace(/&#39;/g, "\\\'")}')">🚩</button>
                 </td></tr>`;
                 });
                 tbody.innerHTML = html;
@@ -1170,14 +1182,14 @@
                     tbody.innerHTML = '';
                     data.forEach(row => {
                         tbody.innerHTML += `<tr>
-                            <td style="font-weight:600;">${row.session_name}</td>
+                            <td style="font-weight:600;">${escapeHTML(row.session_name)}</td>
                             <td>${row.branch || 'None'}</td>
                             <td>${row.scan_count}</td>
                             <td>${row.user_count}</td>
-                            <td style="color:#64748b;font-size:12px;">${row.first_scan}</td>
-                            <td style="color:#64748b;font-size:12px;">${row.last_scan}</td>
+                            <td style="color:#64748b;font-size:12px;">${escapeHTML(row.first_scan)}</td>
+                            <td style="color:#64748b;font-size:12px;">${escapeHTML(row.last_scan)}</td>
                             <td>
-                                <button class="btn btn-danger btn-sm" onclick="deleteSession('${row.session_name}', '${row.branch || ''}')">🗑 Delete</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteSession('${escapeHTML(row.session_name).replace(/&#39;/g, "\\\'")}', '${escapeHTML(row.branch) || ''}')">🗑 Delete</button>
                             </td>
                         </tr>`;
                     });

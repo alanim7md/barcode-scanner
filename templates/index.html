@@ -432,10 +432,22 @@
 
 <script>
 let audioCtx = null;
-let lastScanTime = 0;
 let localScans = JSON.parse(localStorage.getItem('localScans') || '[]');
 let currentSummaryData = [];
 let lastScannedBarcode = null;
+
+function escapeHTML(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/[&<>'"]/g, 
+        tag => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+        }[tag] || tag)
+    );
+}
 
 document.getElementById('sessionName').value = new Date().toISOString().split('T')[0];
 
@@ -581,6 +593,7 @@ function scanItem(barcode, qty=1, isDamaged=false) {
             body: JSON.stringify({ barcode, qty, branch, session_name })
         }).then(res => {
             if (res.status === 401) {
+                pushLocal(barcode, qty, isDamaged, branch, session_name);
                 window.location.href = '/login';
                 throw new Error("Logged out");
             }
@@ -620,27 +633,35 @@ function pushLocal(barcode, qty, isDamaged, branch, session_name) {
 }
 
 // Background sync
+let isSyncing = false;
 setInterval(() => {
-    if (localScans.length > 0 && navigator.onLine) {
+    if (localScans.length > 0 && navigator.onLine && !isSyncing) {
+        isSyncing = true;
+        const sendingScans = [...localScans];
         fetch('/sync', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ scans: localScans })
+            body: JSON.stringify({ scans: sendingScans })
         }).then(res => {
             if (res.status === 401) {
+                // Do not clear localScans, just redirect
                 window.location.href = '/login';
                 return;
             }
             if (res.ok) {
-                localScans = [];
+                localScans.splice(0, sendingScans.length);
                 saveLocal();
                 updateSyncStatus(true);
                 loadSummary();
             }
-        }).catch(err => updateSyncStatus(false));
-    } else if (navigator.onLine) {
+        }).catch(err => {
+            updateSyncStatus(false);
+        }).finally(() => {
+            isSyncing = false;
+        });
+    } else if (navigator.onLine && localScans.length === 0) {
         updateSyncStatus(true);
-    } else {
+    } else if (!navigator.onLine) {
         updateSyncStatus(false);
     }
 }, 3000);
@@ -648,8 +669,6 @@ setInterval(() => {
 const input = document.getElementById("barcodeInput");
 input.addEventListener("keypress", function(e) {
     if (e.key === "Enter") {
-        if (Date.now() - lastScanTime < 200) return;
-        lastScanTime = Date.now();
         const barcode = input.value.trim();
         if (!barcode) return;
         scanItem(barcode, 1, false, false);
@@ -751,15 +770,15 @@ function renderSummary() {
         
         htmlStr += `
         <tr${bg}>
-            <td>${item.barcode}</td>
+            <td>${escapeHTML(item.barcode)}</td>
             <td>${item.good}</td>
             <td style="color:#ef4444">${item.damaged}</td>
             <td style="color:#facc15; font-weight:bold;">${item.flagged > 0 ? '🚩 Yes' : ''}</td>
-            <td>${item.first || ""}</td>
-            <td>${item.last || ""}</td>
+            <td>${escapeHTML(item.first) || ""}</td>
+            <td>${escapeHTML(item.last) || ""}</td>
             <td>
-                <button class="clear-btn" style="position:static; transform:none; color:#facc15; font-size:18px; margin-right:8px;" onclick="toggleFlag('${item.barcode}')" title="Flag/Unflag this item">🚩</button>
-                <button class="clear-btn" style="position:static; transform:none; color:#ef4444; font-size:18px;" onclick="deleteSummaryItem('${item.barcode}')" title="Delete all scans for this barcode in this session">🗑️</button>
+                <button class="clear-btn" style="position:static; transform:none; color:#facc15; font-size:18px; margin-right:8px;" onclick="toggleFlag('${escapeHTML(item.barcode).replace(/'/g, '\\\'')}')" title="Flag/Unflag this item">🚩</button>
+                <button class="clear-btn" style="position:static; transform:none; color:#ef4444; font-size:18px;" onclick="deleteSummaryItem('${escapeHTML(item.barcode).replace(/'/g, '\\\'')}')" title="Delete all scans for this barcode in this session">🗑️</button>
             </td>
         </tr>`;
     });
@@ -826,13 +845,13 @@ function renderHistory() {
     filtered.forEach(item => {
         htmlStr += `
         <tr>
-            <td>${item.barcode}</td>
-            <td>${item.branch}</td>
-            <td>${item.session_name}</td>
+            <td>${escapeHTML(item.barcode)}</td>
+            <td>${escapeHTML(item.branch)}</td>
+            <td>${escapeHTML(item.session_name)}</td>
             <td>${item.good}</td>
             <td style="color:#ef4444">${item.damaged}</td>
             <td style="color:#facc15; font-weight:bold;">${item.flagged > 0 ? '🚩 Yes' : ''}</td>
-            <td>${item.last || ""}</td>
+            <td>${escapeHTML(item.last) || ""}</td>
         </tr>`;
     });
     tbody.innerHTML = htmlStr;
