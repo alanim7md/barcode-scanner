@@ -250,7 +250,7 @@ def index():
     return render_template("index.html", user=session["user"], role=session["role"])
 
 # ---------- SCAN ----------
-def insert_scans_bulk(barcode, qty, is_damaged=False, is_flagged=False, session_name=None, branch=None):
+def insert_scans_bulk(barcode, qty, is_damaged=False, is_flagged=False, session_name=None, branch=None, is_manual=False):
     # Normalize barcode: uppercase and strip whitespace so 'abc' == 'ABC'
     barcode = barcode.strip().upper()
     if session_name is None:
@@ -295,6 +295,13 @@ def insert_scans_bulk(barcode, qty, is_damaged=False, is_flagged=False, session_
     elif is_flagged:
         flag_reason = "Manual Flag"
 
+    if is_manual:
+        is_flagged = True
+        if flag_reason and flag_reason != "Manual Flag":
+            flag_reason += ", Manual Entry"
+        else:
+            flag_reason = "Manual Entry"
+
     actual_barcode = barcode
     if is_damaged:
         actual_barcode += SUFFIX_DAMAGED
@@ -316,17 +323,17 @@ def insert_scans_bulk(barcode, qty, is_damaged=False, is_flagged=False, session_
 
 @app.route("/scan", methods=["POST"])
 def scan():
-    res = insert_scans_bulk(request.json["barcode"], 1)
+    res = insert_scans_bulk(request.json["barcode"], 1, is_manual=request.json.get("is_manual", False))
     return jsonify(res)
 
 @app.route("/manual", methods=["POST"])
 def manual():
-    res = insert_scans_bulk(request.json["barcode"], int(request.json.get("qty", 1)))
+    res = insert_scans_bulk(request.json["barcode"], int(request.json.get("qty", 1)), is_manual=request.json.get("is_manual", True))
     return jsonify(res)
 
 @app.route("/damaged", methods=["POST"])
 def damaged():
-    res = insert_scans_bulk(request.json["barcode"], int(request.json.get("qty", 1)), is_damaged=True)
+    res = insert_scans_bulk(request.json["barcode"], int(request.json.get("qty", 1)), is_damaged=True, is_manual=request.json.get("is_manual", False))
     return jsonify(res)
 
 @app.route("/flag_item", methods=["POST"])
@@ -371,21 +378,31 @@ def sync():
     if not scans:
         return jsonify({"status": "ok"})
 
-    rows = [
-        (
-            (s.get("barcode") or "").strip().upper(),
+    rows = []
+    for s in scans:
+        bc = (s.get("barcode") or "").strip().upper()
+        is_manual = s.get("is_manual", False)
+        flag_reason = ""
+        
+        if is_manual:
+            if SUFFIX_FLAGGED not in bc:
+                bc += SUFFIX_FLAGGED
+            flag_reason = "Manual Entry"
+            
+        rows.append((
+            bc,
             s.get("timestamp"),
             s.get("user"),
             s.get("branch"),
-            s.get("session_name")
-        )
-        for s in scans
-    ]
+            s.get("session_name"),
+            flag_reason
+        ))
+
     conn = get_db()
     c = conn.cursor()
     c.executemany("""
-        INSERT OR IGNORE INTO scans (barcode, timestamp, user, branch, session_name)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT OR IGNORE INTO scans (barcode, timestamp, user, branch, session_name, flag_reason)
+        VALUES (?, ?, ?, ?, ?, ?)
     """, rows)
     conn.commit()
     conn.close()

@@ -578,22 +578,22 @@ function showToast(msg, type) {
     }, 4000);
 }
 
-function scanItem(barcode, qty=1, isDamaged=false) {
+function scanItem(barcode, qty=1, isDamaged=false, isManual=false) {
     const session_name = document.getElementById('sessionName').value;
     const branch = document.getElementById('branchSelector').value;
     
     let endpoint = '/scan';
     if (isDamaged) endpoint = '/damaged';
-    else if (qty > 1) endpoint = '/manual';
+    else if (isManual || qty > 1) endpoint = '/manual';
     
     if (navigator.onLine) {
         fetch(endpoint, {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({ barcode, qty, branch, session_name })
+            body: JSON.stringify({ barcode, qty, branch, session_name, is_manual: isManual || qty > 1 })
         }).then(res => {
             if (res.status === 401) {
-                pushLocal(barcode, qty, isDamaged, branch, session_name);
+                pushLocal(barcode, qty, isDamaged, branch, session_name, isManual || qty > 1);
                 window.location.href = '/login';
                 throw new Error("Logged out");
             }
@@ -609,22 +609,23 @@ function scanItem(barcode, qty=1, isDamaged=false) {
             updateSyncStatus(true);
         }).catch(err => {
             if (err.message !== "Logged out") {
-                pushLocal(barcode, qty, isDamaged, branch, session_name);
+                pushLocal(barcode, qty, isDamaged, branch, session_name, isManual || qty > 1);
             }
         });
     } else {
-        pushLocal(barcode, qty, isDamaged, branch, session_name);
+        pushLocal(barcode, qty, isDamaged, branch, session_name, isManual || qty > 1);
     }
 }
 
-function pushLocal(barcode, qty, isDamaged, branch, session_name) {
+function pushLocal(barcode, qty, isDamaged, branch, session_name, isManual=false) {
     const now = new Date();
     const gmt3Time = new Date(now.getTime() + (3 * 60 * 60 * 1000));
     const ts = gmt3Time.toISOString().replace('T', ' ').substring(0, 19);
     for(let i=0; i<qty; i++) {
         let b = barcode;
         if(isDamaged) b += "__DAMAGED";
-        localScans.push({ barcode: b, timestamp: ts, user: "{{ user }}", branch, session_name });
+        if(isManual) b += "__FLAGGED";
+        localScans.push({ barcode: b, timestamp: ts, user: "{{ user }}", branch, session_name, is_manual: isManual });
     }
     saveLocal();
     updateSyncStatus(false);
@@ -873,13 +874,13 @@ function loadHistory() {
 function manualAdd() {
     const barcode = document.getElementById('manualBarcode').value.trim();
     const qty = parseInt(document.getElementById('manualQty').value) || 1;
-    if (barcode) scanItem(barcode, qty, false, false);
+    if (barcode) scanItem(barcode, qty, false, true);
 }
 
 function addDamaged() {
     const barcode = document.getElementById('manualBarcode').value.trim();
     const qty = parseInt(document.getElementById('manualQty').value) || 1;
-    if (barcode) scanItem(barcode, qty, true);
+    if (barcode) scanItem(barcode, qty, true, true);
 }
 
 function toggleFlag(barcode) {
