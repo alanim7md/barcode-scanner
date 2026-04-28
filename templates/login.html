@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -35,8 +36,15 @@
         }
 
         @keyframes pulse {
-            0% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
-            100% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+            0% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.6;
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(1.1);
+                opacity: 1;
+            }
         }
 
         .login-container {
@@ -72,7 +80,7 @@
             align-items: center;
             transition: transform 0.3s ease;
         }
-        
+
         .logo-container:hover {
             transform: scale(1.05) rotate(2deg);
         }
@@ -82,7 +90,7 @@
             height: 100%;
             object-fit: cover;
             border-radius: 50%;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 20px rgba(56, 189, 248, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(56, 189, 248, 0.2);
             border: 2px solid rgba(56, 189, 248, 0.4);
         }
 
@@ -120,12 +128,12 @@
             font-family: 'Inter', sans-serif;
             transition: all 0.3s ease;
             outline: none;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         input:focus {
             border-color: #38bdf8;
-            box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.15), inset 0 2px 4px rgba(0,0,0,0.2);
+            box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.2);
             background: rgba(15, 23, 42, 0.7);
             transform: translateY(-2px);
         }
@@ -159,7 +167,7 @@
             left: -100%;
             width: 50%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
             transform: skewX(-20deg);
             transition: 0.5s;
         }
@@ -188,34 +196,59 @@
             margin-bottom: 25px;
             text-align: center;
             display: none;
-            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+            animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
         }
 
         @keyframes shake {
-            10%, 90% { transform: translate3d(-1px, 0, 0); }
-            20%, 80% { transform: translate3d(2px, 0, 0); }
-            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-            40%, 60% { transform: translate3d(4px, 0, 0); }
+
+            10%,
+            90% {
+                transform: translate3d(-1px, 0, 0);
+            }
+
+            20%,
+            80% {
+                transform: translate3d(2px, 0, 0);
+            }
+
+            30%,
+            50%,
+            70% {
+                transform: translate3d(-4px, 0, 0);
+            }
+
+            40%,
+            60% {
+                transform: translate3d(4px, 0, 0);
+            }
         }
 
         /* Support for Flask flash messages or template variables if used in future */
-        {% if error %}
-            .error-message { display: block; }
-        {% endif %}
+            {
+            % if error %
+        }
 
+        .error-message {
+            display: block;
+        }
+
+            {
+            % endif %
+        }
     </style>
 </head>
+
 <body>
     <div class="background-glow"></div>
     <div class="login-container">
-        
+
         <div class="logo-container">
-            <img src="/static/logo.png" alt="The Golden Mile Logo" class="logo">
+            <img src="/static/logo2.jpeg" alt="The Golden Mile Logo" class="logo">
         </div>
-        
+
         <h2>Welcome Back</h2>
         <p class="subtitle">Log in to The Golden Mile Scanner</p>
-        
+
         <!-- Assuming the backend might pass 'error=True' on failure -->
         <div class="error-message" id="errorMsg">Invalid username or password. Please try again.</div>
 
@@ -237,4 +270,5 @@
         }
     </script>
 </body>
+
 </html>
