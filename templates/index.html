@@ -763,7 +763,8 @@ function renderSummary() {
     </tr>`;
 
     let htmlStr = "";
-    filtered.forEach(item => {
+    let toRender = filtered.slice(0, 500);
+    toRender.forEach(item => {
         let bg = '';
         if (item.barcode === lastScannedBarcode) {
             bg = ' style="background: #334155;"';
@@ -783,6 +784,9 @@ function renderSummary() {
             </td>
         </tr>`;
     });
+    if (filtered.length > 500) {
+        htmlStr += `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding: 20px;">Showing top 500 of ${filtered.length} entries. Use search to see more.</td></tr>`;
+    }
     table.innerHTML = htmlStr;
     updateCounterDisplay();
 }
@@ -843,7 +847,8 @@ function renderHistory() {
     </tr>`;
 
     let htmlStr = "";
-    filtered.forEach(item => {
+    let toRender = filtered.slice(0, 500);
+    toRender.forEach(item => {
         htmlStr += `
         <tr>
             <td>${escapeHTML(item.barcode)}</td>
@@ -855,6 +860,9 @@ function renderHistory() {
             <td>${escapeHTML(item.last) || ""}</td>
         </tr>`;
     });
+    if (filtered.length > 500) {
+        htmlStr += `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding: 20px;">Showing top 500 of ${filtered.length} entries. Use search to see more.</td></tr>`;
+    }
     tbody.innerHTML = htmlStr;
 }
 

@@ -1075,7 +1075,8 @@
             <th onclick="doSort('last')" style="cursor:pointer">Last Scan${s('last')}</th>
             <th>Actions</th></tr>`;
                 let html = "";
-                filtered.forEach(row => {
+                let toRender = filtered.slice(0, 500);
+                toRender.forEach(row => {
                     const marked = row.barcode === odooMarkedBarcodeAdmin;
                     html += `<tr${marked ? ' style="background:rgba(34,197,94,0.12);border-left:3px solid #22c55e"' : ''}>
                 <td><input type="checkbox" class="row-checkbox" data-barcode="${escapeHTML(row.barcode)}"></td>
@@ -1088,6 +1089,9 @@
                 <button class="btn btn-warn btn-sm" onclick="toggleAdminFlag('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}','null',document.getElementById('masterBranch').value,document.getElementById('masterSession').value)">🚩</button>
                 </td></tr>`;
                 });
+                if (filtered.length > 500) {
+                    html += `<tr><td colspan="10" style="text-align:center; color:#94a3b8; padding: 20px;">Showing top 500 of ${filtered.length} entries. Use search or export to see more.</td></tr>`;
+                }
                 tbody.innerHTML = html;
                 document.getElementById('rowCountBadge').innerText = `${filtered.length} unique barcodes`;
             } else {
@@ -1104,7 +1108,8 @@
             <th onclick="doSort('last')" style="cursor:pointer">Last${s('last')}</th>
             <th>Actions</th></tr>`;
                 let html = "";
-                filtered.forEach(row => {
+                let toRender = filtered.slice(0, 500);
+                toRender.forEach(row => {
                     const marked = row.barcode === odooMarkedBarcodeAdmin;
                     html += `<tr${marked ? ' style="background:rgba(34,197,94,0.12);border-left:3px solid #22c55e"' : ''}>
                 <td><input type="checkbox" class="row-checkbox" data-barcode="${escapeHTML(row.barcode)}" data-user="${escapeHTML(row.user)}" data-branch="${escapeHTML(row.branch)}" data-session="${escapeHTML(row.session_name)}"></td>
@@ -1124,6 +1129,9 @@
                     <button class="btn btn-warn btn-sm" onclick="toggleAdminFlag('${escapeHTML(row.barcode)}','${escapeHTML(row.user).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.branch).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.session_name).replace(/&#39;/g, "\\\'")}')">🚩</button>
                 </td></tr>`;
                 });
+                if (filtered.length > 500) {
+                    html += `<tr><td colspan="12" style="text-align:center; color:#94a3b8; padding: 20px;">Showing top 500 of ${filtered.length} entries. Use search or export to see more.</td></tr>`;
+                }
                 tbody.innerHTML = html;
                 document.getElementById('rowCountBadge').innerText = `${filtered.length} scan entries`;
             }

@@ -109,6 +109,11 @@ def init_main_db():
     c.execute("CREATE INDEX IF NOT EXISTS idx_scans_timestamp ON scans(timestamp)")
     
     try:
+        c.execute("CREATE INDEX IF NOT EXISTS idx_scans_clean_barcode ON scans(REPLACE(REPLACE(barcode,'__DAMAGED',''),'__FLAGGED',''))")
+    except sqlite3.OperationalError:
+        pass
+    
+    try:
         c.execute("DROP INDEX IF EXISTS idx_scans_unique_sync")
     except sqlite3.OperationalError:
         pass
