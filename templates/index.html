@@ -792,7 +792,7 @@ function renderSummary() {
 }
 
 function loadSummary(highlightBarcode=null) {
-    if (highlightBarcode) lastScannedBarcode = highlightBarcode;
+    if (highlightBarcode) lastScannedBarcode = String(highlightBarcode).trim().toUpperCase();
     const session_name = document.getElementById('sessionName').value;
     fetch("/summary?session_name=" + encodeURIComponent(session_name))
         .then(res => res.json())
