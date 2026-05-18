@@ -683,14 +683,14 @@
                     style="font-size:12px;font-weight:500;color:#38bdf8;background:rgba(56,189,248,0.1);padding:3px 10px;border-radius:20px;margin-left:8px;"></span>
             </h3>
             <div class="filter-row">
-                <select id="viewMode" onchange="loadScans()">
+                <select id="viewMode" onchange="currentPage=1; loadScans()">
                     <option value="master">Master Branch View</option>
                     <option value="detailed">Detailed View (By User)</option>
                 </select>
-                <select id="masterBranch" onchange="loadScans()">
+                <select id="masterBranch" onchange="currentPage=1; loadScans()">
                     <option value="">-- All Branches --</option>
                 </select>
-                <select id="masterSession" onchange="loadScans()">
+                <select id="masterSession" onchange="currentPage=1; loadScans()">
                     <option value="">-- All Sessions --</option>
                 </select>
             </div>
@@ -718,15 +718,15 @@
                 </div>
                 <label
                     style="display:flex;align-items:center;gap:6px;cursor:pointer;color:#facc15;font-weight:600;background:rgba(250,204,21,0.08);padding:7px 12px;border-radius:9px;border:1px solid rgba(250,204,21,0.2);margin:0;">
-                    <input type="checkbox" id="showFlaggedOnly" onchange="renderScans()"> Flagged Only
+                    <input type="checkbox" id="showFlaggedOnly" onchange="currentPage=1; loadScans()"> Flagged Only
                 </label>
-                <button class="btn btn-ghost" onclick="loadScans()">↻ Refresh</button>
+                <button class="btn btn-ghost" onclick="currentPage=1; loadScans()">↻ Refresh</button>
                 <button class="btn btn-primary" onclick="exportCSV()">⬇ Export CSV</button>
                 {% if role == 'admin' %}
                 <button class="btn btn-danger" id="deleteSelectedBtn" onclick="deleteSelected()"
                     style="display:none;">🗑 Delete Selected</button>
                 {% endif %}
-                <input id="adminSearch" onkeyup="renderScans()" placeholder="Search barcodes..."
+                <input id="adminSearch" onkeyup="currentPage=1; loadScans()" placeholder="Search barcodes..."
                     style="margin-left:auto;width:180px;">
             </div>
             <div class="table-wrap" id="scansTableWrap">
@@ -737,6 +737,14 @@
                     <thead id="scans-thead"></thead>
                     <tbody id="scans-tbody"></tbody>
                 </table>
+            </div>
+
+            <!-- Pagination Controls -->
+            <div id="pagination-controls"
+                style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 20px;">
+                <button class="btn btn-ghost" id="prevPageBtn" onclick="prevPage()">◀ Previous</button>
+                <span id="pageInfo" style="font-size: 14px; font-weight: 600; color: #94a3b8;">Page 1 of 1</span>
+                <button class="btn btn-ghost" id="nextPageBtn" onclick="nextPage()">Next ▶</button>
             </div>
         </div>
 
@@ -879,7 +887,7 @@
     <script>
         function escapeHTML(str) {
             if (str === null || str === undefined) return '';
-            return String(str).replace(/[&<>'"]/g, 
+            return String(str).replace(/[&<>'"]/g,
                 tag => ({
                     '&': '&amp;',
                     '<': '&lt;',
@@ -940,7 +948,7 @@
             const session_name = document.getElementById('masterSession') ? document.getElementById('masterSession').value : '';
             const dateFrom = document.getElementById('dateFrom') ? document.getElementById('dateFrom').value : '';
             const dateTo = document.getElementById('dateTo') ? document.getElementById('dateTo').value : '';
-            
+
             let url = `/admin/stats?branch=${encodeURIComponent(branch)}&session_name=${encodeURIComponent(session_name)}`;
             if (dateFrom) url += `&date_from=${encodeURIComponent(dateFrom)}`;
             if (dateTo) url += `&date_to=${encodeURIComponent(dateTo)}`;
@@ -982,6 +990,8 @@
         let sortCol = 'last';
         let sortAsc = false;
         let odooMarkedBarcodeAdmin = localStorage.getItem('odooMarkedBarcodeAdmin') || null;
+        let currentPage = 1;
+        let totalPages = 1;
 
         function setOdooMarkAdmin(barcode) {
             odooMarkedBarcodeAdmin = odooMarkedBarcodeAdmin === barcode ? null : barcode;
@@ -1015,19 +1025,37 @@
             const ms = document.getElementById('masterSession');
             const dateFrom = document.getElementById('dateFrom').value;
             const dateTo = document.getElementById('dateTo').value;
+            const search = document.getElementById('adminSearch').value || "";
+            const flaggedOnly = document.getElementById('showFlaggedOnly').checked;
+
             showSpinner();
-            let dateParams = '';
-            if (dateFrom) dateParams += `&date_from=${encodeURIComponent(dateFrom)}`;
-            if (dateTo) dateParams += `&date_to=${encodeURIComponent(dateTo)}`;
+            let params = `page=${currentPage}&limit=100&search=${encodeURIComponent(search)}&flagged_only=${flaggedOnly}`;
+            if (dateFrom) params += `&date_from=${encodeURIComponent(dateFrom)}`;
+            if (dateTo) params += `&date_to=${encodeURIComponent(dateTo)}`;
+
             if (mode === 'master') {
                 mb.style.display = 'inline-block';
                 ms.style.display = 'inline-block';
-                fetch(`/admin/master_scans?branch=${encodeURIComponent(mb.value)}&session_name=${encodeURIComponent(ms.value)}${dateParams}`)
-                    .then(r => r.json()).then(data => { currentAdminData = data; renderScans(); hideSpinner(); });
+                fetch(`/admin/master_scans?branch=${encodeURIComponent(mb.value)}&session_name=${encodeURIComponent(ms.value)}&${params}`)
+                    .then(r => r.json()).then(res => {
+                        currentAdminData = res.data;
+                        totalPages = res.total_pages;
+                        currentPage = res.current_page;
+                        renderScans();
+                        renderPagination();
+                        hideSpinner();
+                    });
             } else {
                 mb.style.display = 'none';
                 ms.style.display = 'none';
-                fetch(`/admin/scans_data?${dateParams}`).then(r => r.json()).then(data => { currentAdminData = data; renderScans(); hideSpinner(); });
+                fetch(`/admin/scans_data?${params}`).then(r => r.json()).then(res => {
+                    currentAdminData = res.data;
+                    totalPages = res.total_pages;
+                    currentPage = res.current_page;
+                    renderScans();
+                    renderPagination();
+                    hideSpinner();
+                });
             }
             loadStats();
         }
@@ -1035,26 +1063,45 @@
         function clearDateRange() {
             document.getElementById('dateFrom').value = '';
             document.getElementById('dateTo').value = '';
+            currentPage = 1;
             loadScans();
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                loadScans();
+            }
+        }
+
+        function nextPage() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                loadScans();
+            }
+        }
+
+        function renderPagination() {
+            const prevBtn = document.getElementById('prevPageBtn');
+            const nextBtn = document.getElementById('nextPageBtn');
+            const pageInfo = document.getElementById('pageInfo');
+            if (prevBtn && nextBtn && pageInfo) {
+                prevBtn.disabled = currentPage <= 1;
+                nextBtn.disabled = currentPage >= totalPages;
+                pageInfo.innerText = `Page ${currentPage} of ${totalPages}`;
+            }
         }
 
         function renderScans() {
             const mode = document.getElementById('viewMode').value;
             const thead = document.getElementById('scans-thead');
             const tbody = document.getElementById('scans-tbody');
-            const search = (document.getElementById('adminSearch').value || "").toLowerCase();
-            const flaggedOnly = document.getElementById('showFlaggedOnly').checked;
             tbody.innerHTML = '';
             const delBtn = document.getElementById('deleteSelectedBtn');
             if (delBtn) delBtn.style.display = 'inline-block';
-            let filtered = currentAdminData.filter(row =>
-                (row.barcode || "").toLowerCase().includes(search) ||
-                (row.user || row.users || "").toLowerCase().includes(search) ||
-                (row.branch || "").toLowerCase().includes(search) ||
-                (row.session_name || "").toLowerCase().includes(search)
-            );
-            if (flaggedOnly) filtered = filtered.filter(row => row.flagged > 0);
-            filtered.sort((a, b) => {
+
+            let sorted = [...currentAdminData];
+            sorted.sort((a, b) => {
                 let valA = a[sortCol]; let valB = b[sortCol];
                 if (typeof valA === 'string') valA = valA.toLowerCase();
                 if (typeof valB === 'string') valB = valB.toLowerCase();
@@ -1075,8 +1122,7 @@
             <th onclick="doSort('last')" style="cursor:pointer">Last Scan${s('last')}</th>
             <th>Actions</th></tr>`;
                 let html = "";
-                let toRender = filtered.slice(0, 500);
-                toRender.forEach(row => {
+                sorted.forEach(row => {
                     const marked = row.barcode === odooMarkedBarcodeAdmin;
                     html += `<tr${marked ? ' style="background:rgba(34,197,94,0.12);border-left:3px solid #22c55e"' : ''}>
                 <td><input type="checkbox" class="row-checkbox" data-barcode="${escapeHTML(row.barcode)}"></td>
@@ -1089,11 +1135,8 @@
                 <button class="btn btn-warn btn-sm" onclick="toggleAdminFlag('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}','null',document.getElementById('masterBranch').value,document.getElementById('masterSession').value)">🚩</button>
                 </td></tr>`;
                 });
-                if (filtered.length > 500) {
-                    html += `<tr><td colspan="10" style="text-align:center; color:#94a3b8; padding: 20px;">Showing top 500 of ${filtered.length} entries. Use search or export to see more.</td></tr>`;
-                }
                 tbody.innerHTML = html;
-                document.getElementById('rowCountBadge').innerText = `${filtered.length} unique barcodes`;
+                document.getElementById('rowCountBadge').innerText = `${sorted.length} unique barcodes`;
             } else {
                 thead.innerHTML = `<tr><th><input type="checkbox" onchange="toggleAllCheckboxes(this)"></th>
             <th onclick="doSort('barcode')" style="cursor:pointer">Barcode${s('barcode')}</th>
@@ -1108,8 +1151,7 @@
             <th onclick="doSort('last')" style="cursor:pointer">Last${s('last')}</th>
             <th>Actions</th></tr>`;
                 let html = "";
-                let toRender = filtered.slice(0, 500);
-                toRender.forEach(row => {
+                sorted.forEach(row => {
                     const marked = row.barcode === odooMarkedBarcodeAdmin;
                     html += `<tr${marked ? ' style="background:rgba(34,197,94,0.12);border-left:3px solid #22c55e"' : ''}>
                 <td><input type="checkbox" class="row-checkbox" data-barcode="${escapeHTML(row.barcode)}" data-user="${escapeHTML(row.user)}" data-branch="${escapeHTML(row.branch)}" data-session="${escapeHTML(row.session_name)}"></td>
@@ -1129,11 +1171,8 @@
                     <button class="btn btn-warn btn-sm" onclick="toggleAdminFlag('${escapeHTML(row.barcode)}','${escapeHTML(row.user).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.branch).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.session_name).replace(/&#39;/g, "\\\'")}')">🚩</button>
                 </td></tr>`;
                 });
-                if (filtered.length > 500) {
-                    html += `<tr><td colspan="12" style="text-align:center; color:#94a3b8; padding: 20px;">Showing top 500 of ${filtered.length} entries. Use search or export to see more.</td></tr>`;
-                }
                 tbody.innerHTML = html;
-                document.getElementById('rowCountBadge').innerText = `${filtered.length} scan entries`;
+                document.getElementById('rowCountBadge').innerText = `${sorted.length} scan entries`;
             }
         }
 
@@ -1402,6 +1441,7 @@
         function clearDateRange() {
             fpFrom.clear();
             fpTo.clear();
+            currentPage = 1;
             loadScans();
         }
     </script>

@@ -114,6 +114,11 @@ def init_main_db():
         pass
     
     try:
+        c.execute("CREATE INDEX IF NOT EXISTS idx_scans_session_name ON scans(session_name)")
+    except sqlite3.OperationalError:
+        pass
+    
+    try:
         c.execute("DROP INDEX IF EXISTS idx_scans_unique_sync")
     except sqlite3.OperationalError:
         pass
@@ -451,6 +456,7 @@ def summary():
         WHERE user=? AND session_name=?
         GROUP BY 1
         ORDER BY MAX(timestamp) DESC
+        LIMIT 250
     """, (session.get("user"), sess_name))
 
     data = []
@@ -569,11 +575,11 @@ def user_history():
         query += " AND session_name=?"
         params.append(session_name)
     if date:
-        # SQLite dates are stored as YYYY-MM-DD HH:MM:SS, so DATE() works perfectly.
-        query += " AND date(timestamp)=?"
-        params.append(date)
+        query += " AND timestamp >= ? AND timestamp <= ?"
+        params.append(date + " 00:00:00")
+        params.append(date + " 23:59:59")
         
-    query += " GROUP BY 1, 2, 3 ORDER BY MAX(timestamp) DESC"
+    query += " GROUP BY 1, 2, 3 ORDER BY MAX(timestamp) DESC LIMIT 100"
     
     conn = get_db()
     c = conn.cursor()
@@ -610,11 +616,63 @@ def admin():
 @app.route("/admin/scans_data")
 def admin_scans_data():
     if session.get("role") not in ["admin", "moderator"]: return "forbidden"
+    
+    page = int(request.args.get("page", 1))
+    limit = int(request.args.get("limit", 100))
+    offset = (page - 1) * limit
+    
+    search = request.args.get("search", "").strip()
+    flagged_only = request.args.get("flagged_only", "false") == "true"
     date_from = request.args.get("date_from", "")
     date_to = request.args.get("date_to", "")
+    
     conn = get_db()
     c = conn.cursor()
     
+    where_clauses = ["1=1"]
+    params = []
+    
+    if date_from:
+        where_clauses.append("timestamp >= ?")
+        params.append(date_from.replace("T", " ") + ":00")
+    if date_to:
+        where_clauses.append("timestamp <= ?")
+        params.append(date_to.replace("T", " ") + ":59")
+    if search:
+        search_like = f"%{search}%"
+        where_clauses.append(f"({SQL_CLEAN_BARCODE} LIKE ? OR user LIKE ? OR branch LIKE ? OR session_name LIKE ?)")
+        params.extend([search_like, search_like, search_like, search_like])
+        
+    where_str = " AND ".join(where_clauses)
+    
+    having_str = ""
+    if flagged_only:
+        having_str = f"HAVING {SQL_FLAGGED_COUNT} > 0"
+        
+    # Count query
+    if flagged_only:
+        count_query = f"""
+            SELECT COUNT(*) FROM (
+                SELECT 1 FROM scans
+                WHERE {where_str}
+                GROUP BY {SQL_CLEAN_BARCODE}, user, branch, session_name
+                {having_str}
+            )
+        """
+    else:
+        count_query = f"""
+            SELECT COUNT(*) FROM (
+                SELECT 1 FROM scans
+                WHERE {where_str}
+                GROUP BY {SQL_CLEAN_BARCODE}, user, branch, session_name
+            )
+        """
+        
+    c.execute(count_query, tuple(params))
+    total_records = c.fetchone()[0]
+    total_pages = max(1, (total_records + limit - 1) // limit)
+    
+    # Main query
     query = f"""
         SELECT 
             {SQL_CLEAN_BARCODE},
@@ -628,18 +686,17 @@ def admin_scans_data():
             {SQL_FLAGGED_COUNT},
             GROUP_CONCAT(DISTINCT flag_reason)
         FROM scans
-        WHERE 1=1
+        WHERE {where_str}
+        GROUP BY 1, 2, 3, 4
+        {having_str}
+        ORDER BY MAX(timestamp) DESC
+        LIMIT ? OFFSET ?
     """
-    params = []
-    if date_from:
-        query += " AND timestamp >= ?"
-        params.append(date_from.replace("T", " ") + ":00")
-    if date_to:
-        query += " AND timestamp <= ?"
-        params.append(date_to.replace("T", " ") + ":59")
-    query += " GROUP BY 1, 2, 3, 4 ORDER BY MAX(timestamp) DESC"
     
-    c.execute(query, tuple(params))
+    main_params = list(params)
+    main_params.extend([limit, offset])
+    
+    c.execute(query, tuple(main_params))
     data = []
     for r in c.fetchall():
         reasons = r[9]
@@ -653,7 +710,13 @@ def admin_scans_data():
             "good": r[4], "damaged": r[5], "first": r[6], "last": r[7], "flagged": r[8], "reason": clean_reason
         })
     conn.close()
-    return jsonify(data)
+    
+    return jsonify({
+        "data": data,
+        "total_pages": total_pages,
+        "current_page": page,
+        "total_records": total_records
+    })
 
 @app.route("/admin/master_scans")
 def admin_master_scans():
@@ -662,9 +725,67 @@ def admin_master_scans():
     session_name = request.args.get("session_name", "")
     date_from = request.args.get("date_from", "")
     date_to = request.args.get("date_to", "")
+    
+    page = int(request.args.get("page", 1))
+    limit = int(request.args.get("limit", 100))
+    offset = (page - 1) * limit
+    
+    search = request.args.get("search", "").strip()
+    flagged_only = request.args.get("flagged_only", "false") == "true"
+    
     conn = get_db()
     c = conn.cursor()
     
+    where_clauses = ["1=1"]
+    params = []
+    
+    if branch:
+        where_clauses.append("branch=?")
+        params.append(branch)
+    if session_name:
+        where_clauses.append("session_name=?")
+        params.append(session_name)
+    if date_from:
+        where_clauses.append("timestamp >= ?")
+        params.append(date_from.replace("T", " ") + ":00")
+    if date_to:
+        where_clauses.append("timestamp <= ?")
+        params.append(date_to.replace("T", " ") + ":59")
+    if search:
+        search_like = f"%{search}%"
+        where_clauses.append(f"({SQL_CLEAN_BARCODE} LIKE ? OR user LIKE ?)")
+        params.extend([search_like, search_like])
+        
+    where_str = " AND ".join(where_clauses)
+    
+    having_str = ""
+    if flagged_only:
+        having_str = f"HAVING {SQL_FLAGGED_COUNT} > 0"
+        
+    # Count query
+    if flagged_only:
+        count_query = f"""
+            SELECT COUNT(*) FROM (
+                SELECT 1 FROM scans
+                WHERE {where_str}
+                GROUP BY {SQL_CLEAN_BARCODE}
+                {having_str}
+            )
+        """
+    else:
+        count_query = f"""
+            SELECT COUNT(*) FROM (
+                SELECT 1 FROM scans
+                WHERE {where_str}
+                GROUP BY {SQL_CLEAN_BARCODE}
+            )
+        """
+        
+    c.execute(count_query, tuple(params))
+    total_records = c.fetchone()[0]
+    total_pages = max(1, (total_records + limit - 1) // limit)
+    
+    # Main query
     query = f"""
         SELECT 
             {SQL_CLEAN_BARCODE},
@@ -676,25 +797,17 @@ def admin_master_scans():
             {SQL_FLAGGED_COUNT},
             GROUP_CONCAT(DISTINCT flag_reason)
         FROM scans
-        WHERE 1=1
+        WHERE {where_str}
+        GROUP BY 1
+        {having_str}
+        ORDER BY MAX(timestamp) DESC
+        LIMIT ? OFFSET ?
     """
-    params = []
-    if branch:
-        query += " AND branch=?"
-        params.append(branch)
-    if session_name:
-        query += " AND session_name=?"
-        params.append(session_name)
-    if date_from:
-        query += " AND timestamp >= ?"
-        params.append(date_from.replace("T", " ") + ":00")
-    if date_to:
-        query += " AND timestamp <= ?"
-        params.append(date_to.replace("T", " ") + ":59")
-        
-    query += " GROUP BY 1 ORDER BY MAX(timestamp) DESC"
     
-    c.execute(query, tuple(params))
+    main_params = list(params)
+    main_params.extend([limit, offset])
+    
+    c.execute(query, tuple(main_params))
     data = []
     for r in c.fetchall():
         reasons = r[7]
@@ -707,7 +820,13 @@ def admin_master_scans():
             "barcode": r[0], "good": r[1], "damaged": r[2], "first": r[3], "last": r[4], "users": r[5], "flagged": r[6], "reason": clean_reason
         })
     conn.close()
-    return jsonify(data)
+    
+    return jsonify({
+        "data": data,
+        "total_pages": total_pages,
+        "current_page": page,
+        "total_records": total_records
+    })
 
 @app.route("/admin/export_csv")
 def admin_export_csv():
