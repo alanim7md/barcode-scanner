@@ -497,9 +497,13 @@ def branches():
 
 @app.route("/sessions")
 def get_sessions():
+    branch = request.args.get("branch", "")
     conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT DISTINCT session_name FROM scans WHERE session_name != '' AND session_name IS NOT NULL ORDER BY session_name")
+    if branch:
+        c.execute("SELECT DISTINCT session_name FROM scans WHERE branch=? AND session_name != '' AND session_name IS NOT NULL ORDER BY session_name", (branch,))
+    else:
+        c.execute("SELECT DISTINCT session_name FROM scans WHERE session_name != '' AND session_name IS NOT NULL ORDER BY session_name")
     data = [r[0] for r in c.fetchall() if r[0]]
     conn.close()
     return jsonify(data)

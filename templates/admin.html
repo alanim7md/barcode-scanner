@@ -687,7 +687,7 @@
                     <option value="master">Master Branch View</option>
                     <option value="detailed">Detailed View (By User)</option>
                 </select>
-                <select id="masterBranch" onchange="currentPage=1; loadScans()">
+                <select id="masterBranch" onchange="currentPage=1; updateSessionsDropdown(false, null, true)">
                     <option value="">-- All Branches --</option>
                 </select>
                 <select id="masterSession" onchange="currentPage=1; loadScans()">
@@ -909,26 +909,43 @@
                     gb.value = s.global_branch;
                     mb.value = s.global_branch;
                 }
-                if (s.global_session) {
-                    document.getElementById('global-session').value = s.global_session;
-                    document.getElementById('masterSession').value = s.global_session;
-                }
-                loadScans();
+                updateSessionsDropdown(true, s.global_session, true);
             });
         });
 
-        fetch("/sessions").then(r => r.json()).then(data => {
-            const ms = document.getElementById('masterSession');
-            const dl = document.getElementById('session-list');
-            data.forEach(s => {
-                ms.appendChild(new Option(s, s));
-                if (dl) {
-                    const opt = document.createElement('option');
-                    opt.value = s;
-                    dl.appendChild(opt);
+        function updateSessionsDropdown(initial = false, globalSession = null, triggerLoad = false) {
+            const branch = document.getElementById('masterBranch').value;
+            fetch(`/sessions?branch=${encodeURIComponent(branch)}`).then(r => r.json()).then(data => {
+                const ms = document.getElementById('masterSession');
+                const dl = document.getElementById('session-list');
+                const currentMsVal = initial ? globalSession : ms.value;
+
+                ms.innerHTML = '<option value="">-- All Sessions --</option>';
+                if (dl) dl.innerHTML = '';
+
+                data.forEach(s => {
+                    ms.appendChild(new Option(s, s));
+                    if (dl) {
+                        const opt = document.createElement('option');
+                        opt.value = s;
+                        dl.appendChild(opt);
+                    }
+                });
+
+                if (currentMsVal && data.includes(currentMsVal)) {
+                    ms.value = currentMsVal;
+                    if (initial && globalSession) document.getElementById('global-session').value = globalSession;
+                } else if (initial && globalSession) {
+                     ms.appendChild(new Option(globalSession, globalSession));
+                     ms.value = globalSession;
+                     if (document.getElementById('global-session')) document.getElementById('global-session').value = globalSession;
+                }
+                
+                if (triggerLoad) {
+                    loadScans();
                 }
             });
-        });
+        }
 
         function showTab(id, el) {
             document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
