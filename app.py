@@ -276,14 +276,15 @@ def insert_scans_bulk(barcode, qty, is_damaged=False, is_flagged=False, session_
 
     # --- Session Collision Detection ---
     bc_clean, bc_damaged, bc_flagged = barcode_variants(barcode)
-    # Check if this barcode exists in a DIFFERENT session
+    # Check if this barcode exists in a DIFFERENT session within the SAME branch
     c.execute("""
         SELECT session_name, branch FROM scans 
         WHERE (barcode=? OR barcode=? OR barcode=? OR barcode=? OR barcode=?) 
         AND session_name != ? 
         AND session_name != ''
+        AND branch = ?
         LIMIT 1
-    """, (bc_clean, bc_damaged, bc_flagged, bc_clean + SUFFIX_DAMAGED + SUFFIX_FLAGGED, bc_clean + SUFFIX_FLAGGED + SUFFIX_DAMAGED, session_name))
+    """, (bc_clean, bc_damaged, bc_flagged, bc_clean + SUFFIX_DAMAGED + SUFFIX_FLAGGED, bc_clean + SUFFIX_FLAGGED + SUFFIX_DAMAGED, session_name, branch))
     collision = c.fetchone()
     
     flag_reason = ""
@@ -294,12 +295,13 @@ def insert_scans_bulk(barcode, qty, is_damaged=False, is_flagged=False, session_
         prev_branch = collision[1] or "Unknown"
         flag_reason = f"Session Collision: scanned in {prev_session} ({prev_branch})"
         
-        # Check if already scanned in current session
+        # Check if already scanned in current session and branch
         c.execute("""
             SELECT COUNT(*) FROM scans 
             WHERE (barcode=? OR barcode=? OR barcode=? OR barcode=? OR barcode=?) 
             AND session_name = ?
-        """, (bc_clean, bc_damaged, bc_flagged, bc_clean + SUFFIX_DAMAGED + SUFFIX_FLAGGED, bc_clean + SUFFIX_FLAGGED + SUFFIX_DAMAGED, session_name))
+            AND branch = ?
+        """, (bc_clean, bc_damaged, bc_flagged, bc_clean + SUFFIX_DAMAGED + SUFFIX_FLAGGED, bc_clean + SUFFIX_FLAGGED + SUFFIX_DAMAGED, session_name, branch))
         if c.fetchone()[0] == 0:
             warning_msg = f"Collision! Barcode previously scanned in session '{prev_session}' ({prev_branch})."
     elif is_flagged:
