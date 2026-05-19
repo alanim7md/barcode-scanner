@@ -453,13 +453,11 @@ fetch("/settings").then(r=>r.json()).then(settings => {
     }
     fetch("/branches").then(r=>r.json()).then(data => {
         const sel = document.getElementById('branchSelector');
-        const hb = document.getElementById('histBranch');
         data.forEach(b => {
             let opt = document.createElement('option');
             opt.value = b;
             opt.innerText = b;
             sel.appendChild(opt);
-            hb.appendChild(new Option(b, b));
         });
         if (settings.global_branch) {
             sel.value = settings.global_branch;
