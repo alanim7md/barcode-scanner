@@ -845,6 +845,7 @@ def admin_export_csv():
     conn = get_db()
     c = conn.cursor()
     output = io.StringIO()
+    output.write('\ufeff')
     writer = csv.writer(output)
     if mode == "master":
         writer.writerow(["Barcode", "Good", "Damaged", "Flagged", "Flag Reason", "First Scan", "Last Scan", "Users"])
