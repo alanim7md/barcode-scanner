@@ -10,7 +10,7 @@
     <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         *,
         *::before,
@@ -18,54 +18,114 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --primary: #38bdf8;
+            --primary-hover: #0ea5e9;
+            --primary-glow: rgba(56, 189, 248, 0.2);
+            --bg-dark: #090d16;
+            --card-bg: rgba(30, 41, 59, 0.45);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #facc15;
+        }
+
         body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            font-family: 'Outfit', 'Inter', sans-serif;
+            background: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 50%, #090d16 100%);
             background-attachment: fixed;
-            color: #f8fafc;
+            color: var(--text-main);
             margin: 0;
-            padding: 20px;
+            padding: 24px;
             min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Ambient floating glowing orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(140px);
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.35;
+        }
+        .orb-1 { width: 450px; height: 450px; background: rgba(56, 189, 248, 0.18); top: 5%; left: -100px; animation: float-1 25s infinite alternate ease-in-out; }
+        .orb-2 { width: 500px; height: 500px; background: rgba(129, 140, 248, 0.12); bottom: 5%; right: -150px; animation: float-2 30s infinite alternate ease-in-out; }
+        @keyframes float-1 { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(80px, 40px) scale(1.1); } }
+        @keyframes float-2 { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(-80px, -50px) scale(0.95); } }
+
+        .mesh-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.01) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.01) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 0;
+            pointer-events: none;
         }
 
         .container {
-            max-width: 1100px;
+            max-width: 1600px;
+            width: 95%;
             margin: auto;
+            position: relative;
+            z-index: 1;
         }
 
+        /* NAVIGATION */
         .nav {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
+            margin-bottom: 30px;
             flex-wrap: wrap;
             gap: 16px;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 16px 28px;
+            border-radius: 20px;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
         }
 
         .nav h1 {
             margin: 0;
-            font-size: 22px;
+            font-size: 24px;
+            font-weight: 700;
             color: #f8fafc;
             display: flex;
             align-items: center;
             gap: 8px;
+            background: linear-gradient(135deg, #ffffff 40%, #a5f3fc 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .nav-links {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             align-items: center;
         }
 
         .nav-links a {
             text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 9px;
+            padding: 10px 20px;
+            border-radius: 12px;
             font-size: 13px;
             font-weight: 600;
-            transition: all 0.2s;
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             color: #e2e8f0;
             display: inline-flex;
             align-items: center;
@@ -75,7 +135,8 @@
         .nav-links a:hover {
             background: rgba(255, 255, 255, 0.1);
             color: #fff;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .nav-links a.logout {
@@ -85,27 +146,27 @@
         }
 
         .nav-links a.logout:hover {
-            background: rgba(239, 68, 68, 0.2);
+            background: rgba(239, 68, 68, 0.18);
             color: #fca5a5;
         }
 
         /* CARDS */
         .card {
-            background: rgba(30, 41, 59, 0.6);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 24px;
-            border-radius: 20px;
-            margin-bottom: 24px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            background: var(--card-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--card-border);
+            padding: 28px;
+            border-radius: 24px;
+            margin-bottom: 28px;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
         }
 
         .card h3 {
-            margin: 0 0 20px 0;
+            margin: 0 0 22px 0;
             font-size: 15px;
             font-weight: 600;
-            color: #94a3b8;
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 1.5px;
         }
@@ -114,69 +175,81 @@
         .stat-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
+            gap: 20px;
             margin-bottom: 8px;
         }
 
         .stat-card {
-            background: rgba(15, 23, 42, 0.5);
+            background: rgba(10, 15, 26, 0.45);
             border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 14px;
-            padding: 20px;
+            border-radius: 18px;
+            padding: 24px 20px;
             text-align: center;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(56, 189, 248, 0.2);
         }
 
         .stat-card .stat-num {
-            font-size: 2.2em;
-            font-weight: 700;
-            color: #38bdf8;
+            font-size: 2.5em;
+            font-weight: 800;
+            color: var(--primary);
             line-height: 1;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
+            text-shadow: 0 4px 15px rgba(56, 189, 248, 0.15);
         }
 
         .stat-card .stat-num.danger {
-            color: #f87171;
+            color: var(--danger);
+            text-shadow: 0 4px 15px rgba(239, 68, 68, 0.15);
         }
 
         .stat-card p {
             margin: 0;
             font-size: 13px;
             color: #64748b;
-            font-weight: 500;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         /* TABS */
         .tabs {
             display: flex;
-            gap: 8px;
-            margin-bottom: 24px;
+            gap: 10px;
+            margin-bottom: 28px;
             flex-wrap: wrap;
         }
 
         .tab {
-            padding: 10px 20px;
+            padding: 12px 24px;
             cursor: pointer;
-            background: rgba(51, 65, 85, 0.5);
+            background: rgba(51, 65, 85, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 10px;
+            border-radius: 14px;
             font-size: 14px;
-            font-weight: 500;
-            color: #94a3b8;
-            transition: all 0.2s;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .tab:hover {
-            background: rgba(56, 189, 248, 0.1);
+            background: rgba(56, 189, 248, 0.08);
             color: #f8fafc;
-            border-color: rgba(56, 189, 248, 0.2);
+            border-color: rgba(56, 189, 248, 0.15);
+            transform: translateY(-1px);
         }
 
         .tab.active {
-            background: linear-gradient(135deg, #38bdf8, #0284c7);
+            background: linear-gradient(135deg, var(--primary), #0284c7);
             color: white;
             font-weight: 600;
             border-color: transparent;
-            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
+            box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);
         }
 
         .tab-content {
@@ -185,19 +258,27 @@
 
         .tab-content.active {
             display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* TABLE */
         .table-wrap {
-            max-height: 500px;
+            max-height: 75vh;
             overflow-y: auto;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            background: rgba(15, 23, 42, 0.3);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(10, 15, 26, 0.35);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .table-wrap::-webkit-scrollbar {
             width: 6px;
+            height: 6px;
         }
 
         .table-wrap::-webkit-scrollbar-track {
@@ -205,58 +286,82 @@
         }
 
         .table-wrap::-webkit-scrollbar-thumb {
-            background: #475569;
+            background: rgba(255,255,255,0.12);
             border-radius: 6px;
+        }
+        
+        .table-wrap::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.22);
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 13px;
+            font-size: 13.5px;
+            text-align: left;
         }
 
         th {
             position: sticky;
             top: 0;
-            background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(4px);
-            padding: 12px 14px;
+            background: rgba(23, 33, 51, 0.96);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 14px 16px;
             font-weight: 600;
             color: #64748b;
             text-transform: uppercase;
             font-size: 11px;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
             z-index: 2;
         }
 
         td {
-            padding: 12px 14px;
+            padding: 14px 16px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.04);
             color: #e2e8f0;
             vertical-align: middle;
+            transition: background-color 0.15s ease;
         }
 
-        tbody tr:hover {
-            background: rgba(255, 255, 255, 0.02);
+        tbody tr:hover td {
+            background: rgba(255, 255, 255, 0.015);
         }
+
+        /* Pill badges for table columns */
+        .pill-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .pill-badge-good { background: rgba(34, 197, 94, 0.12); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
+        .pill-badge-damaged { background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+        .pill-badge-flagged { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
+        .pill-badge-empty { background: rgba(255, 255, 255, 0.04); color: #64748b; }
 
         /* LOADING SPINNER */
         .spinner-wrap {
-            padding: 40px;
+            padding: 50px;
             text-align: center;
-            color: #475569;
+            color: #64748b;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 500;
         }
 
         .spinner {
             display: inline-block;
-            width: 32px;
-            height: 32px;
-            border: 3px solid rgba(56, 189, 248, 0.2);
-            border-top-color: #38bdf8;
+            width: 36px;
+            height: 36px;
+            border: 3px solid rgba(56, 189, 248, 0.15);
+            border-top-color: var(--primary);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
         }
 
         @keyframes spin {
@@ -267,28 +372,41 @@
 
         /* BUTTONS */
         button {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Outfit', sans-serif;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             border: none;
+            outline: none;
         }
 
         .btn {
-            padding: 9px 16px;
-            border-radius: 9px;
-            font-size: 13px;
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 13.5px;
             font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #38bdf8, #0284c7);
+            background: linear-gradient(135deg, var(--primary), #0284c7);
             color: white;
-            box-shadow: 0 3px 10px rgba(2, 132, 199, 0.35);
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
         }
 
         .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 5px 14px rgba(2, 132, 199, 0.5);
+            box-shadow: 0 6px 16px rgba(2, 132, 199, 0.5);
         }
 
         .btn-danger {
@@ -299,6 +417,8 @@
 
         .btn-danger:hover {
             background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.4);
+            color: white;
         }
 
         .btn-warn {
@@ -309,86 +429,105 @@
 
         .btn-warn:hover {
             background: rgba(250, 204, 21, 0.2);
+            border-color: rgba(250, 204, 21, 0.4);
+            color: white;
         }
 
         .btn-ghost {
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             color: #94a3b8;
         }
 
         .btn-ghost:hover {
             background: rgba(255, 255, 255, 0.1);
             color: #f8fafc;
+            border-color: rgba(255, 255, 255, 0.15);
         }
 
         .btn-sm {
-            padding: 5px 10px;
+            padding: 6px 12px;
             font-size: 12px;
-            border-radius: 7px;
+            border-radius: 8px;
         }
 
         .btn-icon {
             background: transparent;
-            padding: 4px 8px;
+            padding: 6px;
             font-size: 16px;
-            border-radius: 6px;
+            border-radius: 8px;
             border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-icon:hover {
+            background: rgba(255,255,255,0.06);
+            color: var(--success);
+            transform: scale(1.15);
         }
 
         /* INPUTS */
         input,
         select {
-            font-family: 'Inter', sans-serif;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: 'Outfit', 'Inter', sans-serif;
+            background: rgba(10, 15, 26, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             color: #f8fafc;
-            border-radius: 9px;
-            padding: 9px 14px;
-            font-size: 13px;
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-size: 13.5px;
             outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
         }
 
         input:focus,
         select:focus {
-            border-color: #38bdf8;
-            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow), 0 4px 12px rgba(56, 189, 248, 0.1);
+            background: rgba(10, 15, 26, 0.7);
         }
 
         input::placeholder {
-            color: #475569;
+            color: #4b5563;
         }
 
         label {
             font-size: 13px;
-            font-weight: 500;
-            color: #94a3b8;
+            font-weight: 600;
+            color: var(--text-muted);
             display: block;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         /* CHART CONTAINERS */
         .chart-box {
-            background: rgba(15, 23, 42, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 14px;
-            padding: 20px;
+            background: rgba(10, 15, 26, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 18px;
+            padding: 24px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
         }
 
         /* FILTER ROW */
         .filter-row {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             flex-wrap: wrap;
             align-items: center;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
 
-        /* USERS TABLE */
+        /* USERS TABLE ACTIONS */
         .user-actions {
             display: flex;
-            gap: 6px;
+            gap: 8px;
             flex-wrap: wrap;
         }
 
@@ -401,23 +540,24 @@
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.65);
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
             z-index: 10000;
             justify-content: center;
             align-items: center;
         }
 
         .modal-box {
-            background: rgba(30, 41, 59, 0.97);
-            backdrop-filter: blur(20px);
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 32px;
-            max-width: 430px;
+            border-radius: 24px;
+            padding: 35px;
+            max-width: 440px;
             width: 92%;
             box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
-            animation: fadeUp 0.25s ease;
+            animation: fadeUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         @keyframes fadeUp {
@@ -433,15 +573,16 @@
         }
 
         .modal-title {
-            font-size: 17px;
-            font-weight: 700;
+            font-size: 18px;
+            font-weight: 750;
             color: #f8fafc;
-            margin: 0 0 14px 0;
+            margin: 0 0 16px 0;
+            font-family: 'Outfit', sans-serif;
         }
 
         .modal-body {
             color: #94a3b8;
-            font-size: 14px;
+            font-size: 14.5px;
             line-height: 1.65;
         }
 
@@ -451,53 +592,54 @@
 
         .modal-actions {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             justify-content: flex-end;
-            margin-top: 24px;
+            margin-top: 28px;
         }
 
         .modal-input {
             width: 100%;
-            padding: 11px 15px;
-            border-radius: 10px;
+            padding: 12px 18px;
+            border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.12);
-            background: rgba(15, 23, 42, 0.7);
+            background: rgba(10, 15, 26, 0.7);
             color: #f8fafc;
-            font-size: 14px;
-            font-family: 'Inter', sans-serif;
+            font-size: 14.5px;
+            font-family: 'Outfit', sans-serif;
             outline: none;
-            margin-top: 12px;
-            transition: border-color 0.2s;
+            margin-top: 15px;
+            transition: all 0.3s ease;
         }
 
         .modal-input:focus {
-            border-color: #38bdf8;
-            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
         }
 
         .mbtn {
-            padding: 10px 22px;
+            padding: 11px 22px;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             font-weight: 600;
             cursor: pointer;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Outfit', sans-serif;
             font-size: 14px;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
         }
 
         .mbtn-primary {
-            background: linear-gradient(135deg, #38bdf8, #0284c7);
+            background: linear-gradient(135deg, var(--primary), #0284c7);
             color: white;
             box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
         }
 
         .mbtn-primary:hover {
             transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(2, 132, 199, 0.5);
         }
 
         .mbtn-secondary {
-            background: rgba(255, 255, 255, 0.07);
+            background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.12);
             color: #94a3b8;
         }
@@ -515,11 +657,19 @@
 
         .mbtn-danger:hover {
             transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(220, 38, 38, 0.5);
+        }
+
+        /* Row marked state */
+        .marked-row {
+            background: rgba(34, 197, 94, 0.08) !important;
+            border-left: 4px solid #22c55e;
         }
 
         @media (max-width: 768px) {
             .stat-grid {
                 grid-template-columns: 1fr 1fr;
+                gap: 12px;
             }
 
             .nav {
@@ -527,6 +677,7 @@
                 gap: 16px;
                 text-align: center;
                 justify-content: center;
+                padding: 20px;
             }
 
             .filter-row {
@@ -542,6 +693,10 @@
                 justify-content: center;
                 text-align: center;
             }
+            
+            .filter-row input[placeholder="Search barcodes..."] {
+                margin-left: 0 !important;
+            }
 
             .user-actions {
                 flex-direction: column;
@@ -554,9 +709,9 @@
             input,
             select {
                 font-size: 16px !important;
+                padding: 12px !important;
             }
 
-            /* Make tables scrollable on mobile without breaking layout */
             .table-wrap {
                 max-height: 400px;
                 overflow-x: auto;
@@ -564,10 +719,9 @@
             }
 
             table {
-                min-width: 700px;
+                min-width: 800px;
             }
 
-            /* Make tabs scrollable */
             .tabs {
                 flex-wrap: nowrap;
                 overflow-x: auto;
@@ -596,17 +750,21 @@
             }
 
             .card {
-                padding: 16px;
+                padding: 20px;
             }
 
             table {
-                min-width: 600px;
+                min-width: 700px;
             }
         }
     </style>
 </head>
 
 <body>
+
+    <div class="mesh-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
 
     <div class="container">
         <div class="nav">
@@ -627,19 +785,18 @@
             <div class="tab" onclick="showTab('users', this)">👥 Users</div>
             <div class="tab" onclick="showTab('branches', this)">🏢 Branches</div>
             <div class="tab" onclick="showTab('settings', this)">⚙️ Settings</div>
+            <div class="tab" onclick="showTab('audit-logs', this)">📜 Audit Logs</div>
             {% endif %}
         </div>
 
         {% if role == 'admin' %}
         <div id="dashboard" class="tab-content card">
             <h3>System Analytics</h3>
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-top: 4px;">
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-top: 4px;">
                 <div class="chart-box">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                        <span
-                            style="font-weight:600; color:#94a3b8; font-size:13px; text-transform:uppercase; letter-spacing:1px;">Scans
-                            Over Time</span>
-                        <select id="timeRange" onchange="loadStats()" style="font-size:12px; padding:5px 10px;">
+                        <span style="font-weight:600; color:#94a3b8; font-size:13px; text-transform:uppercase; letter-spacing:1px;">Scans Over Time</span>
+                        <select id="timeRange" onchange="loadStats()" style="font-size:12px; padding:6px 12px; border-radius: 8px;">
                             <option value="7days">Last 7 Days</option>
                             <option value="24hours">Last 24 Hours</option>
                         </select>
@@ -647,10 +804,40 @@
                     <canvas id="timeChart" style="max-height:280px;"></canvas>
                 </div>
                 <div class="chart-box">
-                    <div
-                        style="font-weight:600; color:#94a3b8; font-size:13px; text-transform:uppercase; letter-spacing:1px; margin-bottom:16px;">
-                        User Activity</div>
+                    <div style="font-weight:600; color:#94a3b8; font-size:13px; text-transform:uppercase; letter-spacing:1px; margin-bottom:16px;">User Activity</div>
                     <canvas id="userChart" style="max-height:280px;"></canvas>
+                </div>
+            </div>
+
+            <!-- User Productivity Stats Section -->
+            <div style="margin-top: 40px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+                    <h4 style="margin:0; color:var(--text-main); font-size:16px;">👥 Counter Stats & Productivity</h4>
+                    <select id="userStatsTimeframe" onchange="loadUserStats()" style="font-size:12px; padding:6px 12px; border-radius:8px;">
+                        <option value="all">All-Time</option>
+                        <option value="today">Today</option>
+                        <option value="yesterday">Yesterday</option>
+                        <option value="7days">Last 7 Days</option>
+                        <option value="30days">Last 30 Days</option>
+                    </select>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Role</th>
+                                <th>Total Scans</th>
+                                <th>Good Scans</th>
+                                <th>Damaged Scans</th>
+                                <th>Flagged Scans</th>
+                                <th>Sessions Worked</th>
+                                <th>Branches Worked</th>
+                                <th>Last Active (Scan)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-stats-tbody"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -677,11 +864,12 @@
                 </div>
             </div>
 
-            <hr style="border:0; border-top:1px solid rgba(255,255,255,0.06); margin:24px 0;">
+            <hr style="border:0; border-top:1px solid rgba(255,255,255,0.06); margin:28px 0;">
 
-            <h3>Scan View <span id="rowCountBadge"
-                    style="font-size:12px;font-weight:500;color:#38bdf8;background:rgba(56,189,248,0.1);padding:3px 10px;border-radius:20px;margin-left:8px;"></span>
-            </h3>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+                <h3 style="margin:0;">Scan View <span id="rowCountBadge" style="font-size:12px;font-weight:600;color:#38bdf8;background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.2);padding:4px 12px;border-radius:20px;margin-left:8px;text-transform:none;letter-spacing:normal;"></span></h3>
+            </div>
+            
             <div class="filter-row">
                 <select id="viewMode" onchange="currentPage=1; loadScans()">
                     <option value="master">Master Branch View</option>
@@ -694,41 +882,37 @@
                     <option value="">-- All Sessions --</option>
                 </select>
             </div>
-            <div class="filter-row">
-                <div
-                    style="display:flex; align-items:center; background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:4px 8px; gap:8px;">
+            <div class="filter-row" style="margin-bottom: 24px;">
+                <div style="display:flex; align-items:center; background:rgba(10,15,26,0.55); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:6px 12px; gap:10px; flex-wrap:wrap;">
                     <span style="font-size:14px;margin-left:4px;">📅</span>
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <label
-                            style="margin:0;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">From</label>
-                        <input type="text" id="dateFrom" placeholder="Select Time..."
-                            style="background:transparent;border:none;color:#f8fafc;font-size:13px;width:150px;padding:4px;box-shadow:none;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <label style="margin:0;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">From</label>
+                        <input type="text" id="dateFrom" placeholder="Select Time..." style="background:transparent;border:none;color:#f8fafc;font-size:13px;width:140px;padding:4px;box-shadow:none;border-radius:0;">
                     </div>
-                    <div style="width:1px;height:16px;background:rgba(255,255,255,0.15);margin:0 2px;"></div>
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <label
-                            style="margin:0;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">To</label>
-                        <input type="text" id="dateTo" placeholder="Select Time..."
-                            style="background:transparent;border:none;color:#f8fafc;font-size:13px;width:150px;padding:4px;box-shadow:none;">
+                    <div style="width:1px;height:18px;background:rgba(255,255,255,0.12);margin:0 4px;"></div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <label style="margin:0;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">To</label>
+                        <input type="text" id="dateTo" placeholder="Select Time..." style="background:transparent;border:none;color:#f8fafc;font-size:13px;width:140px;padding:4px;box-shadow:none;border-radius:0;">
                     </div>
-                    <button onclick="clearDateRange()"
-                        style="background:rgba(239,68,68,0.1);border:none;color:#ef4444;border-radius:6px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-left:2px;transition:all 0.2s ease;"
-                        onmouseover="this.style.background='rgba(239,68,68,0.2)'"
-                        onmouseout="this.style.background='rgba(239,68,68,0.1)'" title="Clear Dates">✕</button>
+                    <button onclick="clearDateRange()" style="background:rgba(239,68,68,0.12);border:none;color:#ef4444;border-radius:8px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-left:4px;transition:all 0.2s ease;font-weight:bold;" title="Clear Dates">✕</button>
                 </div>
-                <label
-                    style="display:flex;align-items:center;gap:6px;cursor:pointer;color:#facc15;font-weight:600;background:rgba(250,204,21,0.08);padding:7px 12px;border-radius:9px;border:1px solid rgba(250,204,21,0.2);margin:0;">
-                    <input type="checkbox" id="showFlaggedOnly" onchange="currentPage=1; loadScans()"> Flagged Only
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;color:#fbbf24;font-weight:600;background:rgba(245,158,11,0.08);padding:9px 16px;border-radius:12px;border:1px solid rgba(245,158,11,0.2);margin:0;font-size:13px;user-select:none;">
+                    <input type="checkbox" id="showFlaggedOnly" onchange="currentPage=1; loadScans()" style="margin:0;cursor:pointer;"> Flagged Only
                 </label>
+                <select id="autoRefreshInterval" onchange="setupAutoRefresh()" style="font-size:12px; padding:6px 12px; border-radius:8px; background:rgba(10,15,26,0.6); color:white; border:1px solid rgba(255,255,255,0.15); height: 41px; outline: none; cursor: pointer;">
+                    <option value="0">Auto-refresh: Off</option>
+                    <option value="5000">Auto-refresh: 5s</option>
+                    <option value="10000" selected>Auto-refresh: 10s</option>
+                    <option value="30000">Auto-refresh: 30s</option>
+                </select>
                 <button class="btn btn-ghost" onclick="currentPage=1; loadScans()">↻ Refresh</button>
                 <button class="btn btn-primary" onclick="exportCSV()">⬇ Export CSV</button>
                 {% if role == 'admin' %}
-                <button class="btn btn-danger" id="deleteSelectedBtn" onclick="deleteSelected()"
-                    style="display:none;">🗑 Delete Selected</button>
+                <button class="btn btn-danger" id="deleteSelectedBtn" onclick="deleteSelected()" style="display:none;background:linear-gradient(135deg,#f87171,#dc2626);color:white;border:none;">🗑 Delete Selected</button>
                 {% endif %}
-                <input id="adminSearch" onkeyup="currentPage=1; loadScans()" placeholder="Search barcodes..."
-                    style="margin-left:auto;width:180px;">
+                <input id="adminSearch" onkeyup="currentPage=1; loadScans()" placeholder="Search barcodes..." style="margin-left:auto;width:200px;">
             </div>
+            
             <div class="table-wrap" id="scansTableWrap">
                 <div class="spinner-wrap" id="scansSpinner">
                     <div class="spinner"></div><br>Loading data…
@@ -740,11 +924,20 @@
             </div>
 
             <!-- Pagination Controls -->
-            <div id="pagination-controls"
-                style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 20px;">
+            <div id="pagination-controls" style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 25px; flex-wrap: wrap;">
                 <button class="btn btn-ghost" id="prevPageBtn" onclick="prevPage()">◀ Previous</button>
-                <span id="pageInfo" style="font-size: 14px; font-weight: 600; color: #94a3b8;">Page 1 of 1</span>
+                <span id="pageInfo" style="font-size: 14px; font-weight: 600; color: #94a3b8; font-family:'Outfit', sans-serif;">Page 1 of 1</span>
                 <button class="btn btn-ghost" id="nextPageBtn" onclick="nextPage()">Next ▶</button>
+                <span style="margin: 0 10px; color: rgba(255,255,255,0.15);">|</span>
+                <label style="font-size: 13px; color: #94a3b8; font-weight: 500; display: flex; align-items: center; gap: 8px;">Page Size:
+                    <select id="pageSizeSelect" onchange="changePageSize()" style="font-size:12px; padding:4px 8px; border-radius:6px; background:rgba(10,15,26,0.6); color:white; border:1px solid rgba(255,255,255,0.15); outline: none; cursor: pointer;">
+                        <option value="50">50</option>
+                        <option value="100" selected>100</option>
+                        <option value="250">250</option>
+                        <option value="500">500</option>
+                        <option value="1000">1000</option>
+                    </select>
+                </label>
             </div>
         </div>
 
@@ -762,19 +955,14 @@
                     <tbody>
                         {% for u in users %}
                         <tr>
-                            <td style="font-weight:600;">{{ u.username }}</td>
-                            <td><span
-                                    style="padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600; background:{% if u.role=='admin' %}rgba(56,189,248,0.15); color:#38bdf8{% elif u.role=='moderator' %}rgba(168,85,247,0.15); color:#c084fc{% else %}rgba(255,255,255,0.06); color:#94a3b8{% endif %};">{{
-                                    u.role }}</span></td>
+                            <td style="font-weight:600; font-family:'Inter', sans-serif;">{{ u.username }}</td>
+                            <td><span style="padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; background:{% if u.role=='admin' %}rgba(56,189,248,0.15); color:#38bdf8{% elif u.role=='moderator' %}rgba(168,85,247,0.15); color:#c084fc{% else %}rgba(255,255,255,0.06); color:#94a3b8{% endif %};">{{ u.role }}</span></td>
                             <td>
                                 <div class="user-actions">
-                                    <button class="btn btn-ghost btn-sm" onclick="changePassword('{{ u.username }}')">🔑
-                                        Password</button>
-                                    <button class="btn btn-warn btn-sm" onclick="forceLogoutUser('{{ u.username }}')">⏏
-                                        Force Logout</button>
+                                    <button class="btn btn-ghost btn-sm" onclick="changePassword('{{ u.username }}')">🔑 Password</button>
+                                    <button class="btn btn-warn btn-sm" onclick="forceLogoutUser('{{ u.username }}')">⏏ Force Logout</button>
                                     {% if u.username != 'admin' %}
-                                    <button class="btn btn-danger btn-sm" onclick="deleteUser('{{ u.username }}')">🗑
-                                        Delete</button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteUser('{{ u.username }}')">🗑 Delete</button>
                                     {% endif %}
                                 </div>
                             </td>
@@ -784,16 +972,16 @@
                 </table>
             </div>
 
-            <h3 style="margin-top:28px;">Add User</h3>
-            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
+            <h3 style="margin-top:35px;">Add User</h3>
+            <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
                 <div><label>Username</label><input id="new-user" placeholder="e.g. john"></div>
                 <div><label>Password</label><input id="new-pass" placeholder="Password" type="password"></div>
-                <div><label>Role</label><select id="new-role">
+                <div><label>Role</label><select id="new-role" style="padding-right: 30px;">
                         <option value="user">User</option>
                         <option value="moderator">Moderator</option>
                         <option value="admin">Admin</option>
                     </select></div>
-                <button class="btn btn-primary" style="margin-top:22px;" onclick="addUser()">+ Add User</button>
+                <button class="btn btn-primary" style="height:41px;" onclick="addUser()">+ Add User</button>
             </div>
         </div>
 
@@ -810,25 +998,62 @@
                     <tbody>
                         {% for b in branches %}
                         <tr>
-                            <td style="font-weight:500;">{{ b.name }}</td>
-                            <td><button class="btn btn-danger btn-sm" onclick="deleteBranch('{{ b.name }}')">🗑
-                                    Delete</button></td>
+                            <td style="font-weight:600; font-family:'Inter', sans-serif;">{{ b.name }}</td>
+                            <td><button class="btn btn-danger btn-sm" onclick="deleteBranch('{{ b.name }}')">🗑 Delete</button></td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
-            <h3 style="margin-top:28px;">Add Branch</h3>
-            <div style="display:flex; gap:10px; align-items:flex-end;">
+            <h3 style="margin-top:35px;">Add Branch</h3>
+            <div style="display:flex; gap:12px; align-items:flex-end;">
                 <div><label>Branch Name</label><input id="new-branch" placeholder="e.g. Main Store"></div>
-                <button class="btn btn-primary" style="margin-top:22px;" onclick="addBranch()">+ Add Branch</button>
+                <button class="btn btn-primary" style="height:41px;" onclick="addBranch()">+ Add Branch</button>
             </div>
         </div>
 
         <div id="sessions" class="tab-content card">
-            <h3>Session Management</h3>
-            <p style="color:#64748b; font-size:14px; margin-top:-10px; margin-bottom:20px;">View, delete, or reassign
-                sessions. Use this to remove sessions created by mistake.</p>
+            <h3>Pre-defined Sessions (per Branch)</h3>
+            <p style="color:#64748b; font-size:14.5px; margin-top:-10px; margin-bottom:20px;">
+                Define sessions for branches. Counters will only be able to select from these sessions under their selected branch.
+            </p>
+            
+            <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap: 30px; margin-bottom: 40px; align-items: start;">
+                <div>
+                    <h4 style="margin: 0 0 15px 0; color: var(--text-main); font-size: 15px;">Add Session Definition</h4>
+                    <div style="display:flex; gap:12px; flex-direction: column;">
+                        <div>
+                            <label>Target Branch</label>
+                            <select id="defBranchSelect" style="width: 100%; padding-right: 30px;"></select>
+                        </div>
+                        <div>
+                            <label>Session Name</label>
+                            <input id="defSessionName" placeholder="e.g. الطابق الرابع" style="width: 100%;">
+                        </div>
+                        <button class="btn btn-primary" onclick="addBranchSession()" style="width: 100%; margin-top: 10px;">+ Add Session Definition</button>
+                    </div>
+                </div>
+                <div>
+                    <h4 style="margin: 0 0 15px 0; color: var(--text-main); font-size: 15px;">Defined Sessions List</h4>
+                    <div class="table-wrap" style="max-height: 250px;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Branch</th>
+                                    <th>Session Name</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="def-sessions-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <hr style="border:0; border-top:1px solid rgba(255,255,255,0.06); margin:30px 0;">
+
+            <h3>Active Scan Sessions</h3>
+            <p style="color:#64748b; font-size:14.5px; margin-top:-10px; margin-bottom:20px;">View, delete, or reassign sessions. Use this to remove sessions created by mistake.</p>
             <div class="filter-row" style="margin-bottom:16px;">
                 <button class="btn btn-ghost" onclick="loadSessionInfo()">↻ Refresh</button>
             </div>
@@ -852,34 +1077,51 @@
                 </table>
             </div>
 
-            <h3 style="margin-top:28px;">Reassign Session Data</h3>
-            <p style="color:#64748b; font-size:14px; margin-top:-10px; margin-bottom:20px;">Move all scans from one
-                session to another.</p>
+            <h3 style="margin-top:35px;">Reassign Session Data</h3>
+            <p style="color:#64748b; font-size:14.5px; margin-top:-10px; margin-bottom:20px;">Move all scans from one session to another.</p>
             <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
-                <div><label>From Session</label><input id="reassign-from" list="session-list"
-                        placeholder="Source session"></div>
-                <div><label>From Branch (optional)</label><input id="reassign-from-branch"
-                        placeholder="Leave empty for all"></div>
-                <div><label>To Session</label><input id="reassign-to" list="session-list" placeholder="Target session">
-                </div>
-                <div><label>To Branch (optional)</label><input id="reassign-to-branch"
-                        placeholder="Leave empty to keep"></div>
-                <button class="btn btn-primary" style="margin-top:22px;" onclick="reassignSession()">↗ Reassign</button>
+                <div><label>From Session</label><input id="reassign-from" list="session-list" placeholder="Source session"></div>
+                <div><label>From Branch (optional)</label><input id="reassign-from-branch" placeholder="Leave empty for all"></div>
+                <div><label>To Session</label><input id="reassign-to" list="session-list" placeholder="Target session"></div>
+                <div><label>To Branch (optional)</label><input id="reassign-to-branch" placeholder="Leave empty to keep"></div>
+                <button class="btn btn-primary" style="height:41px;" onclick="reassignSession()">↗ Reassign</button>
             </div>
         </div>
 
         <div id="settings" class="tab-content card">
             <h3>Global Settings</h3>
-            <p style="color:#64748b; font-size:14px; margin-top:-10px; margin-bottom:24px;">Lock all users to a specific
-                branch and session. Leave blank to let users choose freely.</p>
+            <p style="color:#64748b; font-size:14.5px; margin-top:-10px; margin-bottom:24px;">Lock all users to a specific branch and session. Leave blank to let users choose freely.</p>
             <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:flex-end;">
-                <div><label>Enforced Branch</label><select id="global-branch">
+                <div><label>Enforced Branch</label><select id="global-branch" style="padding-right:30px;">
                         <option value="">— None (Users Choose) —</option>
                     </select></div>
-                <div><label>Enforced Session</label><input id="global-session" list="session-list"
-                        placeholder="Session name"><datalist id="session-list"></datalist></div>
-                <button class="btn btn-primary" style="margin-top:22px;" onclick="saveSettings()">💾 Save
-                    Settings</button>
+                <div><label>Enforced Session</label><input id="global-session" list="session-list" placeholder="Session name"><datalist id="session-list"></datalist></div>
+                <button class="btn btn-primary" style="height:41px;" onclick="saveSettings()">💾 Save Settings</button>
+            </div>
+        </div>
+
+        <div id="audit-logs" class="tab-content card">
+            <h3>System Audit Logs</h3>
+            <p style="color:#64748b; font-size:14.5px; margin-top:-10px; margin-bottom:20px;">Detailed log of all scan creations, adjustments, deletions, and barcode edits. Only accessible by admins.</p>
+            <div class="filter-row" style="margin-bottom:16px;">
+                <button class="btn btn-ghost" onclick="loadAuditLogs()">↻ Refresh</button>
+                <input id="auditSearch" onkeyup="renderAuditLogs()" placeholder="Search logs..." style="margin-left:auto; width:250px;">
+            </div>
+            <div class="table-wrap" id="auditTableWrap">
+                <div class="spinner-wrap" id="auditSpinner" style="display:none;">
+                    <div class="spinner"></div><br>Loading logs…
+                </div>
+                <table id="auditTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 180px;">Timestamp (GMT+3)</th>
+                            <th style="width: 120px;">Operator</th>
+                            <th style="width: 160px;">Action</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="audit-tbody"></tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -900,9 +1142,11 @@
         fetch("/branches").then(r => r.json()).then(data => {
             const mb = document.getElementById('masterBranch');
             const gb = document.getElementById('global-branch');
+            const dbSel = document.getElementById('defBranchSelect');
             data.forEach(b => {
                 mb.appendChild(new Option(b, b));
                 gb.appendChild(new Option(b, b));
+                if (dbSel) dbSel.appendChild(new Option(b, b));
             });
             fetch("/settings").then(r => r.json()).then(s => {
                 if (s.global_branch) {
@@ -954,13 +1198,30 @@
             if (el) el.classList.add('active');
             if (id === 'scans') loadScans();
             if (id === 'dashboard') loadStats();
-            if (id === 'sessions') loadSessionInfo();
+            if (id === 'sessions') {
+                loadSessionInfo();
+                loadBranchSessionDefs();
+            }
+            if (id === 'audit-logs') loadAuditLogs();
         }
 
         let timeChartObj = null;
         let statusChartObj = null;
 
+        // Custom chart configuration helpers
+        const chartFontConfig = {
+            family: "'Outfit', 'Inter', sans-serif",
+            size: 11
+        };
+
         function loadStats() {
+            const activeTab = document.querySelector('.tab.active');
+            const isAnalyticsActive = activeTab && (activeTab.innerText.toLowerCase().includes('analytics') || activeTab.innerText.toLowerCase().includes('dashboard'));
+            
+            if (isAnalyticsActive) {
+                loadUserStats();
+            }
+            
             const branch = document.getElementById('masterBranch') ? document.getElementById('masterBranch').value : '';
             const session_name = document.getElementById('masterSession') ? document.getElementById('masterSession').value : '';
             const dateFrom = document.getElementById('dateFrom') ? document.getElementById('dateFrom').value : '';
@@ -981,7 +1242,7 @@
                 })
                 .catch(err => console.error("Failed to load stats:", err));
 
-            if (document.getElementById('timeChart')) {
+            if (isAnalyticsActive && document.getElementById('timeChart')) {
                 const timeRange = document.getElementById('timeRange') ? document.getElementById('timeRange').value : '7days';
                 fetch('/admin/chart_data?range=' + timeRange)
                     .then(r => r.json())
@@ -990,14 +1251,59 @@
                         if (timeChartObj) timeChartObj.destroy();
                         timeChartObj = new Chart(document.getElementById('timeChart'), {
                             type: 'line',
-                            data: { labels: data.time.labels, datasets: [{ label: 'Scans', data: data.time.data, borderColor: '#38bdf8', tension: 0.4, fill: true, backgroundColor: 'rgba(56,189,248,0.08)' }] },
-                            options: { responsive: true, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#64748b' } }, x: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#64748b' } } }, plugins: { legend: { display: false } } }
+                            data: { 
+                                labels: data.time.labels, 
+                                datasets: [{ 
+                                    label: 'Scans', 
+                                    data: data.time.data, 
+                                    borderColor: '#38bdf8', 
+                                    borderWidth: 2,
+                                    tension: 0.4, 
+                                    fill: true, 
+                                    backgroundColor: 'rgba(56,189,248,0.05)',
+                                    pointBackgroundColor: '#38bdf8',
+                                    pointBorderColor: 'rgba(255, 255, 255, 0.1)',
+                                    pointHoverRadius: 6
+                                }] 
+                            },
+                            options: { 
+                                responsive: true, 
+                                scales: { 
+                                    y: { 
+                                        beginAtZero: true, 
+                                        grid: { color: 'rgba(255,255,255,0.04)' }, 
+                                        ticks: { color: '#64748b', font: chartFontConfig } 
+                                    }, 
+                                    x: { 
+                                        grid: { color: 'rgba(255,255,255,0.04)' }, 
+                                        ticks: { color: '#64748b', font: chartFontConfig } 
+                                    } 
+                                }, 
+                                plugins: { 
+                                    legend: { display: false } 
+                                } 
+                            }
                         });
                         if (statusChartObj) statusChartObj.destroy();
                         statusChartObj = new Chart(document.getElementById('userChart'), {
                             type: 'doughnut',
-                            data: { labels: data.users.labels, datasets: [{ data: data.users.data, borderWidth: 0, backgroundColor: ['#38bdf8', '#818cf8', '#a78bfa', '#e879f9', '#f472b6', '#fb7185', '#34d399'] }] },
-                            options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 12 } } } }
+                            data: { 
+                                labels: data.users.labels, 
+                                datasets: [{ 
+                                    data: data.users.data, 
+                                    borderWidth: 0, 
+                                    backgroundColor: ['#38bdf8', '#818cf8', '#a78bfa', '#e879f9', '#f472b6', '#fb7185', '#34d399'] 
+                                }] 
+                            },
+                            options: { 
+                                responsive: true, 
+                                plugins: { 
+                                    legend: { 
+                                        position: 'bottom', 
+                                        labels: { color: '#94a3b8', padding: 15, font: chartFontConfig } 
+                                    } 
+                                } 
+                            }
                         });
                     });
             }
@@ -1029,6 +1335,7 @@
             if (tbl) tbl.style.display = 'none';
         }
 
+        // Modified spinner toggle to clean up alignment
         function hideSpinner() {
             const sp = document.getElementById('scansSpinner');
             const tbl = document.querySelector('#scansTableWrap table');
@@ -1036,7 +1343,7 @@
             if (tbl) tbl.style.display = 'table';
         }
 
-        function loadScans() {
+        function loadScans(isSilent = false) {
             const mode = document.getElementById('viewMode').value;
             const mb = document.getElementById('masterBranch');
             const ms = document.getElementById('masterSession');
@@ -1045,8 +1352,8 @@
             const search = document.getElementById('adminSearch').value || "";
             const flaggedOnly = document.getElementById('showFlaggedOnly').checked;
 
-            showSpinner();
-            let params = `page=${currentPage}&limit=100&search=${encodeURIComponent(search)}&flagged_only=${flaggedOnly}`;
+            if (!isSilent) showSpinner();
+            let params = `page=${currentPage}&limit=${pageSize}&search=${encodeURIComponent(search)}&flagged_only=${flaggedOnly}`;
             if (dateFrom) params += `&date_from=${encodeURIComponent(dateFrom)}`;
             if (dateTo) params += `&date_to=${encodeURIComponent(dateTo)}`;
 
@@ -1060,7 +1367,7 @@
                         currentPage = res.current_page;
                         renderScans();
                         renderPagination();
-                        hideSpinner();
+                        if (!isSilent) hideSpinner();
                     });
             } else {
                 mb.style.display = 'none';
@@ -1071,7 +1378,7 @@
                     currentPage = res.current_page;
                     renderScans();
                     renderPagination();
-                    hideSpinner();
+                    if (!isSilent) hideSpinner();
                 });
             }
             loadStats();
@@ -1126,66 +1433,99 @@
                 if (valA > valB) return sortAsc ? 1 : -1;
                 return 0;
             });
-            const s = col => sortCol === col ? (sortAsc ? ' ↑' : ' ↓') : '';
+            const s = col => sortCol === col ? (sortAsc ? ' ▲' : ' ▼') : '';
             if (mode === 'master') {
-                thead.innerHTML = `<tr><th><input type="checkbox" onchange="toggleAllCheckboxes(this)"></th>
+                thead.innerHTML = `<tr>
+            <th style="width: 40px;"><input type="checkbox" onchange="toggleAllCheckboxes(this)"></th>
             <th onclick="doSort('barcode')" style="cursor:pointer">Barcode${s('barcode')}</th>
             <th onclick="doSort('users')" style="cursor:pointer">Users${s('users')}</th>
-            <th onclick="doSort('good')" style="cursor:pointer">Good${s('good')}</th>
-            <th onclick="doSort('damaged')" style="cursor:pointer">Damaged${s('damaged')}</th>
-            <th onclick="doSort('flagged')" style="cursor:pointer">Flagged${s('flagged')}</th>
+            <th onclick="doSort('good')" style="cursor:pointer; width:100px;">Good${s('good')}</th>
+            <th onclick="doSort('damaged')" style="cursor:pointer; width:110px;">Damaged${s('damaged')}</th>
+            <th onclick="doSort('flagged')" style="cursor:pointer; width:110px;">Flagged${s('flagged')}</th>
             <th>Flag Reason</th>
             <th onclick="doSort('first')" style="cursor:pointer">First Scan${s('first')}</th>
             <th onclick="doSort('last')" style="cursor:pointer">Last Scan${s('last')}</th>
-            <th>Actions</th></tr>`;
+            <th style="width: 120px;">Actions</th></tr>`;
                 let html = "";
                 sorted.forEach(row => {
                     const marked = row.barcode === odooMarkedBarcodeAdmin;
-                    html += `<tr${marked ? ' style="background:rgba(34,197,94,0.12);border-left:3px solid #22c55e"' : ''}>
+                    
+                    let goodBadge = `<span class="pill-badge pill-badge-good">${row.good}</span>`;
+                    let damagedBadge = row.damaged > 0 
+                        ? `<span class="pill-badge pill-badge-damaged">⚠️ ${row.damaged}</span>` 
+                        : `<span class="pill-badge pill-badge-empty">0</span>`;
+                    let flaggedBadge = row.flagged > 0 
+                        ? `<span class="pill-badge pill-badge-flagged">🚩 Flagged</span>` 
+                        : `<span class="pill-badge pill-badge-empty">—</span>`;
+                        
+                    html += `<tr${marked ? ' class="marked-row"' : ''}>
                 <td><input type="checkbox" class="row-checkbox" data-barcode="${escapeHTML(row.barcode)}"></td>
-                <td style="font-family:monospace;font-size:12px;">${escapeHTML(row.barcode)}</td><td>${escapeHTML(row.users) || ''}</td>
-                <td style="color:#4ade80;font-weight:600;">${row.good}</td>
-                <td style="color:#f87171;font-weight:600;">${row.damaged}</td>
-                <td style="color:#facc15;font-weight:700;">${row.flagged > 0 ? '🚩 Yes' : ''}</td>
-                <td style="color:#94a3b8;font-size:12px;">${escapeHTML(row.reason) || ''}</td><td style="color:#64748b;font-size:12px;">${escapeHTML(row.first)}</td><td style="color:#64748b;font-size:12px;">${escapeHTML(row.last)}</td>
-                <td><button class="btn-icon" onclick="setOdooMarkAdmin('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}')" title="Mark as entered">✅</button>
-                <button class="btn btn-warn btn-sm" onclick="toggleAdminFlag('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}','null',document.getElementById('masterBranch').value,document.getElementById('masterSession').value)">🚩</button>
+                <td style="font-family:'Inter', sans-serif;font-weight:600;">${escapeHTML(row.barcode)}</td>
+                <td>${escapeHTML(row.users) || ''}</td>
+                <td>${goodBadge}</td>
+                <td>${damagedBadge}</td>
+                <td>${flaggedBadge}</td>
+                <td style="color:#94a3b8;font-size:12px;">${escapeHTML(row.reason) || ''}</td>
+                <td style="color:#64748b;font-size:12px;">${escapeHTML(row.first)}</td>
+                <td style="color:#64748b;font-size:12px;">${escapeHTML(row.last)}</td>
+                <td>
+                    <div style="display:flex; gap: 4px; align-items:center;">
+                        <button class="btn-icon" onclick="setOdooMarkAdmin('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}')" title="Mark as entered">✅</button>
+                        <button class="btn btn-warn btn-sm" style="padding:4px 8px; font-size:11px;" onclick="toggleAdminFlag('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}','null',document.getElementById('masterBranch').value,document.getElementById('masterSession').value)">🚩</button>
+                        <button class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:11px;" onclick="editBarcodeMaster('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}')" title="Edit Barcode">✏️</button>
+                    </div>
                 </td></tr>`;
                 });
                 tbody.innerHTML = html;
                 document.getElementById('rowCountBadge').innerText = `${sorted.length} unique barcodes`;
             } else {
-                thead.innerHTML = `<tr><th><input type="checkbox" onchange="toggleAllCheckboxes(this)"></th>
+                thead.innerHTML = `<tr>
+            <th style="width: 40px;"><input type="checkbox" onchange="toggleAllCheckboxes(this)"></th>
             <th onclick="doSort('barcode')" style="cursor:pointer">Barcode${s('barcode')}</th>
             <th onclick="doSort('user')" style="cursor:pointer">User${s('user')}</th>
             <th onclick="doSort('branch')" style="cursor:pointer">Branch${s('branch')}</th>
             <th onclick="doSort('session_name')" style="cursor:pointer">Session${s('session_name')}</th>
-            <th onclick="doSort('good')" style="cursor:pointer">Good${s('good')}</th>
-            <th onclick="doSort('damaged')" style="cursor:pointer">Damaged${s('damaged')}</th>
-            <th onclick="doSort('flagged')" style="cursor:pointer">Flagged${s('flagged')}</th>
+            <th onclick="doSort('good')" style="cursor:pointer; width:100px;">Good${s('good')}</th>
+            <th onclick="doSort('damaged')" style="cursor:pointer; width:110px;">Damaged${s('damaged')}</th>
+            <th onclick="doSort('flagged')" style="cursor:pointer; width:110px;">Flagged${s('flagged')}</th>
             <th>Flag Reason</th>
             <th onclick="doSort('first')" style="cursor:pointer">First${s('first')}</th>
             <th onclick="doSort('last')" style="cursor:pointer">Last${s('last')}</th>
-            <th>Actions</th></tr>`;
+            <th style="width: 200px;">Actions</th></tr>`;
                 let html = "";
                 sorted.forEach(row => {
                     const marked = row.barcode === odooMarkedBarcodeAdmin;
-                    html += `<tr${marked ? ' style="background:rgba(34,197,94,0.12);border-left:3px solid #22c55e"' : ''}>
+                    
+                    let goodBadge = `<span class="pill-badge pill-badge-good">${row.good}</span>`;
+                    let damagedBadge = row.damaged > 0 
+                        ? `<span class="pill-badge pill-badge-damaged">⚠️ ${row.damaged}</span>` 
+                        : `<span class="pill-badge pill-badge-empty">0</span>`;
+                    let flaggedBadge = row.flagged > 0 
+                        ? `<span class="pill-badge pill-badge-flagged">🚩 Flagged</span>` 
+                        : `<span class="pill-badge pill-badge-empty">—</span>`;
+                        
+                    html += `<tr${marked ? ' class="marked-row"' : ''}>
                 <td><input type="checkbox" class="row-checkbox" data-barcode="${escapeHTML(row.barcode)}" data-user="${escapeHTML(row.user)}" data-branch="${escapeHTML(row.branch)}" data-session="${escapeHTML(row.session_name)}"></td>
-                <td style="font-family:monospace;font-size:12px;">${escapeHTML(row.barcode)}</td>
-                <td>${escapeHTML(row.user) || ''}</td><td>${escapeHTML(row.branch) || ''}</td><td>${escapeHTML(row.session_name) || ''}</td>
-                <td style="color:#4ade80;font-weight:600;">${row.good}</td>
-                <td style="color:#f87171;font-weight:600;">${row.damaged}</td>
-                <td style="color:#facc15;font-weight:700;">${row.flagged > 0 ? '🚩 Yes' : ''}</td>
+                <td style="font-family:'Inter', sans-serif;font-weight:600;">${escapeHTML(row.barcode)}</td>
+                <td>${escapeHTML(row.user) || ''}</td>
+                <td>${escapeHTML(row.branch) || ''}</td>
+                <td>${escapeHTML(row.session_name) || ''}</td>
+                <td>${goodBadge}</td>
+                <td>${damagedBadge}</td>
+                <td>${flaggedBadge}</td>
                 <td style="color:#94a3b8;font-size:12px;">${escapeHTML(row.reason) || ''}</td>
-                <td style="color:#64748b;font-size:12px;">${escapeHTML(row.first)}</td><td style="color:#64748b;font-size:12px;">${escapeHTML(row.last)}</td>
+                <td style="color:#64748b;font-size:12px;">${escapeHTML(row.first)}</td>
+                <td style="color:#64748b;font-size:12px;">${escapeHTML(row.last)}</td>
                 <td>
-                    <button class="btn-icon" onclick="setOdooMarkAdmin('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}')" title="Mark as entered">✅</button>
-                    {% if role == 'admin' %}
-                    <button class="btn btn-ghost btn-sm" onclick="promptAdjust('${escapeHTML(row.barcode)}','${escapeHTML(row.user).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.branch).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.session_name).replace(/&#39;/g, "\\\'")}','good')">+/- G</button>
-                    <button class="btn btn-ghost btn-sm" onclick="promptAdjust('${escapeHTML(row.barcode)}','${escapeHTML(row.user).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.branch).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.session_name).replace(/&#39;/g, "\\\'")}','damaged')">+/- D</button>
-                    {% endif %}
-                    <button class="btn btn-warn btn-sm" onclick="toggleAdminFlag('${escapeHTML(row.barcode)}','${escapeHTML(row.user).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.branch).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.session_name).replace(/&#39;/g, "\\\'")}')">🚩</button>
+                    <div style="display:flex; gap: 4px; align-items:center;">
+                        <button class="btn-icon" onclick="setOdooMarkAdmin('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}')" title="Mark as entered">✅</button>
+                        {% if role == 'admin' %}
+                        <button class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:11px;" onclick="promptAdjust('${escapeHTML(row.barcode)}','${escapeHTML(row.user).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.branch).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.session_name).replace(/&#39;/g, "\\\'")}','good')">Good +/-</button>
+                        <button class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:11px;" onclick="promptAdjust('${escapeHTML(row.barcode)}','${escapeHTML(row.user).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.branch).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.session_name).replace(/&#39;/g, "\\\'")}','damaged')">Damaged +/-</button>
+                        {% endif %}
+                        <button class="btn btn-warn btn-sm" style="padding:4px 8px; font-size:11px;" onclick="toggleAdminFlag('${escapeHTML(row.barcode)}','${escapeHTML(row.user).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.branch).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.session_name).replace(/&#39;/g, "\\\'")}')">🚩</button>
+                        <button class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:11px;" onclick="editBarcodeDetailed('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.user).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.branch).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.session_name).replace(/&#39;/g, "\\\'")}')" title="Edit Barcode">✏️</button>
+                    </div>
                 </td></tr>`;
                 });
                 tbody.innerHTML = html;
@@ -1246,10 +1586,10 @@
                     tbody.innerHTML = '';
                     data.forEach(row => {
                         tbody.innerHTML += `<tr>
-                            <td style="font-weight:600;">${escapeHTML(row.session_name)}</td>
+                            <td style="font-weight:600; font-family:'Inter', sans-serif;">${escapeHTML(row.session_name)}</td>
                             <td>${row.branch || 'None'}</td>
-                            <td>${row.scan_count}</td>
-                            <td>${row.user_count}</td>
+                            <td><span class="pill-badge pill-badge-good">${row.scan_count}</span></td>
+                            <td><span class="pill-badge pill-badge-empty">${row.user_count}</span></td>
                             <td style="color:#64748b;font-size:12px;">${escapeHTML(row.first_scan)}</td>
                             <td style="color:#64748b;font-size:12px;">${escapeHTML(row.last_scan)}</td>
                             <td>
@@ -1322,6 +1662,7 @@
             });
         }
 
+        // Fixed count modification endpoint triggers
         function adjustCount(barcode, user, branch, session_name, type, diff) {
             if (!diff || isNaN(diff)) return;
             fetch('/admin/adjust_count', {
@@ -1428,6 +1769,227 @@
             ov._cb = null;
         }
 
+        // --- EXTRA UTILITIES IMPLEMENTATION ---
+
+        // Edit Barcode Master
+        function editBarcodeMaster(barcode) {
+            const branch = document.getElementById('masterBranch').value;
+            const session_name = document.getElementById('masterSession').value;
+            showModal('prompt', 'Edit Barcode', `Enter new barcode to replace <strong>${escapeHTML(barcode)}</strong> (this will update all scans under selected branch/session filters):`, newBarcode => {
+                if (typeof newBarcode !== 'string') return;
+                newBarcode = newBarcode.trim().toUpperCase();
+                if (!newBarcode) return;
+                performEditBarcode(barcode, newBarcode, null, branch, session_name);
+            });
+        }
+
+        // Edit Barcode Detailed
+        function editBarcodeDetailed(barcode, user, branch, session_name) {
+            showModal('prompt', 'Edit Barcode', `Enter new barcode to replace <strong>${escapeHTML(barcode)}</strong> for user <strong>${escapeHTML(user)}</strong> in session <strong>${escapeHTML(session_name)}</strong>:`, newBarcode => {
+                if (typeof newBarcode !== 'string') return;
+                newBarcode = newBarcode.trim().toUpperCase();
+                if (!newBarcode) return;
+                performEditBarcode(barcode, newBarcode, user, branch, session_name);
+            });
+        }
+
+        // Perform edit barcode request
+        function performEditBarcode(oldBarcode, newBarcode, user, branch, session_name) {
+            fetch('/admin/edit_barcode', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    old_barcode: oldBarcode,
+                    new_barcode: newBarcode,
+                    user: user,
+                    branch: branch,
+                    session_name: session_name
+                })
+            }).then(r => r.json()).then(res => {
+                if (res.error) {
+                    showModal('alert', 'Error', 'Failed to edit barcode: ' + res.error);
+                } else {
+                    showModal('alert', 'Success', `Successfully updated barcode to ${newBarcode}.`);
+                    loadScans();
+                }
+            });
+        }
+
+        // Change Page Size
+        let pageSize = parseInt(localStorage.getItem('pageSize') || '100');
+        if (document.getElementById('pageSizeSelect')) {
+            document.getElementById('pageSizeSelect').value = pageSize;
+        }
+        function changePageSize() {
+            pageSize = parseInt(document.getElementById('pageSizeSelect').value);
+            localStorage.setItem('pageSize', pageSize);
+            currentPage = 1;
+            loadScans();
+        }
+
+        // Auto Refresh
+        let autoRefreshTimer = null;
+        function setupAutoRefresh() {
+            if (autoRefreshTimer) {
+                clearInterval(autoRefreshTimer);
+                autoRefreshTimer = null;
+            }
+            const val = parseInt(document.getElementById('autoRefreshInterval').value);
+            if (val > 0) {
+                autoRefreshTimer = setInterval(() => {
+                    const activeTab = document.querySelector('.tab.active');
+                    if (activeTab) {
+                        const tabText = activeTab.innerText.toLowerCase();
+                        if (tabText.includes('scans')) {
+                            loadScans(true);
+                        } else if (tabText.includes('analytics') || tabText.includes('dashboard')) {
+                            loadStats();
+                        }
+                    }
+                }, val);
+            }
+        }
+
+        // Add Branch Session definition
+        function addBranchSession() {
+            const branch = document.getElementById('defBranchSelect').value;
+            const session = document.getElementById('defSessionName').value.trim();
+            if (!branch || !session) return showModal('alert', 'Error', 'Please fill in both branch and session name.');
+            
+            fetch('/admin/add_session_def', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ branch_name: branch, session_name: session })
+            }).then(r => r.text()).then(res => {
+                if (res === 'exists') {
+                    showModal('alert', 'Exists', 'This session is already defined for this branch.');
+                } else if (res === 'ok') {
+                    document.getElementById('defSessionName').value = '';
+                    loadBranchSessionDefs();
+                    updateSessionsDropdown(false, null, false);
+                }
+            });
+        }
+
+        // Load Branch Session definitions
+        function loadBranchSessionDefs() {
+            fetch('/admin/session_defs')
+                .then(r => r.json())
+                .then(data => {
+                    const tbody = document.getElementById('def-sessions-tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(def => {
+                        tbody.innerHTML += `<tr>
+                            <td style="font-weight:600;">${escapeHTML(def.branch_name)}</td>
+                            <td>${escapeHTML(def.session_name)}</td>
+                            <td><button class="btn btn-danger btn-sm" onclick="deleteSessionDef('${def.id}', '${escapeHTML(def.branch_name).replace(/&#39;/g, "\\\'")}', '${escapeHTML(def.session_name).replace(/&#39;/g, "\\\'")}')">🗑 Delete</button></td>
+                        </tr>`;
+                    });
+                    if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#64748b; padding:10px;">No session definitions found.</td></tr>';
+                    }
+                });
+        }
+
+        // Delete Session definition
+        function deleteSessionDef(id, branch, session) {
+            showModal('confirm', 'Delete Definition', `Remove session definition <strong>${session}</strong> for branch <strong>${branch}</strong>? (This will NOT delete scan data, only the dropdown option for counters.)`, () => {
+                fetch(`/admin/delete_session_def/${id}`, { method: 'DELETE' })
+                    .then(() => {
+                        loadBranchSessionDefs();
+                        updateSessionsDropdown(false, null, false);
+                    });
+            });
+        }
+
+        // Load User productivity statistics
+        function loadUserStats() {
+            const timeframe = document.getElementById('userStatsTimeframe') ? document.getElementById('userStatsTimeframe').value : 'all';
+            const tbody = document.getElementById('user-stats-tbody');
+            if (!tbody) return;
+            fetch(`/admin/user_stats?timeframe=${timeframe}`)
+                .then(r => r.json())
+                .then(data => {
+                    tbody.innerHTML = '';
+                    data.forEach(row => {
+                        let roleColor = 'background:rgba(255,255,255,0.06); color:#94a3b8';
+                        if (row.role === 'admin') roleColor = 'background:rgba(56,189,248,0.15); color:#38bdf8';
+                        else if (row.role === 'moderator') roleColor = 'background:rgba(168,85,247,0.15); color:#c084fc';
+                        
+                        tbody.innerHTML += `<tr>
+                            <td style="font-weight:600;">${escapeHTML(row.user)}</td>
+                            <td><span style="padding:4px 12px; border-radius:20px; font-size:11px; font-weight:700; ${roleColor}">${escapeHTML(row.role)}</span></td>
+                            <td style="font-weight:700; color:#38bdf8;">${row.total_scans}</td>
+                            <td><span class="pill-badge pill-badge-good">${row.good_scans}</span></td>
+                            <td>${row.damaged_scans > 0 ? `<span class="pill-badge pill-badge-damaged">⚠️ ${row.damaged_scans}</span>` : `<span class="pill-badge pill-badge-empty">0</span>`}</td>
+                            <td>${row.flagged_scans > 0 ? `<span class="pill-badge pill-badge-flagged">🚩 ${row.flagged_scans}</span>` : `<span class="pill-badge pill-badge-empty">0</span>`}</td>
+                            <td>${row.sessions_worked}</td>
+                            <td>${row.branches_worked}</td>
+                            <td style="color:#64748b; font-size:12.5px;">${escapeHTML(row.last_active) || 'N/A'}</td>
+                        </tr>`;
+                    });
+                    if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#64748b; padding:20px;">No scan data found for this timeframe.</td></tr>';
+                    }
+                });
+        }
+
+        // Load Audit Logs
+        let auditLogsData = [];
+        function loadAuditLogs() {
+            const spinner = document.getElementById('auditSpinner');
+            const table = document.getElementById('auditTable');
+            if (spinner) spinner.style.display = 'block';
+            if (table) table.style.display = 'none';
+            
+            fetch('/admin/audit_logs')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.forbidden) return;
+                    auditLogsData = data;
+                    renderAuditLogs();
+                    if (spinner) spinner.style.display = 'none';
+                    if (table) table.style.display = 'table';
+                });
+        }
+
+        // Render Audit Logs
+        function renderAuditLogs() {
+            const tbody = document.getElementById('audit-tbody');
+            if (!tbody) return;
+            const search = (document.getElementById('auditSearch').value || "").toLowerCase();
+            tbody.innerHTML = '';
+            
+            let filtered = auditLogsData.filter(row => 
+                (row.timestamp || "").toLowerCase().includes(search) ||
+                (row.operator || "").toLowerCase().includes(search) ||
+                (row.action || "").toLowerCase().includes(search) ||
+                (row.details || "").toLowerCase().includes(search)
+            );
+            
+            let html = '';
+            filtered.forEach(row => {
+                let actionBadgeColor = 'rgba(255,255,255,0.06); color:#94a3b8';
+                if (row.action.includes('DELETE')) actionBadgeColor = 'rgba(239, 68, 68, 0.15); color:#f87171';
+                else if (row.action.includes('EDIT')) actionBadgeColor = 'rgba(245, 158, 11, 0.15); color:#fbbf24';
+                else if (row.action.includes('ADJUST')) actionBadgeColor = 'rgba(168, 85, 247, 0.15); color:#c084fc';
+                else if (row.action.includes('UNDO')) actionBadgeColor = 'rgba(56, 189, 248, 0.15); color:#38bdf8';
+                
+                html += `<tr>
+                    <td style="color:#64748b; font-size:13px; font-family:'Inter', sans-serif;">${escapeHTML(row.timestamp)}</td>
+                    <td style="font-weight:600;">${escapeHTML(row.operator)}</td>
+                    <td><span style="padding:4px 12px; border-radius:20px; font-size:11px; font-weight:700; background:${actionBadgeColor}">${escapeHTML(row.action)}</span></td>
+                    <td style="color:#e2e8f0; font-size:13.5px; font-family:'Inter', sans-serif;">${escapeHTML(row.details)}</td>
+                </tr>`;
+            });
+            
+            if (filtered.length === 0) {
+                html = '<tr><td colspan="4" style="text-align:center; color:#64748b; padding:20px;">No audit logs found.</td></tr>';
+            }
+            tbody.innerHTML = html;
+        }
+
+        setupAutoRefresh();
         loadScans();
         loadStats();
 

@@ -8,7 +8,10 @@ env/
 # Ignore database files to avoid pushing sensitive scan data to GitHub
 *.db
 *.sqlite3
-database.db-shm
-database.db-wal
-users.db*
+*.db-shm
+*.db-wal
 backups/
+
+# Ignore temp files and test scripts
+temp_csv_export/
+test_*.py

@@ -48,10 +48,10 @@ def create_backup():
                     writer = csv.writer(f)
                     writer.writerow(["Barcode", "Good", "Damaged", "Flagged", "Last Scan"])
                     c.execute("""
-                        SELECT REPLACE(REPLACE(barcode,'__DAMAGED',''),'__FLAGGED',''),
-                               SUM(CASE WHEN barcode NOT LIKE '%__DAMAGED' AND barcode NOT LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
-                               SUM(CASE WHEN barcode LIKE '%__DAMAGED' THEN 1 ELSE 0 END),
-                               SUM(CASE WHEN barcode LIKE '%__FLAGGED' THEN 1 ELSE 0 END),
+                        SELECT barcode,
+                               SUM(CASE WHEN is_damaged=0 AND is_flagged=0 THEN 1 ELSE 0 END),
+                               SUM(CASE WHEN is_damaged=1 THEN 1 ELSE 0 END),
+                               SUM(CASE WHEN is_flagged=1 THEN 1 ELSE 0 END),
                                MAX(timestamp)
                         FROM scans 
                         WHERE branch=? AND session_name=? 

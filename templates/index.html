@@ -3,18 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Scanner</title>
+    <title>Scanner - The Golden Mile</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" type="text/javascript"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
         
+        :root {
+            --primary: #38bdf8;
+            --primary-glow: rgba(56, 189, 248, 0.25);
+            --bg-dark: #090d16;
+            --card-bg: rgba(30, 41, 59, 0.45);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #facc15;
+        }
+
         body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            font-family: 'Outfit', 'Inter', sans-serif;
+            background: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 50%, #090d16 100%);
             background-attachment: fixed;
-            color: #f8fafc;
+            color: var(--text-main);
             margin: 0;
             padding: 20px 0;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Ambient floating glowing orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(140px);
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.4;
+        }
+        .orb-1 { width: 400px; height: 400px; background: rgba(56, 189, 248, 0.2); top: 10%; left: -100px; animation: float-1 25s infinite alternate ease-in-out; }
+        .orb-2 { width: 500px; height: 500px; background: rgba(129, 140, 248, 0.15); bottom: 10%; right: -150px; animation: float-2 30s infinite alternate ease-in-out; }
+        @keyframes float-1 { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(80px, 50px) scale(1.1); } }
+        @keyframes float-2 { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(-100px, -60px) scale(0.95); } }
+
+        .mesh-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.01) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.01) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 0;
+            pointer-events: none;
         }
 
         .container {
@@ -22,84 +66,154 @@
             margin: auto;
             padding: 0 20px;
             text-align: center;
+            position: relative;
+            z-index: 1;
         }
 
+        /* Float Navbar */
+        .nav-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 14px 28px;
+            border-radius: 20px;
+            margin-bottom: 35px;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+
+        /* Heading */
+        h1 {
+            font-weight: 800;
+            letter-spacing: -1.5px;
+            font-size: 42px;
+            background: linear-gradient(135deg, #ffffff 40%, #a5f3fc 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 15px 0 35px 0;
+        }
+
+        /* Glass Cards */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            padding: 28px;
+            border-radius: 24px;
+            box-shadow: 0 20px 45px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15);
+        }
+
+        /* Bright High-Contrast inputs */
         input, select {
             box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #f8fafc;
-            transition: all 0.3s ease;
+            font-family: 'Outfit', 'Inter', sans-serif;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: #0f172a;
+            padding: 12px 18px;
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
             outline: none;
+            font-weight: 500;
         }
 
         input:focus, select:focus {
-            border-color: #38bdf8;
-            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow), 0 4px 12px rgba(56, 189, 248, 0.1);
+            background: #ffffff;
+        }
+
+        /* Large Barcode Input */
+        #barcodeInputContainer {
+            position: relative;
+            display: flex;
+            gap: 12px;
+            width: 100%;
+            margin-bottom: 8px;
         }
 
         #barcodeInput {
-            width: 100%;
-            box-sizing: border-box;
+            flex: 1;
             font-size: 32px;
-            padding: 20px 50px 20px 20px;
-            border-radius: 16px;
-            background: rgba(15, 23, 42, 0.8);
-            border: 2px solid rgba(56, 189, 248, 0.5);
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.15), inset 0 2px 4px rgba(0,0,0,0.5);
+            padding: 22px 60px 22px 24px;
+            border-radius: 20px;
+            background: #ffffff;
+            border: 2.5px solid var(--primary);
+            box-shadow: 0 10px 30px rgba(56, 189, 248, 0.15), inset 0 1px 2px rgba(0,0,0,0.1);
             text-align: center;
-            font-weight: 300;
+            font-weight: 600;
             letter-spacing: 2px;
-            margin-bottom: 30px;
+            color: #090d16;
         }
 
         #barcodeInput:focus {
-            border-color: #38bdf8;
-            box-shadow: 0 0 25px rgba(56, 189, 248, 0.4), inset 0 2px 4px rgba(0,0,0,0.5);
+            border-color: #0ea5e9;
+            box-shadow: 
+                0 0 35px rgba(56, 189, 248, 0.45), 
+                inset 0 1px 2px rgba(0,0,0,0.1),
+                0 10px 20px rgba(56, 189, 248, 0.1);
+            background: #ffffff;
         }
 
         #barcodeInput::placeholder {
             color: #64748b;
         }
 
-        .count {
-            font-size: 130px;
-            font-weight: 700;
-            margin: 10px 0 20px 0;
-            color: #38bdf8;
-            line-height: 1;
-            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+
+        /* Camera scan border pulsing neon green when active */
+        #reader {
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
         }
 
+        /* Counter Widget */
+        .count {
+            font-size: 140px;
+            font-weight: 800;
+            margin: 10px 0;
+            color: var(--primary);
+            line-height: 1;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            font-family: 'Outfit', sans-serif;
+            text-align: center;
+            transition: color 0.4s ease;
+        }
+
+        /* Grid */
         .grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 25px;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 30px;
             margin-top: 30px;
         }
 
-        .card {
-            background: rgba(30, 41, 59, 0.6);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 25px;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
-        }
-
+        /* Tables style */
         .table-container {
-            max-height: 350px;
+            max-height: 380px;
             overflow-y: auto;
-            border-radius: 10px;
-            background: rgba(15, 23, 42, 0.3);
+            border-radius: 14px;
+            background: rgba(10, 15, 26, 0.3);
             border: 1px solid rgba(255,255,255,0.05);
         }
 
-        .table-container::-webkit-scrollbar { width: 8px; }
+        .table-container::-webkit-scrollbar { width: 6px; }
         .table-container::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; }
-        .table-container::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
+        .table-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
+        .table-container::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
 
         table {
             width: 100%;
@@ -108,44 +222,60 @@
         }
 
         th, td {
-            padding: 12px 15px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
             text-align: left;
         }
 
         th {
             position: sticky;
             top: 0;
-            background: rgba(30, 41, 59, 0.95);
-            backdrop-filter: blur(4px);
+            background: rgba(23, 33, 51, 0.95);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             font-weight: 600;
-            color: #94a3b8;
+            color: #64748b;
             text-transform: uppercase;
-            font-size: 12px;
-            letter-spacing: 1px;
+            font-size: 11px;
+            letter-spacing: 1.5px;
             z-index: 10;
+        }
+
+        tbody tr {
+            transition: background-color 0.2s ease;
         }
         
         tbody tr:hover {
             background: rgba(255,255,255,0.02);
         }
 
+        /* Row scan highlight animation */
+        .row-highlight {
+            animation: row-flash 2.5s ease-out forwards;
+        }
+
+        @keyframes row-flash {
+            0% { background-color: rgba(34, 197, 94, 0.25); box-shadow: inset 0 0 15px rgba(34, 197, 94, 0.2); }
+            100% { background-color: rgba(255, 255, 255, 0.03); }
+        }
+
+        /* Buttons */
         button {
             box-sizing: border-box;
-            padding: 16px 24px;
+            padding: 14px 22px;
             border: none;
-            border-radius: 14px;
+            border-radius: 12px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            font-family: 'Inter', sans-serif;
-            font-size: 16px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 15px;
             touch-action: manipulation;
         }
 
         button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
         }
 
         button:active {
@@ -153,94 +283,54 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, #0284c7 100%);
             color: white;
-            box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);
+            box-shadow: 0 4px 15px rgba(2, 132, 199, 0.35);
+        }
+        .btn-primary:hover {
+            box-shadow: 0 8px 25px rgba(2, 132, 199, 0.5);
         }
 
         .btn-danger {
             background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
             color: white;
-            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.35);
         }
-
-        .manual input {
-            padding: 12px 15px;
-            font-size: 16px;
-            border-radius: 10px;
-        }
-
-        .input-wrapper {
-            position: relative;
-            display: inline-block;
+        .btn-danger:hover {
+            box-shadow: 0 8px 25px rgba(220, 38, 38, 0.5);
         }
 
         .clear-btn {
             position: absolute;
-            right: 15px;
+            right: 18px;
             top: 50%;
             transform: translateY(-50%);
             background: none !important;
             border: none;
-            color: #64748b;
-            font-size: 28px;
+            color: #475569;
+            font-size: 26px;
             cursor: pointer;
-            padding: 5px !important;
+            padding: 4px !important;
             min-width: 0 !important;
             width: auto !important;
             line-height: 1;
             box-shadow: none !important;
-            border-radius: 5px !important;
+            border-radius: 50% !important;
+            transition: all 0.2s ease;
         }
         
         .clear-btn:hover {
-            color: #ef4444;
-            transform: translateY(-50%) scale(1.1);
-            box-shadow: none;
+            color: var(--danger);
+            transform: translateY(-50%) scale(1.15);
+            background: rgba(239, 68, 68, 0.1) !important;
         }
 
-        .nav-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(30, 41, 59, 0.6);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            padding: 12px 25px;
-            border-radius: 16px;
-            margin-bottom: 40px;
-            border: 1px solid rgba(255,255,255,0.08);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-
-        h1 {
-            font-weight: 700;
-            letter-spacing: -1px;
-            font-size: 36px;
-            background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 30px;
-        }
-
-        h3 {
-            margin-top: 0;
-            font-weight: 600;
-            color: #f8fafc;
-        }
-        
-        h4 {
-            color: #94a3b8;
-            margin: 20px 0 10px 0;
-            font-weight: 500;
-        }
-        
+        /* Status badges */
         .status-badge {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 6px 12px;
+            padding: 6px 14px;
             background: rgba(34, 197, 94, 0.1);
             border: 1px solid rgba(34, 197, 94, 0.2);
             border-radius: 20px;
@@ -250,24 +340,128 @@
             transition: all 0.3s ease;
         }
 
-        .pulse-animation {
-            animation: pulse-green 2s infinite;
-        }
-
+        .pulse-animation { animation: pulse-green 2s infinite; }
         @keyframes pulse-green {
             0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+            70% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
             100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
         }
         
-        .pulse-red {
-            animation: pulse-red 2s infinite;
-        }
-        
+        .pulse-red { animation: pulse-red 2s infinite; }
         @keyframes pulse-red {
             0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
             100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .sync-spinner {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Pill badges for table columns */
+        .pill-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .pill-badge-good { background: rgba(34, 197, 94, 0.12); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
+        .pill-badge-damaged { background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+        .pill-badge-flagged { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
+        .pill-badge-empty { background: rgba(255, 255, 255, 0.04); color: #64748b; }
+
+        /* Card Collapsible Header Style */
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .card-header h3 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+        .card-body-wrapper {
+            margin-top: 15px;
+            max-height: 1200px;
+            opacity: 1;
+            transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, margin-top 0.3s ease;
+            overflow: visible;
+        }
+        .card-body-wrapper.collapsed {
+            max-height: 0 !important;
+            opacity: 0 !important;
+            overflow: hidden !important;
+            margin-top: 0 !important;
+            pointer-events: none;
+        }
+        .collapse-btn {
+            background: transparent !important;
+            padding: 4px !important;
+            color: var(--text-muted);
+            font-size: 14px;
+            transition: transform 0.3s ease;
+            box-shadow: none !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .collapse-btn:hover {
+            color: var(--text-main);
+            transform: scale(1.1);
+        }
+        .collapse-btn.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        /* Scanning laser pulse overlay for barcode input */
+        .scanner-glow-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 20px;
+            pointer-events: none;
+            z-index: 10;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .flash-success {
+            animation: border-flash-green 0.8s ease-out;
+        }
+        .flash-error {
+            animation: border-flash-red 0.8s ease-out;
+        }
+        .flash-offline {
+            animation: border-flash-blue 0.8s ease-out;
+        }
+
+        @keyframes border-flash-green {
+            0% { border-color: #22c55e; box-shadow: 0 0 25px rgba(34, 197, 94, 0.6); }
+            100% { border-color: transparent; box-shadow: 0 0 0 rgba(34, 197, 94, 0); }
+        }
+        @keyframes border-flash-red {
+            0% { border-color: #ef4444; box-shadow: 0 0 25px rgba(239, 68, 68, 0.6); }
+            100% { border-color: transparent; box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        @keyframes border-flash-blue {
+            0% { border-color: #3b82f6; box-shadow: 0 0 25px rgba(59, 130, 246, 0.6); }
+            100% { border-color: transparent; box-shadow: 0 0 0 rgba(59, 130, 246, 0); }
         }
 
         /* --- TABLET & MOBILE RESPONSIVE UPDATES --- */
@@ -278,22 +472,19 @@
             .nav-bar > div { justify-content: center; flex-wrap: wrap; width: 100%; gap: 10px !important; }
             .nav-bar input, .nav-bar select { flex: 1; min-width: 120px; font-size: 16px !important; padding: 14px !important; height: auto !important; }
             
-            #barcodeInput { font-size: 26px; padding: 20px 60px 20px 20px; margin-bottom: 20px; }
+            #barcodeInput { font-size: 26px; padding: 20px 60px 20px 20px; margin-bottom: 0px; }
             .clear-btn { font-size: 30px !important; right: 10px !important; }
             td button.clear-btn { font-size: 22px !important; margin: 0 5px !important; padding: 5px !important; display: inline-block !important; }
             
             .card { padding: 20px; margin-bottom: 20px !important; }
             .count { font-size: 110px; margin: 15px 0; }
             
-            /* Tappable table rows */
             th, td { padding: 16px 10px; font-size: 14px; }
             .table-container { max-height: 400px; -webkit-overflow-scrolling: touch; }
             
-            /* Inputs & Buttons globally */
             input, select { font-size: 16px !important; padding: 14px !important; }
             button { font-size: 16px !important; }
             
-            /* Fix history filters */
             #histBranch, #histSession, #histDate, #histSearch { flex: 1; min-width: 100px; }
             
             h1 { font-size: 32px; margin-bottom: 20px; }
@@ -301,6 +492,10 @@
     </style>
 </head>
 <body>
+
+<div class="mesh-grid"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
 
 <div class="container">
     <div class="nav-bar">
@@ -313,91 +508,97 @@
             </span>
         </div>
         <div style="display:flex; align-items:center; gap: 15px;">
-            <select id="branchSelector" style="font-size: 14px; padding: 8px 12px; border-radius: 8px;"></select>
-            <input id="sessionName" list="main-session-list" value="" placeholder="Session Name" style="width: 140px; font-size: 14px; padding: 8px 12px; border-radius: 8px;" onchange="loadSummary();">
-            <datalist id="main-session-list"></datalist>
+            <select id="branchSelector" style="font-size: 14px; padding: 8px 12px; border-radius: 8px;" onchange="loadSessionsForSelectedBranch();"></select>
+            <select id="sessionName" style="width: 140px; font-size: 14px; padding: 8px 12px; border-radius: 8px;" onchange="loadSummary();"></select>
             <span id="syncStatus" class="status-badge">🟢 Online</span>
         </div>
     </div>
 
     <h1>Barcode Scanner</h1>
 
-    <div style="display: flex; gap: 10px; width: 100%; margin-bottom: 5px;">
-        <div class="input-wrapper" style="flex: 1;">
-            <input id="barcodeInput" autofocus placeholder="Scan barcode..." style="margin-bottom: 0;" />
-            <button class="clear-btn" onclick="document.getElementById('barcodeInput').value=''; document.getElementById('barcodeInput').focus();" style="right: 25px;">&times;</button>
-        </div>
+    <div id="barcodeInputContainer">
+        <input id="barcodeInput" autofocus placeholder="Scan barcode..." autocomplete="off" />
+        <div id="scannerFlashBorder" class="scanner-glow-border"></div>
+        <button class="clear-btn" onclick="document.getElementById('barcodeInput').value=''; document.getElementById('barcodeInput').focus();" style="right: 25px;">&times;</button>
         {% if role == 'admin' %}
-        <button onclick="toggleCamera()" class="btn-primary" style="padding: 0 20px; font-size: 24px; border-radius: 16px;">📷</button>
+        <button onclick="toggleCamera()" class="btn-primary" style="padding: 0 20px; font-size: 24px; border-radius: 20px; display: flex; align-items: center; justify-content: center;">📷</button>
         {% endif %}
     </div>
     
-    <div style="text-align: right; margin-bottom: 30px;">
-        <button onclick="undoLastScan()" style="background: transparent; color: #f87171; border: 1px solid rgba(248,113,113,0.3); padding: 6px 12px; font-size: 13px; border-radius: 6px; cursor: pointer;">↶ Undo Last Scan</button>
+    <div style="text-align: right; margin-bottom: 30px; position: relative; z-index: 10;">
+        <button onclick="undoLastScan()" style="background: transparent; color: #f87171; border: 1px solid rgba(248,113,113,0.3); padding: 6px 12px; font-size: 13px; border-radius: 8px; cursor: pointer; transition: all 0.2s;">↶ Undo Last Scan</button>
     </div>
 
-    <div id="reader" style="width: 100%; margin-bottom: 20px; display: none; border-radius: 16px; overflow: hidden; background: white;"></div>
+    <div id="reader" style="width: 100%; margin-bottom: 30px; display: none; border-radius: 20px; overflow: hidden; background: white;"></div>
 
-    <div class="card" style="margin-bottom: 30px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-            <h3 style="margin: 0; color: #94a3b8; text-transform: uppercase; font-size: 13px; letter-spacing: 1.5px;">Session Counter</h3>
-            <select id="countMode" onchange="updateCounterDisplay()" style="background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); color: #f8fafc; padding: 6px 12px; border-radius: 6px; outline: none; font-size: 13px; font-weight: 500; cursor: pointer;">
-                <option value="last">Last Barcode Scanned</option>
-                <option value="all">Total Items Scanned</option>
-                <option value="unique">Unique Barcodes Count</option>
-                <option value="damaged">Damaged Items Total</option>
-            </select>
+    <div class="card" id="card-counter" style="margin-bottom: 30px;">
+        <div class="card-header" style="cursor: default; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px;">
+            <h3>Session Counter</h3>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <select id="countMode" onchange="updateCounterDisplay()" style="background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); color: #f8fafc; padding: 6px 12px; border-radius: 8px; outline: none; font-size: 13px; font-weight: 500; cursor: pointer;">
+                    <option value="last">Last Barcode Scanned</option>
+                    <option value="all">Total Items Scanned</option>
+                    <option value="unique">Unique Barcodes Count</option>
+                    <option value="damaged">Damaged Items Total</option>
+                </select>
+            </div>
         </div>
-        <div id="lastBarcodeDisplay" style="margin-top: 15px; font-size: 24px; font-weight: 600; color: #f8fafc; letter-spacing: 1px; min-height: 29px;"></div>
-        <div class="count" id="count">0</div>
+        <div id="card-counter-body" class="card-body-wrapper">
+            <div id="lastBarcodeDisplay" style="text-align: center; margin-top: 15px; font-size: 24px; font-weight: 600; color: #f8fafc; letter-spacing: 1px; min-height: 29px;"></div>
+            <div class="count" id="count">0</div>
+        </div>
     </div>
+    
     <div id="status"></div>
 
     <div class="grid">
-
-        <div class="card manual">
-            <h3 style="text-align: center; margin-bottom: 20px;">Manual Entry</h3>
-            
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 25px;">
-                <div class="input-wrapper">
-                    <input id="manualBarcode" placeholder="Barcode" style="width: 100%; text-align: left; padding-left: 15px;">
-                    <button class="clear-btn" onclick="document.getElementById('manualBarcode').value=''; document.getElementById('manualBarcode').focus();">&times;</button>
+        <div class="card manual" id="card-manual">
+            <div class="card-header" style="cursor: default; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px;">
+                <h3>Manual Entry</h3>
+            </div>
+            <div id="card-manual-body" class="card-body-wrapper">
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 25px;">
+                    <div class="input-wrapper" style="position: relative;">
+                        <input id="manualBarcode" placeholder="Barcode" style="width: 100%; text-align: left; padding-left: 15px; padding-right: 40px;">
+                        <button class="clear-btn" onclick="document.getElementById('manualBarcode').value=''; document.getElementById('manualBarcode').focus();" style="right: 10px;">&times;</button>
+                    </div>
+                    <input id="manualQty" type="number" value="1" min="1" style="width: 100%; text-align: center;">
                 </div>
-                <input id="manualQty" type="number" value="1" min="1" style="width: 100%; text-align: center; background: rgba(15, 23, 42, 0.4);">
-            </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <button onclick="addDamaged()" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #ef4444;">Add Damaged</button>
-                <button class="btn-primary" onclick="manualAdd()" style="width: 100%;">Add Good</button>
-            </div>
-        </div>
-
-        <div class="card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <h3 style="margin:0;">Summary</h3>
-                <input id="sumSearch" onkeyup="renderSummary()" placeholder="Search..." style="padding:8px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); outline:none; background:rgba(15,23,42,0.6); color:#fff; font-size:13px; width: 200px;">
-            </div>
-
-            <div class="table-container">
-                <table>
-                    <thead id="summary-thead">
-                        <tr>
-                            <th>Barcode</th>
-                            <th>Good</th>
-                            <th>Damaged</th>
-                            <th>Flagged</th>
-                            <th>First Scan</th>
-                            <th>Last Scan</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="summary"></tbody>
-                </table>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <button onclick="addDamaged()" style="width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: #f87171; transition: all 0.2s;">Add Damaged</button>
+                    <button class="btn-primary" onclick="manualAdd()" style="width: 100%;">Add Good</button>
+                </div>
             </div>
         </div>
 
+        <div class="card" id="card-summary">
+            <div class="card-header" style="cursor: default; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; width: 100%; gap: 10px;">
+                    <h3 style="margin: 0;">Summary</h3>
+                    <input id="sumSearch" onkeyup="renderSummary()" placeholder="Search..." style="padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); outline:none; background:rgba(10,15,26,0.5); color:#fff; font-size:13px; width: 160px;">
+                </div>
+            </div>
+            <div id="card-summary-body" class="card-body-wrapper">
+                <div class="table-container">
+                    <table>
+                        <thead id="summary-thead">
+                            <tr>
+                                <th>Barcode</th>
+                                <th>Good</th>
+                                <th>Damaged</th>
+                                <th>Flagged</th>
+                                <th>First Scan</th>
+                                <th>Last Scan</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summary"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
-
 
 </div>
 
@@ -420,24 +621,29 @@ function escapeHTML(str) {
     );
 }
 
-document.getElementById('sessionName').value = new Date().toISOString().split('T')[0];
+const sessionNameEl = document.getElementById('sessionName');
+if (sessionNameEl) {
+    sessionNameEl.value = new Date().toISOString().split('T')[0];
+}
 
 function saveLocal() {
     localStorage.setItem('localScans', JSON.stringify(localScans));
 }
 
-function updateSyncStatus(isOnline) {
+function updateSyncStatus(isOnline, syncing = false) {
     const status = document.getElementById('syncStatus');
+    let syncIcon = syncing ? '<span class="sync-spinner">🔄</span> ' : '🟢 ';
+    
     if (!isOnline || localScans.length > 0) {
-        status.innerText = `🔴 Offline (${localScans.length} unsynced)`;
-        status.style.color = '#ef4444';
+        status.innerHTML = `${syncing ? '<span class="sync-spinner">🔄</span> ' : '🔴 '} Offline (${localScans.length} unsynced)`;
+        status.style.color = '#f87171';
         status.style.borderColor = 'rgba(239, 68, 68, 0.2)';
         status.style.background = 'rgba(239, 68, 68, 0.1)';
         status.classList.add('pulse-red');
         status.classList.remove('pulse-animation');
     } else {
-        status.innerText = `🟢 Online`;
-        status.style.color = '#22c55e';
+        status.innerHTML = `${syncIcon}Online`;
+        status.style.color = '#4ade80';
         status.style.borderColor = 'rgba(34, 197, 94, 0.2)';
         status.style.background = 'rgba(34, 197, 94, 0.1)';
         status.classList.add('pulse-animation');
@@ -445,38 +651,82 @@ function updateSyncStatus(isOnline) {
     }
 }
 
+// Collapsible Card Logic
+function toggleCard(bodyId, btn) {
+    const body = document.getElementById(bodyId);
+    if (body.classList.contains('collapsed')) {
+        body.classList.remove('collapsed');
+        if (btn) btn.classList.remove('collapsed');
+    } else {
+        body.classList.add('collapsed');
+        if (btn) btn.classList.add('collapsed');
+    }
+}
+
+// Visual feedback on scan
+function triggerScanFlash(type) {
+    const flashBorder = document.getElementById('scannerFlashBorder');
+    flashBorder.className = 'scanner-glow-border'; // Reset classes
+    // Force reflow to restart animation
+    void flashBorder.offsetWidth;
+    flashBorder.classList.add(`flash-${type}`);
+}
+
+let appSettings = {};
+
+function loadSessionsForSelectedBranch(callback) {
+    const branch = document.getElementById('branchSelector').value;
+    const sessionSel = document.getElementById('sessionName');
+    fetch("/sessions?branch=" + encodeURIComponent(branch))
+        .then(r => r.json())
+        .then(data => {
+            sessionSel.innerHTML = "";
+            data.forEach(s => {
+                let opt = document.createElement('option');
+                opt.value = s;
+                opt.innerText = s;
+                sessionSel.appendChild(opt);
+            });
+            
+            if (appSettings.global_session) {
+                if (!data.includes(appSettings.global_session)) {
+                    let opt = document.createElement('option');
+                    opt.value = appSettings.global_session;
+                    opt.innerText = appSettings.global_session;
+                    sessionSel.appendChild(opt);
+                }
+                sessionSel.value = appSettings.global_session;
+                sessionSel.disabled = true;
+            }
+            
+            if (callback) callback();
+            else loadSummary();
+        });
+}
+
 // Load settings and branches
 fetch("/settings").then(r=>r.json()).then(settings => {
-    if (settings.global_session) {
-        document.getElementById('sessionName').value = settings.global_session;
-        document.getElementById('sessionName').disabled = true;
-    }
+    appSettings = settings;
     fetch("/branches").then(r=>r.json()).then(data => {
         const sel = document.getElementById('branchSelector');
+        sel.innerHTML = "";
         data.forEach(b => {
             let opt = document.createElement('option');
             opt.value = b;
             opt.innerText = b;
             sel.appendChild(opt);
         });
-        if (settings.global_branch) {
-            sel.value = settings.global_branch;
+        if (appSettings.global_branch) {
+            sel.value = appSettings.global_branch;
             sel.disabled = true;
         }
         
-        loadSummary();
+        loadSessionsForSelectedBranch(() => {
+            loadSummary();
+        });
     });
 });
 
-// Load distinct sessions
-fetch("/sessions").then(r=>r.json()).then(data => {
-    const dl = document.getElementById('main-session-list');
-    data.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s;
-        dl.appendChild(opt);
-    });
-});
 
 document.addEventListener("click", () => {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -513,34 +763,78 @@ function errorBeep() {
     gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.3);
 }
 
+function buzzBeep() {
+    if (!audioCtx) return;
+    try {
+        const osc = audioCtx.createOscillator();
+        const osc2 = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(80, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(60, audioCtx.currentTime + 0.4);
+        
+        osc2.type = 'triangle';
+        osc2.frequency.setValueAtTime(120, audioCtx.currentTime);
+        
+        osc.connect(gain);
+        osc2.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start();
+        osc2.start();
+        
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.4);
+        
+        setTimeout(() => {
+            try {
+                osc.stop();
+                osc2.stop();
+            } catch(e) {}
+        }, 450);
+    } catch (e) {
+        console.error("Audio error: ", e);
+    }
+}
+
+
 function showToast(msg, type) {
     const toast = document.createElement('div');
     toast.innerText = msg;
     toast.style.position = 'fixed';
-    toast.style.top = '20px';
+    toast.style.top = '25px';
     toast.style.left = '50%';
-    toast.style.transform = 'translateX(-50%)';
-    toast.style.padding = '15px 25px';
-    toast.style.borderRadius = '10px';
+    toast.style.transform = 'translateX(-50%) translateY(-20px)';
+    toast.style.opacity = '0';
+    toast.style.padding = '16px 28px';
+    toast.style.borderRadius = '14px';
     toast.style.color = '#fff';
-    toast.style.fontWeight = 'bold';
-    toast.style.zIndex = '9999';
-    toast.style.boxShadow = '0 10px 25px rgba(0,0,0,0.5)';
-    toast.style.transition = 'all 0.3s ease';
+    toast.style.fontWeight = '600';
+    toast.style.fontFamily = "'Outfit', sans-serif";
+    toast.style.zIndex = '99999';
+    toast.style.boxShadow = '0 15px 35px rgba(0,0,0,0.5)';
+    toast.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
     
     if (type === 'error') {
         toast.style.background = 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)';
-        toast.style.border = '2px solid #fca5a5';
+        toast.style.border = '1px solid rgba(255, 255, 255, 0.1)';
     } else {
-        toast.style.background = 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)';
+        toast.style.background = 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)';
+        toast.style.border = '1px solid rgba(255, 255, 255, 0.1)';
     }
     
     document.body.appendChild(toast);
     
+    // Animate in
+    setTimeout(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+    }, 50);
+    
     setTimeout(() => {
         toast.style.opacity = '0';
-        toast.style.top = '-50px';
-        setTimeout(() => toast.remove(), 300);
+        toast.style.transform = 'translateX(-50%) translateY(-20px)';
+        setTimeout(() => toast.remove(), 400);
     }, 4000);
 }
 
@@ -560,6 +854,7 @@ function scanItem(barcode, qty=1, isDamaged=false, isManual=false) {
         }).then(res => {
             if (res.status === 401) {
                 pushLocal(barcode, qty, isDamaged, branch, session_name, isManual || qty > 1);
+                triggerScanFlash('offline');
                 window.location.href = '/login';
                 throw new Error("Logged out");
             }
@@ -570,16 +865,21 @@ function scanItem(barcode, qty=1, isDamaged=false, isManual=false) {
             if (data.warning) {
                 showAlert(data.warning);
                 errorBeep();
+                triggerScanFlash('error');
+            } else {
+                triggerScanFlash('success');
             }
             loadSummary(barcode);
             updateSyncStatus(true);
         }).catch(err => {
             if (err.message !== "Logged out") {
                 pushLocal(barcode, qty, isDamaged, branch, session_name, isManual || qty > 1);
+                triggerScanFlash('offline');
             }
         });
     } else {
         pushLocal(barcode, qty, isDamaged, branch, session_name, isManual || qty > 1);
+        triggerScanFlash('offline');
     }
 }
 
@@ -588,10 +888,15 @@ function pushLocal(barcode, qty, isDamaged, branch, session_name, isManual=false
     const gmt3Time = new Date(now.getTime() + (3 * 60 * 60 * 1000));
     const ts = gmt3Time.toISOString().replace('T', ' ').substring(0, 19);
     for(let i=0; i<qty; i++) {
-        let b = barcode;
-        if(isDamaged) b += "__DAMAGED";
-        if(isManual) b += "__FLAGGED";
-        localScans.push({ barcode: b, timestamp: ts, user: "{{ user }}", branch, session_name, is_manual: isManual });
+        localScans.push({
+            barcode: barcode.trim().toUpperCase(),
+            timestamp: ts,
+            user: "{{ user }}",
+            branch,
+            session_name,
+            is_manual: isManual,
+            is_damaged: isDamaged
+        });
     }
     saveLocal();
     updateSyncStatus(false);
@@ -604,6 +909,7 @@ let isSyncing = false;
 setInterval(() => {
     if (localScans.length > 0 && navigator.onLine && !isSyncing) {
         isSyncing = true;
+        updateSyncStatus(true, true); // Update status badge to show spinner
         const sendingScans = [...localScans];
         fetch('/sync', {
             method: 'POST',
@@ -611,25 +917,24 @@ setInterval(() => {
             body: JSON.stringify({ scans: sendingScans })
         }).then(res => {
             if (res.status === 401) {
-                // Do not clear localScans, just redirect
                 window.location.href = '/login';
                 return;
             }
             if (res.ok) {
                 localScans.splice(0, sendingScans.length);
                 saveLocal();
-                updateSyncStatus(true);
+                updateSyncStatus(true, false);
                 loadSummary();
             }
         }).catch(err => {
-            updateSyncStatus(false);
+            updateSyncStatus(false, false);
         }).finally(() => {
             isSyncing = false;
         });
     } else if (navigator.onLine && localScans.length === 0) {
-        updateSyncStatus(true);
+        updateSyncStatus(true, false);
     } else if (!navigator.onLine) {
-        updateSyncStatus(false);
+        updateSyncStatus(false, false);
     }
 }, 3000);
 
@@ -666,19 +971,19 @@ function updateCounterDisplay() {
     
     if (mode === 'all') {
         total = currentSummaryData.reduce((acc, item) => acc + item.good + item.damaged, 0);
-        countEl.style.color = '#38bdf8';
+        countEl.style.color = '#38bdf8'; // Blue
     } else if (mode === 'unique') {
         total = currentSummaryData.length;
-        countEl.style.color = '#a855f7';
+        countEl.style.color = '#c084fc'; // Purple
     } else if (mode === 'damaged') {
         total = currentSummaryData.reduce((acc, item) => acc + item.damaged, 0);
-        countEl.style.color = '#ef4444';
+        countEl.style.color = '#f87171'; // Red
     } else if (mode === 'last') {
         if (lastScannedBarcode) {
             const item = currentSummaryData.find(i => i.barcode === lastScannedBarcode);
             total = item ? (item.good + item.damaged) : 0;
         }
-        countEl.style.color = '#22c55e';
+        countEl.style.color = '#4ade80'; // Green
     }
     
     countEl.innerText = total;
@@ -690,7 +995,6 @@ function doSumSort(col) {
     else { sumSortCol = col; sumSortAsc = true; }
     renderSummary();
 }
-
 
 function renderSummary() {
     const table = document.getElementById("summary");
@@ -711,34 +1015,44 @@ function renderSummary() {
     });
     
     document.getElementById("summary-thead").innerHTML = `<tr>
-        <th>Barcode</th>
-        <th>Good</th>
-        <th>Damaged</th>
-        <th>Flagged</th>
-        <th>First Scan</th>
-        <th>Last Scan</th>
+        <th style="cursor:pointer;" onclick="doSumSort('barcode')">Barcode ${sumSortCol==='barcode' ? (sumSortAsc?'▲':'▼') : ''}</th>
+        <th style="cursor:pointer;" onclick="doSumSort('good')">Good ${sumSortCol==='good' ? (sumSortAsc?'▲':'▼') : ''}</th>
+        <th style="cursor:pointer;" onclick="doSumSort('damaged')">Damaged ${sumSortCol==='damaged' ? (sumSortAsc?'▲':'▼') : ''}</th>
+        <th style="cursor:pointer;" onclick="doSumSort('flagged')">Flagged ${sumSortCol==='flagged' ? (sumSortAsc?'▲':'▼') : ''}</th>
+        <th style="cursor:pointer;" onclick="doSumSort('first')">First Scan ${sumSortCol==='first' ? (sumSortAsc?'▲':'▼') : ''}</th>
+        <th style="cursor:pointer;" onclick="doSumSort('last')">Last Scan ${sumSortCol==='last' ? (sumSortAsc?'▲':'▼') : ''}</th>
         <th>Action</th>
     </tr>`;
 
     let htmlStr = "";
     let toRender = filtered.slice(0, 500);
     toRender.forEach(item => {
-        let bg = '';
+        let rowClass = '';
         if (item.barcode === lastScannedBarcode) {
-            bg = ' style="background: #334155;"';
+            rowClass = ' class="row-highlight"';
         }
         
+        let goodBadge = `<span class="pill-badge pill-badge-good">${item.good}</span>`;
+        let damagedBadge = item.damaged > 0 
+            ? `<span class="pill-badge pill-badge-damaged">⚠️ ${item.damaged}</span>` 
+            : `<span class="pill-badge pill-badge-empty">0</span>`;
+        let flaggedBadge = item.flagged > 0 
+            ? `<span class="pill-badge pill-badge-flagged">🚩 Flagged</span>` 
+            : `<span class="pill-badge pill-badge-empty">—</span>`;
+            
         htmlStr += `
-        <tr${bg}>
-            <td>${escapeHTML(item.barcode)}</td>
-            <td>${item.good}</td>
-            <td style="color:#ef4444">${item.damaged}</td>
-            <td style="color:#facc15; font-weight:bold;">${item.flagged > 0 ? '🚩 Yes' : ''}</td>
-            <td>${escapeHTML(item.first) || ""}</td>
-            <td>${escapeHTML(item.last) || ""}</td>
+        <tr${rowClass}>
+            <td style="font-weight:600; font-family:'Inter', sans-serif;">${escapeHTML(item.barcode)}</td>
+            <td>${goodBadge}</td>
+            <td>${damagedBadge}</td>
+            <td>${flaggedBadge}</td>
+            <td style="font-size:12px; color:#94a3b8;">${escapeHTML(item.first) || ""}</td>
+            <td style="font-size:12px; color:#94a3b8;">${escapeHTML(item.last) || ""}</td>
             <td>
-                <button class="clear-btn" style="position:static; transform:none; color:#facc15; font-size:18px; margin-right:8px;" onclick="toggleFlag('${escapeHTML(item.barcode).replace(/'/g, '\\\'')}')" title="Flag/Unflag this item">🚩</button>
-                <button class="clear-btn" style="position:static; transform:none; color:#ef4444; font-size:18px;" onclick="deleteSummaryItem('${escapeHTML(item.barcode).replace(/'/g, '\\\'')}')" title="Delete all scans for this barcode in this session">🗑️</button>
+                <div style="display:flex; gap: 8px;">
+                    <button class="clear-btn" style="position:static; transform:none; color:#facc15; font-size:18px; display:inline-flex; padding:0!important;" onclick="toggleFlag('${escapeHTML(item.barcode).replace(/'/g, '\\\'')}')" title="Flag/Unflag this item">🚩</button>
+                    <button class="clear-btn" style="position:static; transform:none; color:#ef4444; font-size:18px; display:inline-flex; padding:0!important;" onclick="deleteSummaryItem('${escapeHTML(item.barcode).replace(/'/g, '\\\'')}')" title="Delete scans">🗑️</button>
+                </div>
             </td>
         </tr>`;
     });
@@ -772,18 +1086,50 @@ function deleteSummaryItem(barcode) {
     });
 }
 
-
-
 function manualAdd() {
-    const barcode = document.getElementById('manualBarcode').value.trim();
-    const qty = parseInt(document.getElementById('manualQty').value) || 1;
-    if (barcode) scanItem(barcode, qty, false, true);
+    const barcodeInput = document.getElementById('manualBarcode');
+    const qtyInput = document.getElementById('manualQty');
+    if (!barcodeInput || !qtyInput) return;
+    const barcode = barcodeInput.value.trim();
+    const qty = parseInt(qtyInput.value) || 1;
+    if (barcode) {
+        scanItem(barcode, qty, false, true);
+        barcodeInput.value = '';
+        qtyInput.value = '1';
+        barcodeInput.focus();
+    }
 }
 
 function addDamaged() {
-    const barcode = document.getElementById('manualBarcode').value.trim();
-    const qty = parseInt(document.getElementById('manualQty').value) || 1;
-    if (barcode) scanItem(barcode, qty, true, true);
+    const barcodeInput = document.getElementById('manualBarcode');
+    const qtyInput = document.getElementById('manualQty');
+    if (!barcodeInput || !qtyInput) return;
+    const barcode = barcodeInput.value.trim();
+    const qty = parseInt(qtyInput.value) || 1;
+    if (barcode) {
+        scanItem(barcode, qty, true, true);
+        barcodeInput.value = '';
+        qtyInput.value = '1';
+        barcodeInput.focus();
+    }
+}
+
+// Bind Enter keypress events for manual inputs safely
+const manualBarcodeEl = document.getElementById('manualBarcode');
+const manualQtyEl = document.getElementById('manualQty');
+if (manualBarcodeEl) {
+    manualBarcodeEl.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            manualAdd();
+        }
+    });
+}
+if (manualQtyEl) {
+    manualQtyEl.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            manualAdd();
+        }
+    });
 }
 
 function toggleFlag(barcode) {
@@ -798,6 +1144,7 @@ function toggleFlag(barcode) {
 }
 
 function undoLastScan() {
+    buzzBeep();
     if (localScans.length > 0) {
         localScans.pop();
         saveLocal();
@@ -836,7 +1183,7 @@ function toggleCamera() {
                 
                 // Visual feedback instead of blocking alert
                 reader.style.border = "4px solid #4ade80";
-                reader.style.boxShadow = "0 0 20px #4ade80";
+                reader.style.boxShadow = "0 0 30px #4ade80";
                 setTimeout(() => {
                     reader.style.border = "none";
                     reader.style.boxShadow = "none";
@@ -911,22 +1258,22 @@ function closeModal() {
 </script>
 
 <!-- Modal Overlay -->
-<div id="modalOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); z-index:10000; justify-content:center; align-items:center;">
-    <div style="background:rgba(30,41,59,0.95); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:30px; max-width:420px; width:90%; box-shadow:0 25px 50px rgba(0,0,0,0.5); animation:fadeUp 0.3s ease;">
-        <div id="modalBody" style="color:#f8fafc; font-size:15px;"></div>
+<div id="modalOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); z-index:10000; justify-content:center; align-items:center;">
+    <div style="background:rgba(30,41,59,0.95); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px); border:1px solid rgba(255,255,255,0.1); border-radius:24px; padding:30px; max-width:420px; width:90%; box-shadow:0 25px 50px rgba(0,0,0,0.6); animation:fadeUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
+        <div id="modalBody" style="color:#f8fafc; font-size:15px; font-family:'Outfit', sans-serif;"></div>
         <div id="modalActions" style="display:flex; gap:12px; justify-content:flex-end; margin-top:25px;"></div>
     </div>
 </div>
 
 <style>
-.modal-btn { padding:10px 22px; border:none; border-radius:10px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; font-size:14px; transition:all 0.2s ease; }
+.modal-btn { padding:10px 22px; border:none; border-radius:10px; font-weight:600; cursor:pointer; font-family:'Outfit',sans-serif; font-size:14px; transition:all 0.2s ease; }
 .modal-btn-primary { background:linear-gradient(135deg,#38bdf8,#0284c7); color:white; box-shadow:0 4px 12px rgba(2,132,199,0.4); }
 .modal-btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(2,132,199,0.5); }
 .modal-btn-secondary { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#94a3b8; }
 .modal-btn-secondary:hover { background:rgba(255,255,255,0.12); color:#f8fafc; }
 .modal-btn-danger { background:linear-gradient(135deg,#f87171,#dc2626); color:white; box-shadow:0 4px 12px rgba(220,38,38,0.4); }
 .modal-btn-danger:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(220,38,38,0.5); }
-.modal-input { width:100%; box-sizing:border-box; padding:12px 16px; border-radius:10px; border:1px solid rgba(255,255,255,0.15); background:rgba(15,23,42,0.6); color:#f8fafc; font-size:15px; font-family:'Inter',sans-serif; outline:none; transition:border-color 0.2s; }
+.modal-input { width:100%; box-sizing:border-box; padding:12px 16px; border-radius:10px; border:1px solid rgba(255,255,255,0.15); background:rgba(15,23,42,0.6); color:#f8fafc; font-size:15px; font-family:'Outfit',sans-serif; outline:none; transition:border-color 0.2s; }
 .modal-input:focus { border-color:#38bdf8; box-shadow:0 0 0 3px rgba(56,189,248,0.2); }
 </style>
 
