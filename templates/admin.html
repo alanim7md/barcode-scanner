@@ -852,7 +852,7 @@
 
     <div class="container">
         <div class="nav">
-            <h1>⚡ Admin Panel</h1>
+            <h1>Admin Panel</h1>
             <div class="nav-links">
                 <a href="/">← Scanner</a>
                 <a href="/logout" class="logout">Logout</a>
@@ -861,15 +861,15 @@
 
         <div class="tabs">
             {% if role == 'admin' %}
-            <div class="tab" onclick="showTab('dashboard', this)">📊 Analytics</div>
+            <div class="tab" onclick="showTab('dashboard', this)">Analytics</div>
             {% endif %}
-            <div class="tab active" onclick="showTab('scans', this)">📋 Scans & Stats</div>
+            <div class="tab active" onclick="showTab('scans', this)">Scans & Stats</div>
             {% if role == 'admin' %}
-            <div class="tab" onclick="showTab('sessions', this)">🏠 Floors</div>
-            <div class="tab" onclick="showTab('users', this)">👥 Users</div>
-            <div class="tab" onclick="showTab('branches', this)">🏢 Branches</div>
-            <div class="tab" onclick="showTab('settings', this)">⚙️ Settings</div>
-            <div class="tab" onclick="showTab('audit-logs', this)">📜 Audit Logs</div>
+            <div class="tab" onclick="showTab('sessions', this)">Floors</div>
+            <div class="tab" onclick="showTab('users', this)">Users</div>
+            <div class="tab" onclick="showTab('branches', this)">Branches</div>
+            <div class="tab" onclick="showTab('settings', this)">Settings</div>
+            <div class="tab" onclick="showTab('audit-logs', this)">Audit Logs</div>
             {% endif %}
         </div>
 
@@ -896,7 +896,10 @@
             <!-- User Productivity Stats Section -->
             <div style="margin-top: 40px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
-                    <h4 style="margin:0; color:var(--text-main); font-size:16px;">👥 Counter Stats & Productivity</h4>
+                    <div class="stats-card">
+                        <h4 style="margin:0; color:var(--text-main); font-size:16px;">Counter Stats & Productivity</h4>
+                        <p style="color:#64748b; font-size:13.5px; margin: 4px 0 20px 0;">Total items scanned and registered by each active user.</p>
+                    </div>
                     <select id="userStatsTimeframe" onchange="loadUserStats()" style="font-size:12px; padding:6px 12px; border-radius:8px;">
                         <option value="all">All-Time</option>
                         <option value="today">Today</option>
@@ -968,7 +971,7 @@
             </div>
             <div class="filter-row" style="margin-bottom: 24px;">
                 <div style="display:flex; align-items:center; background:rgba(10,15,26,0.55); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:6px 12px; gap:10px; flex-wrap:wrap;">
-                    <span style="font-size:14px;margin-left:4px;">📅</span>
+                    <span style="font-size:14px;margin-left:4px;color:#64748b;display:inline-flex;align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
                     <div style="display:flex; align-items:center; gap:8px;">
                         <label style="margin:0;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">From</label>
                         <input type="text" id="dateFrom" placeholder="Select Time..." style="background:transparent;border:none;color:#f8fafc;font-size:13px;width:140px;padding:4px;box-shadow:none;border-radius:0;">
@@ -989,10 +992,10 @@
                     <option value="10000" selected>Auto-refresh: 10s</option>
                     <option value="30000">Auto-refresh: 30s</option>
                 </select>
-                <button class="btn btn-ghost" onclick="currentPage=1; loadScans()">↻ Refresh</button>
-                <button class="btn btn-primary" onclick="exportCSV()">⬇ Export CSV</button>
+                <button class="btn btn-ghost" onclick="currentPage=1; loadScans()">Refresh</button>
+                <button class="btn btn-primary" onclick="exportCSV()">Export CSV</button>
                 {% if role == 'admin' %}
-                <button class="btn btn-danger" id="deleteSelectedBtn" onclick="deleteSelected()" style="display:none;background:linear-gradient(135deg,#f87171,#dc2626);color:white;border:none;">🗑 Delete Selected</button>
+                <button class="btn btn-danger" id="deleteSelectedBtn" onclick="deleteSelected()" style="display:none;background:linear-gradient(135deg,#f87171,#dc2626);color:white;border:none;">Delete Selected</button>
                 {% endif %}
                 <input id="adminSearch" onkeyup="currentPage=1; loadScans()" placeholder="Search barcodes..." style="margin-left:auto;width:200px;">
             </div>
@@ -1009,9 +1012,9 @@
 
             <!-- Pagination Controls -->
             <div id="pagination-controls" style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 25px; flex-wrap: wrap;">
-                <button class="btn btn-ghost" id="prevPageBtn" onclick="prevPage()">◀ Previous</button>
+                <button class="btn btn-ghost" id="prevPageBtn" onclick="prevPage()">Previous</button>
                 <span id="pageInfo" style="font-size: 14px; font-weight: 600; color: #94a3b8; font-family:'Outfit', sans-serif;">Page 1 of 1</span>
-                <button class="btn btn-ghost" id="nextPageBtn" onclick="nextPage()">Next ▶</button>
+                <button class="btn btn-ghost" id="nextPageBtn" onclick="nextPage()">Next</button>
                 <span style="margin: 0 10px; color: rgba(255,255,255,0.15);">|</span>
                 <label style="font-size: 13px; color: #94a3b8; font-weight: 500; display: flex; align-items: center; gap: 8px;">Page Size:
                     <select id="pageSizeSelect" onchange="changePageSize()" style="font-size:12px; padding:4px 8px; border-radius:6px; background:rgba(10,15,26,0.6); color:white; border:1px solid rgba(255,255,255,0.15); outline: none; cursor: pointer;">
@@ -1043,10 +1046,10 @@
                             <td><span style="padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; background:{% if u.role=='admin' %}rgba(56,189,248,0.15); color:#38bdf8{% elif u.role=='moderator' %}rgba(168,85,247,0.15); color:#c084fc{% else %}rgba(255,255,255,0.06); color:#94a3b8{% endif %};">{{ u.role }}</span></td>
                             <td>
                                 <div class="user-actions">
-                                    <button class="btn btn-ghost btn-sm" onclick="changePassword('{{ u.username }}')">🔑 Password</button>
-                                    <button class="btn btn-warn btn-sm" onclick="forceLogoutUser('{{ u.username }}')">⏏ Force Logout</button>
+                                    <button class="btn btn-ghost btn-sm" onclick="changePassword('{{ u.username }}')">Password</button>
+                                    <button class="btn btn-warn btn-sm" onclick="forceLogoutUser('{{ u.username }}')">Force Logout</button>
                                     {% if u.username != 'admin' %}
-                                    <button class="btn btn-danger btn-sm" onclick="deleteUser('{{ u.username }}')">🗑 Delete</button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteUser('{{ u.username }}')">Delete</button>
                                     {% endif %}
                                 </div>
                             </td>
@@ -1083,7 +1086,7 @@
                         {% for b in branches %}
                         <tr>
                             <td style="font-weight:600; font-family:'Inter', sans-serif;">{{ b.name }}</td>
-                            <td><button class="btn btn-danger btn-sm" onclick="deleteBranch('{{ b.name }}')">🗑 Delete</button></td>
+                            <td><button class="btn btn-danger btn-sm" onclick="deleteBranch('{{ b.name }}')">Delete</button></td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -1104,7 +1107,7 @@
             
             <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap: 30px; margin-bottom: 40px; align-items: start;">
                 <div>
-                    <h4 style="margin: 0 0 15px 0; color: var(--text-main); font-size: 15px;">➕ Add Floor to Branch</h4>
+                    <h4 style="margin: 0 0 15px 0; color: var(--text-main); font-size: 15px;">Add Floor to Branch</h4>
                     <div style="display:flex; gap:12px; flex-direction: column;">
                         <div>
                             <label>Target Branch</label>
@@ -1139,7 +1142,7 @@
             <h3>Active Scan Data by Floor</h3>
             <p style="color:#64748b; font-size:14.5px; margin-top:-10px; margin-bottom:20px;">View, delete, or reassign floor scan data.</p>
             <div class="filter-row" style="margin-bottom:16px;">
-                <button class="btn btn-ghost" onclick="loadSessionInfo()">↻ Refresh</button>
+                <button class="btn btn-ghost" onclick="loadSessionInfo()">Refresh</button>
             </div>
             <div class="table-wrap" id="sessionsTableWrap">
                 <div class="spinner-wrap" id="sessionsSpinner">
@@ -1168,29 +1171,29 @@
                 <div><label>From Branch (optional)</label><input id="reassign-from-branch" placeholder="Leave empty for all"></div>
                 <div><label>To Session</label><input id="reassign-to" list="session-list" placeholder="Target session"></div>
                 <div><label>To Branch (optional)</label><input id="reassign-to-branch" placeholder="Leave empty to keep"></div>
-                <button class="btn btn-primary" style="height:41px;" onclick="reassignSession()">↗ Reassign</button>
+                <button class="btn btn-primary" style="height:41px;" onclick="reassignSession()">Reassign</button>
             </div>
         </div>
 
         <div id="settings" class="tab-content card">
-            <h3>⚙️ Global Settings</h3>
+            <h3>Global Settings</h3>
             <p style="color:#64748b; font-size:14.5px; margin-top:-10px; margin-bottom:24px;">Lock all counters to a specific <strong style="color:#f8fafc;">Branch</strong> and/or <strong style="color:#f8fafc;">Floor</strong>. Leave blank to let users choose freely.</p>
             
             <div style="display:grid; grid-template-columns: 1fr 1fr auto; gap:20px; align-items:flex-end; flex-wrap:wrap;">
                 <div>
-                    <label>🏢 Enforced Branch</label>
+                    <label>Enforced Branch</label>
                     <select id="global-branch" style="width:100%; padding-right:30px;" onchange="loadSettingsSessionsForBranch()">
                         <option value="">— None (Users Choose) —</option>
                     </select>
                 </div>
                 <div>
-                    <label>🏠 Enforced Floor / Session</label>
+                    <label>Enforced Floor / Session</label>
                     <select id="global-session" style="width:100%; padding-right:30px;">
                         <option value="">— None (Users Choose) —</option>
                     </select>
                 </div>
                 <div style="display:flex; flex-direction:column; gap:8px;">
-                    <button class="btn btn-primary" style="height:41px; white-space:nowrap;" onclick="saveSettings()">💾 Save Settings</button>
+                    <button class="btn btn-primary" style="height:41px; white-space:nowrap;" onclick="saveSettings()">Save Settings</button>
                     <button class="btn btn-ghost" style="height:41px; white-space:nowrap; font-size:12px;" onclick="clearSettings()">✕ Clear Lock</button>
                 </div>
             </div>
@@ -1199,7 +1202,7 @@
             </div>
 
             <div style="margin-top:30px; padding:18px; background:rgba(56,189,248,0.05); border:1px solid rgba(56,189,248,0.15); border-radius:14px;">
-                <div style="font-size:13px; font-weight:700; color:#38bdf8; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">📋 Current Lock Status</div>
+                <div style="font-size:13px; font-weight:700; color:#38bdf8; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Current Lock Status</div>
                 <div id="currentLockStatus" style="font-size:14px; color:#94a3b8;">Loading...</div>
             </div>
         </div>
@@ -1208,7 +1211,7 @@
             <h3>System Audit Logs</h3>
             <p style="color:#64748b; font-size:14.5px; margin-top:-10px; margin-bottom:20px;">Detailed log of all scan creations, adjustments, deletions, and barcode edits. Only accessible by admins.</p>
             <div class="filter-row" style="margin-bottom:16px;">
-                <button class="btn btn-ghost" onclick="loadAuditLogs()">↻ Refresh</button>
+                <button class="btn btn-ghost" onclick="loadAuditLogs()">Refresh</button>
                 <input id="auditSearch" onkeyup="renderAuditLogs()" placeholder="Search logs..." style="margin-left:auto; width:250px;">
             </div>
             <div class="table-wrap" id="auditTableWrap">
@@ -1231,6 +1234,25 @@
     </div>
 
     <script>
+        // Global fetch interceptor to handle session timeout/logout (401 responses)
+        (function() {
+            const originalFetch = window.fetch;
+            window.fetch = async function(...args) {
+                try {
+                    const response = await originalFetch(...args);
+                    if (response.status === 401) {
+                        window.location.href = '/login';
+                        throw new Error('Unauthorized/Logged out');
+                    }
+                    return response;
+                } catch (err) {
+                    if (err.message === 'Unauthorized/Logged out') throw err;
+                    console.error('Fetch error:', err);
+                    throw err;
+                }
+            };
+        })();
+
         function escapeHTML(str) {
             if (str === null || str === undefined) return '';
             return String(str).replace(/[&<>'"]/g,
@@ -1563,10 +1585,10 @@
                     
                     let goodBadge = `<span class="pill-badge pill-badge-good">${row.good}</span>`;
                     let damagedBadge = row.damaged > 0 
-                        ? `<span class="pill-badge pill-badge-damaged">⚠️ ${row.damaged}</span>` 
+                        ? `<span class="pill-badge pill-badge-damaged">${row.damaged} Damaged</span>` 
                         : `<span class="pill-badge pill-badge-empty">0</span>`;
                     let flaggedBadge = row.flagged > 0 
-                        ? `<span class="pill-badge pill-badge-flagged">🚩 Flagged</span>` 
+                        ? `<span class="pill-badge pill-badge-flagged">Flagged</span>` 
                         : `<span class="pill-badge pill-badge-empty">—</span>`;
                         
                     html += `<tr${marked ? ' class="marked-row"' : ''}>
@@ -1581,9 +1603,15 @@
                 <td style="color:#64748b;font-size:12px;">${escapeHTML(row.last)}</td>
                 <td>
                     <div style="display:flex; gap: 4px; align-items:center;">
-                        <button class="btn-icon" onclick="setOdooMarkAdmin('${escapeHTML(row.barcode).replace(/&#39;/g, "\\'")}')" title="Mark as entered">✅</button>
-                        <button class="btn btn-warn btn-sm" style="padding:4px 8px; font-size:11px;" onclick="toggleAdminFlag('${escapeHTML(row.barcode).replace(/&#39;/g, "\\'")}','null',document.getElementById('masterBranch').value,document.getElementById('masterSession').value)">🚩</button>
-                        <button class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:11px;" onclick="editBarcodeMaster('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}')" title="Edit Barcode">✏️</button>
+                        <button class="btn-icon" style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; color:#4ade80;" onclick="setOdooMarkAdmin('${escapeHTML(row.barcode).replace(/&#39;/g, "\\'")}')" title="Mark as entered">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </button>
+                        <button class="btn btn-warn btn-sm" style="padding:4px 8px; display:inline-flex; align-items:center;" onclick="toggleAdminFlag('${escapeHTML(row.barcode).replace(/&#39;/g, "\\'")}','null',document.getElementById('masterBranch').value,document.getElementById('masterSession').value)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="${row.flagged > 0 ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                        </button>
+                        <button class="btn btn-ghost btn-sm" style="padding:4px 8px; display:inline-flex; align-items:center;" onclick="editBarcodeMaster('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}')" title="Edit Barcode">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                        </button>
                     </div>
                 </td></tr>`;
                 });
@@ -1609,10 +1637,10 @@
                     
                     let goodBadge = `<span class="pill-badge pill-badge-good">${row.good}</span>`;
                     let damagedBadge = row.damaged > 0 
-                        ? `<span class="pill-badge pill-badge-damaged">⚠️ ${row.damaged}</span>` 
+                        ? `<span class="pill-badge pill-badge-damaged">${row.damaged} Damaged</span>` 
                         : `<span class="pill-badge pill-badge-empty">0</span>`;
                     let flaggedBadge = row.flagged > 0 
-                        ? `<span class="pill-badge pill-badge-flagged">🚩 Flagged</span>` 
+                        ? `<span class="pill-badge pill-badge-flagged">Flagged</span>` 
                         : `<span class="pill-badge pill-badge-empty">—</span>`;
                         
                     html += `<tr${marked ? ' class="marked-row"' : ''}>
@@ -1629,13 +1657,21 @@
                 <td style="color:#64748b;font-size:12px;">${escapeHTML(row.last)}</td>
                 <td>
                     <div style="display:flex; gap: 4px; align-items:center;">
-                        <button class="btn-icon" onclick="setOdooMarkAdmin('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}')" title="Mark as entered">✅</button>
+                        <button class="btn-icon" style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; color:#4ade80;" onclick="setOdooMarkAdmin('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}')" title="Mark as entered">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </button>
                         {% if role == 'admin' %}
-                        <button class="btn btn-primary btn-sm" style="padding:4px 10px; font-size:11px;" onclick="openEditDialog('${escapeHTML(row.barcode).replace(/&#39;/g, "\\'")}','${escapeHTML(row.user).replace(/&#39;/g, "\\'")}','${escapeHTML(row.branch).replace(/&#39;/g, "\\'")}','${escapeHTML(row.session_name).replace(/&#39;/g, "\\'")}',${ row.good },${ row.damaged })" title="Edit scan">✏️ Edit</button>
+                        <button class="btn btn-primary btn-sm" style="padding:4px 10px; display:inline-flex; align-items:center;" onclick="openEditDialog('${escapeHTML(row.barcode).replace(/&#39;/g, "\\'")}','${escapeHTML(row.user).replace(/&#39;/g, "\\'")}','${escapeHTML(row.branch).replace(/&#39;/g, "\\'")}','${escapeHTML(row.session_name).replace(/&#39;/g, "\\'")}',${ row.good },${ row.damaged })" title="Edit scan">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Edit
+                        </button>
                         {% else %}
-                        <button class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:11px;" onclick="editBarcodeDetailed('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.user).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.branch).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.session_name).replace(/&#39;/g, "\\\'")}')" title="Edit Barcode">✏️</button>
+                        <button class="btn btn-ghost btn-sm" style="padding:4px 8px; display:inline-flex; align-items:center;" onclick="editBarcodeDetailed('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.user).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.branch).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.session_name).replace(/&#39;/g, "\\\'")}')" title="Edit Barcode">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                        </button>
                         {% endif %}
-                        <button class="btn btn-warn btn-sm" style="padding:4px 8px; font-size:11px;" onclick="toggleAdminFlag('${escapeHTML(row.barcode)}','${escapeHTML(row.user).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.branch).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.session_name).replace(/&#39;/g, "\\\'")}')">🚩</button>
+                        <button class="btn btn-warn btn-sm" style="padding:4px 8px; display:inline-flex; align-items:center;" onclick="toggleAdminFlag('${escapeHTML(row.barcode)}','${escapeHTML(row.user).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.branch).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.session_name).replace(/&#39;/g, "\\\'")}')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="${row.flagged > 0 ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                        </button>
                     </div>
                 </td></tr>`;
                 });
@@ -1704,7 +1740,7 @@
                             <td style="color:#64748b;font-size:12px;">${escapeHTML(row.first_scan)}</td>
                             <td style="color:#64748b;font-size:12px;">${escapeHTML(row.last_scan)}</td>
                             <td>
-                                <button class="btn btn-danger btn-sm" onclick="deleteSession('${escapeHTML(row.session_name).replace(/&#39;/g, "\\\'")}', '${escapeHTML(row.branch) || ''}')">🗑 Delete</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteSession('${escapeHTML(row.session_name).replace(/&#39;/g, "\\\'")}', '${escapeHTML(row.branch) || ''}')">Delete</button>
                             </td>
                         </tr>`;
                     });
@@ -1781,12 +1817,12 @@
             const branch = settings.global_branch || null;
             const sess = settings.global_session || null;
             if (!branch && !sess) {
-                el.innerHTML = '<span style="color:#4ade80;">✅ No lock active — users choose freely</span>';
+                el.innerHTML = '<span style="color:#4ade80;">No lock active — users choose freely</span>';
             } else {
                 let parts = [];
                 if (branch) parts.push(`Branch locked to <strong style="color:#38bdf8;">${escapeHTML(branch)}</strong>`);
                 if (sess) parts.push(`Floor locked to <strong style="color:#c084fc;">${escapeHTML(sess)}</strong>`);
-                el.innerHTML = '🔒 ' + parts.join(' &bull; ');
+                el.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> ' + parts.join(' &bull; ');
             }
         }
 
@@ -1800,7 +1836,7 @@
             }).then(r => r.json()).then(res => {
                 const statusEl = document.getElementById('settings-status');
                 if (res.status === 'ok') {
-                    statusEl.innerHTML = '✅ Settings saved! Counters will use these settings on next page load.';
+                    statusEl.innerHTML = 'Settings saved! Counters will use these settings on next page load.';
                     statusEl.style.display = 'block';
                     setTimeout(() => { statusEl.style.display = 'none'; }, 4000);
                     updateCurrentLockStatus({ global_branch: globalBranch, global_session: globalSession });
@@ -2128,7 +2164,7 @@
                         tbody.innerHTML += `<tr>
                             <td style="font-weight:600;">${escapeHTML(def.branch_name)}</td>
                             <td>${escapeHTML(def.session_name)}</td>
-                            <td><button class="btn btn-danger btn-sm" onclick="deleteSessionDef('${def.id}', '${escapeHTML(def.branch_name).replace(/&#39;/g, "\\\'")}', '${escapeHTML(def.session_name).replace(/&#39;/g, "\\\'")}')">🗑 Delete</button></td>
+                            <td><button class="btn btn-danger btn-sm" onclick="deleteSessionDef('${def.id}', '${escapeHTML(def.branch_name).replace(/&#39;/g, "\\\'")}', '${escapeHTML(def.session_name).replace(/&#39;/g, "\\\'")}')">Delete</button></td>
                         </tr>`;
                     });
                     if (data.length === 0) {
@@ -2167,8 +2203,8 @@
                             <td><span style="padding:4px 12px; border-radius:20px; font-size:11px; font-weight:700; ${roleColor}">${escapeHTML(row.role)}</span></td>
                             <td style="font-weight:700; color:#38bdf8;">${row.total_scans}</td>
                             <td><span class="pill-badge pill-badge-good">${row.good_scans}</span></td>
-                            <td>${row.damaged_scans > 0 ? `<span class="pill-badge pill-badge-damaged">⚠️ ${row.damaged_scans}</span>` : `<span class="pill-badge pill-badge-empty">0</span>`}</td>
-                            <td>${row.flagged_scans > 0 ? `<span class="pill-badge pill-badge-flagged">🚩 ${row.flagged_scans}</span>` : `<span class="pill-badge pill-badge-empty">0</span>`}</td>
+                            <td>${row.damaged_scans > 0 ? `<span class="pill-badge pill-badge-damaged">${row.damaged_scans} Damaged</span>` : `<span class="pill-badge pill-badge-empty">0</span>`}</td>
+                            <td>${row.flagged_scans > 0 ? `<span class="pill-badge pill-badge-flagged">${row.flagged_scans} Flagged</span>` : `<span class="pill-badge pill-badge-empty">0</span>`}</td>
                             <td>${row.sessions_worked}</td>
                             <td>${row.branches_worked}</td>
                             <td style="color:#64748b; font-size:12.5px;">${escapeHTML(row.last_active) || 'N/A'}</td>
@@ -2285,7 +2321,7 @@
     <!-- Edit Scan Dialog -->
     <div id="editScanDialog">
         <div class="edit-dialog-box">
-            <h3>✏️ Edit Scan</h3>
+            <h3>Edit Scan</h3>
             <div class="edit-dialog-info" id="edit-info"></div>
 
             <div class="edit-field-row">
@@ -2296,11 +2332,11 @@
 
             <div class="edit-qty-row">
                 <div class="edit-field-row">
-                    <label class="edit-qty-badge-good">✅ Good Quantity</label>
+                    <label class="edit-qty-badge-good">Good Quantity</label>
                     <input type="number" id="edit-good" min="0">
                 </div>
                 <div class="edit-field-row">
-                    <label class="edit-qty-badge-damaged">⚠️ Damaged Quantity</label>
+                    <label class="edit-qty-badge-damaged">Damaged Quantity</label>
                     <input type="number" id="edit-damaged" min="0">
                 </div>
             </div>
@@ -2308,7 +2344,7 @@
 
             <div class="edit-dialog-actions">
                 <button class="mbtn mbtn-secondary" onclick="closeEditDialog()">Cancel</button>
-                <button class="mbtn mbtn-primary" onclick="saveEditDialog()">💾 Save Changes</button>
+                <button class="mbtn mbtn-primary" onclick="saveEditDialog()">Save Changes</button>
             </div>
         </div>
     </div>

@@ -54,9 +54,9 @@ if os.environ.get('TESTING') == 'true':
         'users': "sqlite:///:memory:"
     }
 else:
-    app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(BASE_DIR, 'database.db')}"
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(BASE_DIR, 'database.db')}?timeout=20"
     app.config['SQLALCHEMY_BINDS'] = {
-        'users': f"sqlite:///{os.path.join(BASE_DIR, 'users.db')}"
+        'users': f"sqlite:///{os.path.join(BASE_DIR, 'users.db')}?timeout=20"
     }
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -247,8 +247,16 @@ def check_session_token():
     user = session.get("user")
     token = session.get("session_token")
 
+    # Helper to check if request expects a JSON/AJAX response rather than page redirect
+    is_ajax = (
+        request.path.startswith('/api/') or 
+        (request.path.startswith('/admin/') and request.path != '/admin') or
+        request.path in ['/scan', '/manual', '/damaged', '/sync', '/flag_item', '/undo', '/branches', '/sessions', '/summary', '/count', '/settings'] or 
+        request.method == 'POST'
+    )
+
     if not user or not token:
-        if request.path.startswith('/api/') or request.path in ['/scan', '/manual', '/damaged', '/sync', '/flag_item', '/undo', '/branches', '/sessions'] or request.method == 'POST':
+        if is_ajax:
             return jsonify({"error": "unauthorized", "redirect": "/login"}), 401
         return redirect("/login")
 
@@ -256,7 +264,7 @@ def check_session_token():
 
     if not user_rec or user_rec.session_token != token:
         session.clear()
-        if request.path.startswith('/api/') or request.path in ['/scan', '/manual', '/damaged', '/sync', '/flag_item', '/undo', '/branches', '/sessions'] or request.method == 'POST':
+        if is_ajax:
             return jsonify({"error": "logged_out", "redirect": "/login"}), 401
         return redirect("/login")
         
@@ -331,10 +339,11 @@ def index():
 # ---------- SCAN ----------
 def insert_scans_bulk(barcode, qty, is_damaged=False, is_flagged=False, session_name=None, branch=None, is_manual=False):
     barcode = clean_barcode(barcode.strip().upper())
+    req_json = request.json or {}
     if session_name is None:
-        session_name = request.json.get("session_name", "")
+        session_name = req_json.get("session_name", "")
     if branch is None:
-        branch = request.json.get("branch") or ""
+        branch = req_json.get("branch") or ""
 
     # Fallback: if no branch sent, use the globally enforced branch if set
     if not branch:
@@ -454,7 +463,7 @@ def flag_item():
 
 @app.route("/sync", methods=["POST"])
 def sync():
-    scans = request.json.get("scans", [])
+    scans = (request.json or {}).get("scans", [])
     if not scans:
         return jsonify({"status": "ok"})
 
