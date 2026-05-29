@@ -1246,19 +1246,30 @@ def admin_delete_entries():
     deleted_count = 0
     for entry in entries:
         barcode = clean_barcode((entry.get("barcode") or "").strip().upper())
+        q = Scan.query.filter_by(barcode=barcode)
+        
         if mode == "master":
-            deleted_count += Scan.query.filter_by(
-                barcode=barcode,
-                branch=entry.get("branch"),
-                session_name=entry.get("session_name")
-            ).delete(synchronize_session=False)
+            branch_val = entry.get("branch")
+            session_val = entry.get("session_name")
+            if branch_val and branch_val != "null":
+                q = q.filter_by(branch=branch_val)
+            if session_val and session_val != "null":
+                q = q.filter_by(session_name=session_val)
+            deleted_count += q.delete(synchronize_session=False)
         else:
-            deleted_count += Scan.query.filter_by(
-                barcode=barcode,
-                user=entry.get("user"),
-                branch=entry.get("branch"),
-                session_name=entry.get("session_name")
-            ).delete(synchronize_session=False)
+            user_val = entry.get("user")
+            branch_val = entry.get("branch")
+            session_val = entry.get("session_name")
+            
+            # In detailed mode, if the field is empty we still filter by it 
+            # because the row specifically has an empty value for that column.
+            # But we handle "null" string as a fallback just in case.
+            if user_val == "null": user_val = None
+            if branch_val == "null": branch_val = None
+            if session_val == "null": session_val = None
+            
+            q = q.filter_by(user=user_val, branch=branch_val, session_name=session_val)
+            deleted_count += q.delete(synchronize_session=False)
             
     # Log audit
     operator = session.get("user", "unknown")
