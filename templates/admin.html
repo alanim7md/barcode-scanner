@@ -1554,8 +1554,8 @@
                 <td style="color:#64748b;font-size:12px;">${escapeHTML(row.last)}</td>
                 <td>
                     <div style="display:flex; gap: 4px; align-items:center;">
-                        <button class="btn-icon" onclick="setOdooMarkAdmin('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}')" title="Mark as entered">✅</button>
-                        <button class="btn btn-warn btn-sm" style="padding:4px 8px; font-size:11px;" onclick="toggleAdminFlag('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}','null',document.getElementById('masterBranch').value,document.getElementById('masterSession').value)">🚩</button>
+                        <button class="btn-icon" onclick="setOdooMarkAdmin('${escapeHTML(row.barcode).replace(/&#39;/g, "\\'")}')" title="Mark as entered">✅</button>
+                        <button class="btn btn-warn btn-sm" style="padding:4px 8px; font-size:11px;" onclick="toggleAdminFlag('${escapeHTML(row.barcode).replace(/&#39;/g, "\\'")}','null',document.getElementById('masterBranch').value,document.getElementById('masterSession').value)">🚩</button>
                         <button class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:11px;" onclick="editBarcodeMaster('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}')" title="Edit Barcode">✏️</button>
                     </div>
                 </td></tr>`;
