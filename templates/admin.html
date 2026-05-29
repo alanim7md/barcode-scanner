@@ -616,6 +616,90 @@
             box-shadow: 0 0 0 3px var(--primary-glow);
         }
 
+        /* EDIT SCAN DIALOG */
+        #editScanDialog {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.65);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 10001;
+            justify-content: center;
+            align-items: center;
+        }
+        .edit-dialog-box {
+            background: rgba(15, 23, 42, 0.97);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 36px;
+            width: 92%;
+            max-width: 520px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+            animation: fadeUp 0.3s cubic-bezier(0.16,1,0.3,1);
+        }
+        .edit-dialog-box h3 {
+            margin: 0 0 6px 0;
+            font-size: 20px;
+            font-weight: 750;
+            color: #f8fafc;
+        }
+        .edit-dialog-info {
+            font-size: 12.5px;
+            color: #64748b;
+            margin-bottom: 24px;
+        }
+        .edit-field-row {
+            margin-bottom: 18px;
+        }
+        .edit-field-row label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 7px;
+        }
+        .edit-field-row input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(10,15,26,0.7);
+            color: #f8fafc;
+            font-size: 15px;
+            font-family: 'Outfit', sans-serif;
+            outline: none;
+            transition: all 0.25s ease;
+        }
+        .edit-field-row input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+        .edit-qty-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+        .edit-qty-row .edit-field-row { margin-bottom: 0; }
+        .edit-qty-badge-good { color: #4ade80; }
+        .edit-qty-badge-damaged { color: #f59e0b; }
+        .edit-dialog-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 28px;
+        }
+        .edit-hint {
+            font-size: 12px;
+            color: #475569;
+            margin-top: 4px;
+        }
+
         .mbtn {
             padding: 11px 22px;
             border: none;
@@ -1520,11 +1604,11 @@
                     <div style="display:flex; gap: 4px; align-items:center;">
                         <button class="btn-icon" onclick="setOdooMarkAdmin('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}')" title="Mark as entered">✅</button>
                         {% if role == 'admin' %}
-                        <button class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:11px;" onclick="promptAdjust('${escapeHTML(row.barcode)}','${escapeHTML(row.user).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.branch).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.session_name).replace(/&#39;/g, "\\\'")}','good')">Good +/-</button>
-                        <button class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:11px;" onclick="promptAdjust('${escapeHTML(row.barcode)}','${escapeHTML(row.user).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.branch).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.session_name).replace(/&#39;/g, "\\\'")}','damaged')">Damaged +/-</button>
+                        <button class="btn btn-primary btn-sm" style="padding:4px 10px; font-size:11px;" onclick="openEditDialog('${escapeHTML(row.barcode).replace(/&#39;/g, "\\'")}','${escapeHTML(row.user).replace(/&#39;/g, "\\'")}','${escapeHTML(row.branch).replace(/&#39;/g, "\\'")}','${escapeHTML(row.session_name).replace(/&#39;/g, "\\'")}',${ row.good },${ row.damaged })" title="Edit scan">✏️ Edit</button>
+                        {% else %}
+                        <button class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:11px;" onclick="editBarcodeDetailed('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.user).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.branch).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.session_name).replace(/&#39;/g, "\\\'")}')" title="Edit Barcode">✏️</button>
                         {% endif %}
                         <button class="btn btn-warn btn-sm" style="padding:4px 8px; font-size:11px;" onclick="toggleAdminFlag('${escapeHTML(row.barcode)}','${escapeHTML(row.user).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.branch).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.session_name).replace(/&#39;/g, "\\\'")}')">🚩</button>
-                        <button class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:11px;" onclick="editBarcodeDetailed('${escapeHTML(row.barcode).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.user).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.branch).replace(/&#39;/g, "\\\'")}','${escapeHTML(row.session_name).replace(/&#39;/g, "\\\'")}')" title="Edit Barcode">✏️</button>
                     </div>
                 </td></tr>`;
                 });
@@ -1662,6 +1746,80 @@
             });
         }
 
+        // ---- UNIFIED EDIT SCAN DIALOG ----
+        function openEditDialog(barcode, user, branch, session_name, currentGood, currentDamaged) {
+            const dlg = document.getElementById('editScanDialog');
+            dlg.querySelector('#edit-barcode').value = barcode;
+            dlg.querySelector('#edit-good').value = currentGood;
+            dlg.querySelector('#edit-damaged').value = currentDamaged;
+            dlg.querySelector('#edit-info').innerHTML =
+                `<strong>${escapeHTML(user)}</strong> &bull; ${escapeHTML(session_name)} &bull; ${escapeHTML(branch)}`;
+            dlg._orig = { barcode, user, branch, session_name, good: currentGood, damaged: currentDamaged };
+            dlg.style.display = 'flex';
+            setTimeout(() => dlg.querySelector('#edit-barcode').select(), 80);
+        }
+
+        function closeEditDialog() {
+            document.getElementById('editScanDialog').style.display = 'none';
+        }
+
+        async function saveEditDialog() {
+            const dlg = document.getElementById('editScanDialog');
+            const orig = dlg._orig;
+            const newBarcode = dlg.querySelector('#edit-barcode').value.trim().toUpperCase();
+            const newGood = parseInt(dlg.querySelector('#edit-good').value) || 0;
+            const newDamaged = parseInt(dlg.querySelector('#edit-damaged').value) || 0;
+
+            if (!newBarcode) return showModal('alert', 'Error', 'Barcode cannot be empty.');
+            if (newGood < 0 || newDamaged < 0) return showModal('alert', 'Error', 'Quantities cannot be negative.');
+
+            const tasks = [];
+
+            // 1. Edit barcode if changed
+            if (newBarcode !== orig.barcode) {
+                tasks.push(
+                    fetch('/admin/edit_barcode', {
+                        method: 'POST', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ old_barcode: orig.barcode, new_barcode: newBarcode, user: orig.user, branch: orig.branch, session_name: orig.session_name })
+                    }).then(r => r.json())
+                );
+            }
+
+            // 2. Adjust good count if changed
+            const goodDiff = newGood - orig.good;
+            if (goodDiff !== 0) {
+                tasks.push(
+                    fetch('/admin/adjust_count', {
+                        method: 'POST', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ barcode: newBarcode, user: orig.user, branch: orig.branch, session_name: orig.session_name, type: 'good', diff: goodDiff })
+                    }).then(r => r.json())
+                );
+            }
+
+            // 3. Adjust damaged count if changed
+            const damagedDiff = newDamaged - orig.damaged;
+            if (damagedDiff !== 0) {
+                tasks.push(
+                    fetch('/admin/adjust_count', {
+                        method: 'POST', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ barcode: newBarcode, user: orig.user, branch: orig.branch, session_name: orig.session_name, type: 'damaged', diff: damagedDiff })
+                    }).then(r => r.json())
+                );
+            }
+
+            if (tasks.length === 0) { closeEditDialog(); return; }
+
+            const results = await Promise.all(tasks);
+            const errors = results.filter(r => r && r.error).map(r => r.error);
+            closeEditDialog();
+            if (errors.length) {
+                showModal('alert', 'Partial Error', 'Some changes failed: ' + errors.join(', '));
+            } else {
+                showModal('alert', 'Saved', 'Scan updated successfully.');
+            }
+            loadScans();
+        }
+
         // Fixed count modification endpoint triggers
         function adjustCount(barcode, user, branch, session_name, type, diff) {
             if (!diff || isNaN(diff)) return;
@@ -1729,7 +1887,7 @@
         }
 
         // ---- MODAL SYSTEM ----
-        function showModal(type, title, message, callback) {
+        function showModal(type, title, message, callback, prefill) {
             const ov = document.getElementById('modalOverlay');
             ov.querySelector('.modal-title').innerText = title;
             ov.querySelector('.modal-body').innerHTML = message;
@@ -1750,9 +1908,10 @@
                 inp.style.display = 'block';
                 if (type === 'prompt-password') inp.type = 'password';
                 inp.placeholder = type === 'prompt-password' ? 'Admin password' : 'Enter value';
+                if (prefill != null) inp.value = prefill;
                 actions.innerHTML = `<button class="mbtn mbtn-secondary" onclick="closeModal()">Cancel</button>
             <button class="mbtn mbtn-primary" onclick="closeModal(true)">Submit</button>`;
-                setTimeout(() => inp.focus(), 80);
+                setTimeout(() => { inp.focus(); inp.select(); }, 80);
                 inp.onkeydown = e => { if (e.key === 'Enter') closeModal(true); };
             }
             ov.style.display = 'flex';
@@ -1775,22 +1934,22 @@
         function editBarcodeMaster(barcode) {
             const branch = document.getElementById('masterBranch').value;
             const session_name = document.getElementById('masterSession').value;
-            showModal('prompt', 'Edit Barcode', `Enter new barcode to replace <strong>${escapeHTML(barcode)}</strong> (this will update all scans under selected branch/session filters):`, newBarcode => {
+            showModal('prompt', 'Edit Barcode', `Replace <strong>${escapeHTML(barcode)}</strong> across all scans in the selected branch/session.<br><small style="color:#94a3b8;">The field below is pre-filled — just correct the barcode:</small>`, newBarcode => {
                 if (typeof newBarcode !== 'string') return;
                 newBarcode = newBarcode.trim().toUpperCase();
-                if (!newBarcode) return;
+                if (!newBarcode || newBarcode === barcode) return;
                 performEditBarcode(barcode, newBarcode, null, branch, session_name);
-            });
+            }, barcode);
         }
 
         // Edit Barcode Detailed
         function editBarcodeDetailed(barcode, user, branch, session_name) {
-            showModal('prompt', 'Edit Barcode', `Enter new barcode to replace <strong>${escapeHTML(barcode)}</strong> for user <strong>${escapeHTML(user)}</strong> in session <strong>${escapeHTML(session_name)}</strong>:`, newBarcode => {
+            showModal('prompt', 'Edit Barcode', `Editing barcode for <strong>${escapeHTML(user)}</strong> in session <strong>${escapeHTML(session_name)}</strong>.<br><small style="color:#94a3b8;">The field below is pre-filled — just correct the barcode:</small>`, newBarcode => {
                 if (typeof newBarcode !== 'string') return;
                 newBarcode = newBarcode.trim().toUpperCase();
-                if (!newBarcode) return;
+                if (!newBarcode || newBarcode === barcode) return;
                 performEditBarcode(barcode, newBarcode, user, branch, session_name);
-            });
+            }, barcode);
         }
 
         // Perform edit barcode request
@@ -2033,6 +2192,37 @@
             <div class="modal-body"></div>
             <input class="modal-input" style="display:none;">
             <div class="modal-actions"></div>
+        </div>
+    </div>
+
+    <!-- Edit Scan Dialog -->
+    <div id="editScanDialog">
+        <div class="edit-dialog-box">
+            <h3>✏️ Edit Scan</h3>
+            <div class="edit-dialog-info" id="edit-info"></div>
+
+            <div class="edit-field-row">
+                <label>Barcode</label>
+                <input type="text" id="edit-barcode" autocomplete="off" spellcheck="false">
+                <div class="edit-hint">Change the barcode if it was scanned incorrectly.</div>
+            </div>
+
+            <div class="edit-qty-row">
+                <div class="edit-field-row">
+                    <label class="edit-qty-badge-good">✅ Good Quantity</label>
+                    <input type="number" id="edit-good" min="0">
+                </div>
+                <div class="edit-field-row">
+                    <label class="edit-qty-badge-damaged">⚠️ Damaged Quantity</label>
+                    <input type="number" id="edit-damaged" min="0">
+                </div>
+            </div>
+            <div class="edit-hint" style="margin-top:-10px; margin-bottom:6px;">Set the exact new quantities. The difference from the current count will be applied.</div>
+
+            <div class="edit-dialog-actions">
+                <button class="mbtn mbtn-secondary" onclick="closeEditDialog()">Cancel</button>
+                <button class="mbtn mbtn-primary" onclick="saveEditDialog()">💾 Save Changes</button>
+            </div>
         </div>
     </div>
 
