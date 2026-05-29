@@ -334,10 +334,20 @@ def insert_scans_bulk(barcode, qty, is_damaged=False, is_flagged=False, session_
     if session_name is None:
         session_name = request.json.get("session_name", "")
     if branch is None:
-        branch = request.json.get("branch")
+        branch = request.json.get("branch") or ""
+
+    # Fallback: if no branch sent, use the globally enforced branch if set
+    if not branch:
+        settings = get_cached_settings()
+        branch = settings.get("global_branch", "") or ""
+    # Fallback: if no session sent, use the globally enforced session if set
+    if not session_name:
+        settings = get_cached_settings()
+        session_name = settings.get("global_session", "") or ""
 
     user = session.get("user")
     ts = get_gmt3_time()
+
 
     # --- Session Collision Detection ---
     collision = Scan.query.filter(

@@ -865,7 +865,7 @@
             {% endif %}
             <div class="tab active" onclick="showTab('scans', this)">📋 Scans & Stats</div>
             {% if role == 'admin' %}
-            <div class="tab" onclick="showTab('sessions', this)">📅 Sessions</div>
+            <div class="tab" onclick="showTab('sessions', this)">🏠 Floors</div>
             <div class="tab" onclick="showTab('users', this)">👥 Users</div>
             <div class="tab" onclick="showTab('branches', this)">🏢 Branches</div>
             <div class="tab" onclick="showTab('settings', this)">⚙️ Settings</div>
@@ -1097,34 +1097,34 @@
         </div>
 
         <div id="sessions" class="tab-content card">
-            <h3>Pre-defined Sessions (per Branch)</h3>
+            <h3>Floors (Sessions) per Branch</h3>
             <p style="color:#64748b; font-size:14.5px; margin-top:-10px; margin-bottom:20px;">
-                Define sessions for branches. Counters will only be able to select from these sessions under their selected branch.
+                Define the <strong style="color:#f8fafc;">Floors</strong> for each <strong style="color:#f8fafc;">Branch</strong>. Counters will only be able to select from these floors when scanning.
             </p>
             
             <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap: 30px; margin-bottom: 40px; align-items: start;">
                 <div>
-                    <h4 style="margin: 0 0 15px 0; color: var(--text-main); font-size: 15px;">Add Session Definition</h4>
+                    <h4 style="margin: 0 0 15px 0; color: var(--text-main); font-size: 15px;">➕ Add Floor to Branch</h4>
                     <div style="display:flex; gap:12px; flex-direction: column;">
                         <div>
                             <label>Target Branch</label>
                             <select id="defBranchSelect" style="width: 100%; padding-right: 30px;"></select>
                         </div>
                         <div>
-                            <label>Session Name</label>
-                            <input id="defSessionName" placeholder="e.g. الطابق الرابع" style="width: 100%;">
+                            <label>Floor Name</label>
+                            <input id="defSessionName" placeholder="e.g. Floor 3, الطابق الرابع" style="width: 100%;">
                         </div>
-                        <button class="btn btn-primary" onclick="addBranchSession()" style="width: 100%; margin-top: 10px;">+ Add Session Definition</button>
+                        <button class="btn btn-primary" onclick="addBranchSession()" style="width: 100%; margin-top: 10px;">+ Add Floor</button>
                     </div>
                 </div>
                 <div>
-                    <h4 style="margin: 0 0 15px 0; color: var(--text-main); font-size: 15px;">Defined Sessions List</h4>
+                    <h4 style="margin: 0 0 15px 0; color: var(--text-main); font-size: 15px;">Defined Floors</h4>
                     <div class="table-wrap" style="max-height: 250px;">
                         <table>
                             <thead>
                                 <tr>
                                     <th>Branch</th>
-                                    <th>Session Name</th>
+                                    <th>Floor Name</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -1136,8 +1136,8 @@
             
             <hr style="border:0; border-top:1px solid rgba(255,255,255,0.06); margin:30px 0;">
 
-            <h3>Active Scan Sessions</h3>
-            <p style="color:#64748b; font-size:14.5px; margin-top:-10px; margin-bottom:20px;">View, delete, or reassign sessions. Use this to remove sessions created by mistake.</p>
+            <h3>Active Scan Data by Floor</h3>
+            <p style="color:#64748b; font-size:14.5px; margin-top:-10px; margin-bottom:20px;">View, delete, or reassign floor scan data.</p>
             <div class="filter-row" style="margin-bottom:16px;">
                 <button class="btn btn-ghost" onclick="loadSessionInfo()">↻ Refresh</button>
             </div>
@@ -1173,14 +1173,34 @@
         </div>
 
         <div id="settings" class="tab-content card">
-            <h3>Global Settings</h3>
-            <p style="color:#64748b; font-size:14.5px; margin-top:-10px; margin-bottom:24px;">Lock all users to a specific branch and session. Leave blank to let users choose freely.</p>
-            <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:flex-end;">
-                <div><label>Enforced Branch</label><select id="global-branch" style="padding-right:30px;">
+            <h3>⚙️ Global Settings</h3>
+            <p style="color:#64748b; font-size:14.5px; margin-top:-10px; margin-bottom:24px;">Lock all counters to a specific <strong style="color:#f8fafc;">Branch</strong> and/or <strong style="color:#f8fafc;">Floor</strong>. Leave blank to let users choose freely.</p>
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr auto; gap:20px; align-items:flex-end; flex-wrap:wrap;">
+                <div>
+                    <label>🏢 Enforced Branch</label>
+                    <select id="global-branch" style="width:100%; padding-right:30px;" onchange="loadSettingsSessionsForBranch()">
                         <option value="">— None (Users Choose) —</option>
-                    </select></div>
-                <div><label>Enforced Session</label><input id="global-session" list="session-list" placeholder="Session name"><datalist id="session-list"></datalist></div>
-                <button class="btn btn-primary" style="height:41px;" onclick="saveSettings()">💾 Save Settings</button>
+                    </select>
+                </div>
+                <div>
+                    <label>🏠 Enforced Floor / Session</label>
+                    <select id="global-session" style="width:100%; padding-right:30px;">
+                        <option value="">— None (Users Choose) —</option>
+                    </select>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <button class="btn btn-primary" style="height:41px; white-space:nowrap;" onclick="saveSettings()">💾 Save Settings</button>
+                    <button class="btn btn-ghost" style="height:41px; white-space:nowrap; font-size:12px;" onclick="clearSettings()">✕ Clear Lock</button>
+                </div>
+            </div>
+
+            <div id="settings-status" style="display:none; margin-top:20px; padding:14px 18px; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.25); border-radius:12px; color:#4ade80; font-weight:600; font-size:14px;">
+            </div>
+
+            <div style="margin-top:30px; padding:18px; background:rgba(56,189,248,0.05); border:1px solid rgba(56,189,248,0.15); border-radius:14px;">
+                <div style="font-size:13px; font-weight:700; color:#38bdf8; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">📋 Current Lock Status</div>
+                <div id="currentLockStatus" style="font-size:14px; color:#94a3b8;">Loading...</div>
             </div>
         </div>
 
@@ -1223,7 +1243,11 @@
                 }[tag] || tag)
             );
         }
+        // Global branches store for reuse
+        let allBranches = [];
+
         fetch("/branches").then(r => r.json()).then(data => {
+            allBranches = data;
             const mb = document.getElementById('masterBranch');
             const gb = document.getElementById('global-branch');
             const dbSel = document.getElementById('defBranchSelect');
@@ -1237,7 +1261,10 @@
                     gb.value = s.global_branch;
                     mb.value = s.global_branch;
                 }
+                // Load sessions for global settings panel
+                loadSettingsSessionsForBranch(s.global_session || null);
                 updateSessionsDropdown(true, s.global_session, true);
+                updateCurrentLockStatus(s);
             });
         });
 
@@ -1731,11 +1758,63 @@
             });
         }
 
+        function loadSettingsSessionsForBranch(preselect) {
+            const branch = document.getElementById('global-branch').value;
+            const sessionSel = document.getElementById('global-session');
+            const url = branch ? `/sessions?branch=${encodeURIComponent(branch)}` : '/sessions';
+            fetch(url).then(r => r.json()).then(sessions => {
+                sessionSel.innerHTML = '<option value="">— None (Users Choose) —</option>';
+                sessions.forEach(s => sessionSel.appendChild(new Option(s, s)));
+                if (preselect && sessions.includes(preselect)) {
+                    sessionSel.value = preselect;
+                } else if (preselect) {
+                    // Add it even if not in list (backward compat)
+                    sessionSel.appendChild(new Option(preselect, preselect));
+                    sessionSel.value = preselect;
+                }
+            });
+        }
+
+        function updateCurrentLockStatus(settings) {
+            const el = document.getElementById('currentLockStatus');
+            if (!el) return;
+            const branch = settings.global_branch || null;
+            const sess = settings.global_session || null;
+            if (!branch && !sess) {
+                el.innerHTML = '<span style="color:#4ade80;">✅ No lock active — users choose freely</span>';
+            } else {
+                let parts = [];
+                if (branch) parts.push(`Branch locked to <strong style="color:#38bdf8;">${escapeHTML(branch)}</strong>`);
+                if (sess) parts.push(`Floor locked to <strong style="color:#c084fc;">${escapeHTML(sess)}</strong>`);
+                el.innerHTML = '🔒 ' + parts.join(' &bull; ');
+            }
+        }
+
         function saveSettings() {
+            const globalBranch = document.getElementById('global-branch').value;
+            const globalSession = document.getElementById('global-session').value;
             fetch('/admin/settings', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ global_branch: document.getElementById('global-branch').value, global_session: document.getElementById('global-session').value })
-            }).then(() => showModal('alert', 'Saved', 'Global settings saved. Users will see this next time they load the page.'));
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ global_branch: globalBranch, global_session: globalSession })
+            }).then(r => r.json()).then(res => {
+                const statusEl = document.getElementById('settings-status');
+                if (res.status === 'ok') {
+                    statusEl.innerHTML = '✅ Settings saved! Counters will use these settings on next page load.';
+                    statusEl.style.display = 'block';
+                    setTimeout(() => { statusEl.style.display = 'none'; }, 4000);
+                    updateCurrentLockStatus({ global_branch: globalBranch, global_session: globalSession });
+                } else {
+                    showModal('alert', 'Error', 'Failed to save settings.');
+                }
+            });
+        }
+
+        function clearSettings() {
+            document.getElementById('global-branch').value = '';
+            document.getElementById('global-session').value = '';
+            loadSettingsSessionsForBranch(null);
+            saveSettings();
         }
 
         function promptAdjust(barcode, user, branch, session_name, type) {
@@ -2019,13 +2098,21 @@
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ branch_name: branch, session_name: session })
-            }).then(r => r.text()).then(res => {
-                if (res === 'exists') {
+            }).then(r => r.json()).then(res => {
+                if (res.error === 'exists') {
                     showModal('alert', 'Exists', 'This session is already defined for this branch.');
-                } else if (res === 'ok') {
+                } else if (res.status === 'ok') {
                     document.getElementById('defSessionName').value = '';
                     loadBranchSessionDefs();
                     updateSessionsDropdown(false, null, false);
+                    // Also refresh settings session dropdown
+                    const currentGlobalBranch = document.getElementById('global-branch').value;
+                    if (!currentGlobalBranch || currentGlobalBranch === branch) {
+                        const currentGlobalSession = document.getElementById('global-session').value;
+                        loadSettingsSessionsForBranch(currentGlobalSession || null);
+                    }
+                } else {
+                    showModal('alert', 'Error', 'Failed to add session: ' + (res.error || 'Unknown error'));
                 }
             });
         }
