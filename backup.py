@@ -49,7 +49,7 @@ def create_backup():
                     writer.writerow(["Barcode", "Good", "Damaged", "Flagged", "Last Scan"])
                     c.execute("""
                         SELECT barcode,
-                               SUM(CASE WHEN is_damaged=0 AND is_flagged=0 THEN 1 ELSE 0 END),
+                               SUM(CASE WHEN is_damaged=0 THEN 1 ELSE 0 END),
                                SUM(CASE WHEN is_damaged=1 THEN 1 ELSE 0 END),
                                SUM(CASE WHEN is_flagged=1 THEN 1 ELSE 0 END),
                                MAX(timestamp)
