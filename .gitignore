@@ -4,7 +4,6 @@ __pycache__/
 venv/
 env/
 .venv/
-backup.py
 # Ignore database files to avoid pushing sensitive scan data to GitHub
 *.db
 *.sqlite3
@@ -14,7 +13,6 @@ backups/
 migrate_db.py
 test_optimization.py
 test_pre_deploy_features.py
-
 
 # Ignore temp files and test scripts
 temp_csv_export/
