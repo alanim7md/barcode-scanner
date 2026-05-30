@@ -210,7 +210,7 @@ def clean_barcode(barcode):
     return barcode.replace(SUFFIX_DAMAGED, '').replace(SUFFIX_FLAGGED, '')
 
 # SQL fragments for grouping queries — reused across summary/admin/export
-SQL_GOOD_COUNT = "SUM(CASE WHEN is_damaged=0 AND (is_flagged=0 OR flag_reason = 'Manual Entry') THEN 1 ELSE 0 END)"
+SQL_GOOD_COUNT = "SUM(CASE WHEN is_damaged=0 THEN 1 ELSE 0 END)"
 SQL_DAMAGED_COUNT = "SUM(CASE WHEN is_damaged=1 THEN 1 ELSE 0 END)"
 SQL_FLAGGED_COUNT = "SUM(CASE WHEN is_flagged=1 THEN 1 ELSE 0 END)"
 
@@ -1086,13 +1086,18 @@ def admin_adjust_count():
         db.session.add_all(to_add)
     elif diff < 0:
         # SQLite doesn't directly support LIMIT in DELETE, so we query matching IDs and delete them
+        filter_kwargs = {
+            "barcode": barcode,
+            "user": data["user"],
+            "branch": data["branch"],
+            "session_name": data["session_name"],
+            "is_damaged": is_damaged
+        }
+        if data["type"] == "flagged":
+            filter_kwargs["is_flagged"] = 1
+            
         subquery_ids = db.session.query(Scan.id).filter_by(
-            barcode=barcode,
-            user=data["user"],
-            branch=data["branch"],
-            session_name=data["session_name"],
-            is_damaged=is_damaged,
-            is_flagged=is_flagged
+            **filter_kwargs
         ).order_by(Scan.timestamp.desc()).limit(abs(diff)).all()
         
         target_ids = [r[0] for r in subquery_ids]
@@ -1393,7 +1398,7 @@ def admin_user_stats():
         SELECT 
             user,
             COUNT(*),
-            SUM(CASE WHEN is_damaged=0 AND (is_flagged=0 OR flag_reason = 'Manual Entry') THEN 1 ELSE 0 END),
+            SUM(CASE WHEN is_damaged=0 THEN 1 ELSE 0 END),
             SUM(CASE WHEN is_damaged=1 THEN 1 ELSE 0 END),
             SUM(CASE WHEN is_flagged=1 THEN 1 ELSE 0 END),
             COUNT(DISTINCT session_name),
