@@ -532,6 +532,7 @@
                                 <th>Good</th>
                                 <th>Damaged</th>
                                 <th>Flagged</th>
+                                <th>First Scan</th>
                                 <th>Last Scan</th>
                                 <th>Action</th>
                             </tr>
@@ -920,6 +921,7 @@ function renderSummary() {
         <th style="cursor:pointer;" onclick="doSumSort('good')">Good ${sumSortCol==='good'?(sumSortAsc?'▲':'▼'):''}</th>
         <th style="cursor:pointer;" onclick="doSumSort('damaged')">Damaged ${sumSortCol==='damaged'?(sumSortAsc?'▲':'▼'):''}</th>
         <th style="cursor:pointer;" onclick="doSumSort('flagged')">Flagged ${sumSortCol==='flagged'?(sumSortAsc?'▲':'▼'):''}</th>
+        <th style="cursor:pointer;" onclick="doSumSort('first')">First Scan ${sumSortCol==='first'?(sumSortAsc?'▲':'▼'):''}</th>
         <th style="cursor:pointer;" onclick="doSumSort('last')">Last Scan ${sumSortCol==='last'?(sumSortAsc?'▲':'▼'):''}</th>
         <th>Action</th>
     </tr>`;
@@ -944,6 +946,7 @@ function renderSummary() {
             <td>${goodBadge}</td>
             <td>${damagedBadge}</td>
             <td>${flaggedBadge}</td>
+            <td style="font-size:12px; color:#94a3b8;">${escapeHTML(item.first) || ''}</td>
             <td style="font-size:12px; color:#94a3b8;">${escapeHTML(item.last) || ''}</td>
             <td>
                 <div style="display:flex; gap: 8px; align-items:center;">
@@ -959,7 +962,7 @@ function renderSummary() {
     });
 
     if (filtered.length > 500) {
-        htmlStr += `<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:20px;">Showing top 500 of ${filtered.length}. Use search to filter.</td></tr>`;
+        htmlStr += `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:20px;">Showing top 500 of ${filtered.length}. Use search to filter.</td></tr>`;
     }
 
     table.innerHTML = htmlStr;
