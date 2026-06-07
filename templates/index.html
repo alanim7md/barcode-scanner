@@ -880,6 +880,64 @@ input.addEventListener('keypress', function(e) {
     }
 });
 
+// Auto-refocus manager to keep barcode input active
+let refocusTimeout = null;
+
+function resetRefocusTimer() {
+    if (refocusTimeout) {
+        clearTimeout(refocusTimeout);
+        refocusTimeout = null;
+    }
+}
+
+function startRefocusTimer() {
+    resetRefocusTimer();
+    refocusTimeout = setTimeout(() => {
+        input.focus();
+    }, 3000);
+}
+
+// Reset the 3-second timer if they are actively typing or selecting inside another field
+document.addEventListener('input', () => {
+    if (document.activeElement && document.activeElement !== input) {
+        startRefocusTimer();
+    }
+});
+document.addEventListener('click', (e) => {
+    if (document.activeElement && document.activeElement !== input) {
+        if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+            startRefocusTimer();
+        }
+    }
+});
+
+// Watch focus changes globally
+document.addEventListener('focusin', function(e) {
+    resetRefocusTimer();
+    const active = document.activeElement;
+    if (!active || active === input) return;
+
+    if (active.tagName === 'BUTTON' || active.tagName === 'A' || active.classList.contains('clear-btn')) {
+        // Refocus buttons/links immediately so subsequent scanner presses don't trigger them again
+        setTimeout(() => {
+            input.focus();
+        }, 50);
+    } else if (['INPUT', 'SELECT', 'TEXTAREA'].includes(active.tagName)) {
+        // Start 3-second refocus timer for other fields
+        startRefocusTimer();
+    }
+});
+
+// Fallback: If clicked completely outside interactive elements (body focus)
+input.addEventListener('blur', function() {
+    setTimeout(() => {
+        const active = document.activeElement;
+        if (!active || active === document.body) {
+            input.focus();
+        }
+    }, 100);
+});
+
 // ===== COUNTER =====
 function updateCounterDisplay() {
     const mode = document.getElementById('countMode').value;
