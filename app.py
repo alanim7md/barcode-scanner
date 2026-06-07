@@ -79,10 +79,6 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     finally:
         cursor.close()
 
-@event.listens_for(Engine, "begin")
-def do_begin(conn):
-    if conn.dialect.name == "sqlite":
-        conn.exec_driver_sql("BEGIN IMMEDIATE")
 
 def get_gmt3_time():
     from datetime import timezone, timedelta
