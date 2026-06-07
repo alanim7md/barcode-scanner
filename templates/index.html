@@ -608,6 +608,14 @@ async function initApp() {
             branchSel.value = appSettings.global_branch;
             branchSel.disabled = true;
             isBranchLocked = true;
+        } else {
+            // Restore selection from localStorage if no lock is set
+            const savedBranch = localStorage.getItem('selectedBranch');
+            if (savedBranch && branches.includes(savedBranch)) {
+                branchSel.value = savedBranch;
+            } else if (branchSel.value) {
+                localStorage.setItem('selectedBranch', branchSel.value);
+            }
         }
 
         // 4. Load sessions for the selected branch
@@ -654,6 +662,14 @@ async function loadSessionsForBranch(branch) {
             sessionSel.value = appSettings.global_session;
             sessionSel.disabled = true;
             isSessionLocked = true;
+        } else {
+            // Restore selection from localStorage if no lock is set
+            const savedSession = localStorage.getItem('selectedSession');
+            if (savedSession && sessions.includes(savedSession)) {
+                sessionSel.value = savedSession;
+            } else if (sessionSel.value) {
+                localStorage.setItem('selectedSession', sessionSel.value);
+            }
         }
 
         // Show lock indicator
@@ -672,10 +688,15 @@ async function loadSessionsForBranch(branch) {
 
 function onBranchChange() {
     const branch = document.getElementById('branchSelector').value;
+    localStorage.setItem('selectedBranch', branch);
+    // Remove the saved floor since we changed branches
+    localStorage.removeItem('selectedSession');
     loadSessionsForBranch(branch);
 }
 
 function onSessionChange() {
+    const session = document.getElementById('sessionSelector').value;
+    localStorage.setItem('selectedSession', session);
     loadSummary();
 }
 

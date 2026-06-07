@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session, redirect, Response
+from flask import Flask, render_template, request, jsonify, session, redirect, Response, make_response
 # pyrefly: ignore [missing-import]
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -63,6 +63,26 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+
+from sqlalchemy.engine import Engine
+from sqlalchemy import event
+
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    try:
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.execute("PRAGMA busy_timeout=30000")
+    except Exception:
+        pass
+    finally:
+        cursor.close()
+
+@event.listens_for(Engine, "begin")
+def do_begin(conn):
+    if conn.dialect.name == "sqlite":
+        conn.exec_driver_sql("BEGIN IMMEDIATE")
 
 def get_gmt3_time():
     from datetime import timezone, timedelta
@@ -218,6 +238,18 @@ SQL_FLAGGED_COUNT = "SUM(CASE WHEN is_flagged=1 THEN 1 ELSE 0 END)"
 # Initialize databases and seed admin user
 with app.app_context():
     db.create_all()
+
+    # Ensure all composite indexes exist in SQLite database
+    try:
+        db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_scans_composite_lookup ON scans (barcode, user, branch, session_name)"))
+        db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_scans_covering_summary ON scans (user, session_name, barcode, is_damaged, is_flagged, timestamp)"))
+        db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_scans_covering_admin ON scans (barcode, user, branch, session_name, is_damaged, is_flagged, timestamp)"))
+        db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_scans_collision_check ON scans (barcode, branch, session_name)"))
+        db.session.commit()
+    except Exception as e:
+        print(f"Error creating indexes: {e}")
+        db.session.rollback()
+
     # Seed admin user if it doesn't exist
     admin = User.query.filter_by(username='admin').first()
     if not admin:
@@ -269,11 +301,24 @@ def check_session_token():
             return jsonify({"error": "logged_out", "redirect": "/login"}), 401
         return redirect("/login")
         
-    try:
-        user_rec.last_active = get_gmt3_time()
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
+    # Throttle last_active update to once every 2 minutes (120 seconds) to reduce write locks
+    now_gmt3_str = get_gmt3_time()
+    should_update = True
+    if user_rec.last_active:
+        try:
+            last_active_dt = datetime.strptime(user_rec.last_active, "%Y-%m-%d %H:%M:%S")
+            current_dt = datetime.strptime(now_gmt3_str, "%Y-%m-%d %H:%M:%S")
+            if (current_dt - last_active_dt).total_seconds() < 120:
+                should_update = False
+        except Exception:
+            pass
+            
+    if should_update:
+        try:
+            user_rec.last_active = now_gmt3_str
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
 
 # ---------- LOGIN ----------
 @app.route("/login", methods=["GET","POST"])
@@ -558,7 +603,9 @@ def branches():
 @app.route("/sessions")
 def get_sessions():
     branch = request.args.get("branch", "")
-    return jsonify(get_cached_sessions(branch))
+    response = make_response(jsonify(get_cached_sessions(branch)))
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    return response
 
 @app.route("/add_branch", methods=["POST"])
 def add_branch():
@@ -1048,7 +1095,9 @@ def admin_chart_data():
 
 @app.route("/settings")
 def get_settings():
-    return jsonify(get_cached_settings())
+    response = make_response(jsonify(get_cached_settings()))
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    return response
 
 @app.route("/admin/settings", methods=["POST"])
 def set_settings():
