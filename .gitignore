@@ -14,3 +14,5 @@ test_optimization.py
 test_pre_deploy_features.py
 temp_csv_export/
 test_*.py
+*.db.*
+database.db*
