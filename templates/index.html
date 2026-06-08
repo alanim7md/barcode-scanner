@@ -1257,21 +1257,19 @@
             resetRefocusTimer();
             refocusTimeout = setTimeout(() => {
                 input.focus();
-            }, 7000);
+            }, 10000); // 10 seconds
         }
 
-        // Reset the 3-second timer if they are actively typing or selecting inside another field
-        document.addEventListener('input', () => {
-            if (document.activeElement && document.activeElement !== input) {
-                startRefocusTimer();
-            }
-        });
-        document.addEventListener('click', (e) => {
-            if (document.activeElement && document.activeElement !== input) {
-                if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
-                    startRefocusTimer();
+        // Reset the 10-second timer if there is user activity (movement, typing, scrolling, clicking) and focus is elsewhere
+        const activityEvents = ['mousemove', 'keydown', 'touchstart', 'touchmove', 'scroll', 'click', 'input'];
+        activityEvents.forEach(eventName => {
+            document.addEventListener(eventName, () => {
+                if (document.activeElement && document.activeElement !== input) {
+                    if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+                        startRefocusTimer();
+                    }
                 }
-            }
+            }, { passive: true });
         });
 
         // Watch focus changes globally
@@ -1286,7 +1284,7 @@
                     input.focus();
                 }, 50);
             } else if (['INPUT', 'SELECT', 'TEXTAREA'].includes(active.tagName)) {
-                // Start 3-second refocus timer for other fields
+                // Start 10-second refocus timer for other fields
                 startRefocusTimer();
             }
         });
