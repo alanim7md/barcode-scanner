@@ -13,10 +13,9 @@ import os
 import urllib.parse
 import orjson
 from werkzeug.security import generate_password_hash, check_password_hash
-
+import re
 app = Flask(__name__)
-# SECRET_KEY should be set in environment for production.
-# If not set, a random key is generated per-restart (sessions will be invalidated on restart).
+
 _secret = os.environ.get("SECRET_KEY")
 if not _secret:
     import warnings
@@ -28,13 +27,11 @@ if not _secret:
     _secret = os.urandom(24).hex()
 app.secret_key = _secret
 
-# Configure Flask-Compress for static assets and API JSON payloads
 app.config['COMPRESS_ALGORITHMS'] = ['br', 'gzip']
 app.config['COMPRESS_LEVEL'] = 6
 app.config['COMPRESS_MIN_SIZE'] = 500
 Compress(app)
 
-# Custom high-performance orjson-based JSON provider for Flask
 class OrjsonProvider(JSONProvider):
     def dumps(self, obj, **kwargs):
         option = orjson.OPT_NAIVE_UTC | orjson.OPT_SERIALIZE_NUMPY
@@ -47,7 +44,6 @@ class OrjsonProvider(JSONProvider):
 
 app.json = OrjsonProvider(app)
 
-# Configure SQLAlchemy with absolute paths to project directory database files
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if os.environ.get('TESTING') == 'true':
     app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///:memory:"
@@ -84,6 +80,10 @@ def get_gmt3_time():
     from datetime import timezone, timedelta
     return datetime.now(timezone(timedelta(hours=3))).strftime("%Y-%m-%d %H:%M:%S")
 
+def is_valid_barcode(barcode):
+    # Detect patterns that indicate a URL/URI (e.g. starts with http://, https://, ftp://, www. or contains :// or has .com/.net followed by / or end-of-string)
+    url_pattern = re.compile(r'^(https?://|ftp://|www\.)|://|(\.com|\.net)([/#]|$)', re.IGNORECASE)
+    return not bool(url_pattern.search(barcode.strip()))
 # ---------- MODELS ----------
 class Branch(db.Model):
     __tablename__ = 'branches'
@@ -380,7 +380,10 @@ def index():
 
 # ---------- SCAN ----------
 def insert_scans_bulk(barcode, qty, is_damaged=False, is_flagged=False, session_name=None, branch=None, is_manual=False):
+    raw_barcode = barcode
     barcode = clean_barcode(barcode.strip().upper())
+    if not is_valid_barcode(raw_barcode):
+        return {"status": "error", "message": "Invalid format: URL detected."}
     req_json = request.json or {}
     if session_name is None:
         session_name = req_json.get("session_name", "")
@@ -455,6 +458,8 @@ def scan():
     if not barcode:
         return jsonify({"error": "barcode required"}), 400
     res = insert_scans_bulk(barcode, 1, is_manual=(request.json or {}).get("is_manual", False))
+    if isinstance(res, dict) and res.get("status") == "error":
+        return jsonify(res), 400
     return jsonify(res)
 
 @app.route("/manual", methods=["POST"])
@@ -465,6 +470,8 @@ def manual():
         return jsonify({"error": "barcode required"}), 400
     qty = max(1, min(int(data.get("qty", 1)), 500))  # cap at 500
     res = insert_scans_bulk(barcode, qty, is_manual=data.get("is_manual", True))
+    if isinstance(res, dict) and res.get("status") == "error":
+        return jsonify(res), 400
     return jsonify(res)
 
 @app.route("/damaged", methods=["POST"])
@@ -475,20 +482,30 @@ def damaged():
         return jsonify({"error": "barcode required"}), 400
     qty = max(1, min(int(data.get("qty", 1)), 500))  # cap at 500
     res = insert_scans_bulk(barcode, qty, is_damaged=True, is_manual=data.get("is_manual", False))
+    if isinstance(res, dict) and res.get("status") == "error":
+        return jsonify(res), 400
     return jsonify(res)
 
 @app.route("/flag_item", methods=["POST"])
 def flag_item():
     barcode = clean_barcode(request.json["barcode"].strip().upper())
     session_name = request.json.get("session_name")
+    branch = request.json.get("branch")
+    if not branch:
+        settings = get_cached_settings()
+        branch = settings.get("global_branch", "") or ""
     user = session.get("user")
     
+    filter_params = {"barcode": barcode, "session_name": session_name, "user": user}
+    if branch:
+        filter_params["branch"] = branch
+
     is_flagged = Scan.query.filter_by(
-        barcode=barcode, session_name=session_name, user=user, is_flagged=1
+        is_flagged=1, **filter_params
     ).count() > 0
     
     scans_to_update = Scan.query.filter_by(
-        barcode=barcode, session_name=session_name, user=user
+        **filter_params
     ).all()
     
     if is_flagged:
@@ -512,6 +529,8 @@ def sync():
     to_add = []
     for s in scans:
         bc = (s.get("barcode") or "").strip().upper()
+        if not is_valid_barcode(bc):
+            continue
         is_damaged = 1 if (s.get("is_damaged", False) or SUFFIX_DAMAGED in bc) else 0
         is_flagged = 1 if (s.get("is_flagged", False) or SUFFIX_FLAGGED in bc or s.get("is_manual", False)) else 0
         
@@ -540,9 +559,17 @@ def sync():
 def undo():
     user = session.get("user")
     session_name = request.json.get("session_name")
+    branch = request.json.get("branch")
+    if not branch:
+        settings = get_cached_settings()
+        branch = settings.get("global_branch", "") or ""
     
+    filter_params = {"user": user, "session_name": session_name}
+    if branch:
+        filter_params["branch"] = branch
+
     last_scan = Scan.query.filter_by(
-        user=user, session_name=session_name
+        **filter_params
     ).order_by(Scan.timestamp.desc()).first()
     
     if last_scan:
@@ -557,6 +584,19 @@ def undo():
 @app.route("/summary")
 def summary():
     sess_name = request.args.get("session_name", "")
+    branch = request.args.get("branch", "")
+    if not branch:
+        settings = get_cached_settings()
+        branch = settings.get("global_branch", "") or ""
+
+    where_clauses = ["user = :user AND session_name = :session_name"]
+    query_params = {"user": session.get("user"), "session_name": sess_name}
+    if branch:
+        where_clauses.append("branch = :branch")
+        query_params["branch"] = branch
+
+    where_str = " AND ".join(where_clauses)
+
     query = text(f"""
         SELECT 
             barcode,
@@ -566,12 +606,12 @@ def summary():
             MAX(timestamp),
             {SQL_FLAGGED_COUNT}
         FROM scans
-        WHERE user = :user AND session_name = :session_name
+        WHERE {where_str}
         GROUP BY barcode
         ORDER BY MAX(timestamp) DESC
         LIMIT 250
     """)
-    res = db.session.execute(query, {"user": session.get("user"), "session_name": sess_name}).fetchall()
+    res = db.session.execute(query, query_params).fetchall()
     
     data = []
     for r in res:
@@ -589,7 +629,16 @@ def summary():
 @app.route("/count")
 def count():
     sess_name = request.args.get("session_name", "")
-    total = Scan.query.filter_by(user=session.get("user"), session_name=sess_name).count()
+    branch = request.args.get("branch", "")
+    if not branch:
+        settings = get_cached_settings()
+        branch = settings.get("global_branch", "") or ""
+
+    filter_params = {"user": session.get("user"), "session_name": sess_name}
+    if branch:
+        filter_params["branch"] = branch
+
+    total = Scan.query.filter_by(**filter_params).count()
     return jsonify({"count": total})
 
 @app.route("/branches")
@@ -625,10 +674,16 @@ def user_delete_scan():
     data = request.json
     barcode = clean_barcode(data.get("barcode").strip().upper())
     session_name = data.get("session_name")
+    branch = data.get("branch")
+    if not branch:
+        settings = get_cached_settings()
+        branch = settings.get("global_branch", "") or ""
     
-    q = Scan.query.filter_by(
-        barcode=barcode, user=session.get("user"), session_name=session_name
-    )
+    filter_params = {"barcode": barcode, "user": session.get("user"), "session_name": session_name}
+    if branch:
+        filter_params["branch"] = branch
+
+    q = Scan.query.filter_by(**filter_params)
     count = q.count()
     q.delete(synchronize_session=False)
     
@@ -1362,6 +1417,9 @@ def admin_edit_barcode():
     
     if not old_bc or not new_bc:
         return jsonify({"error": "Invalid barcodes"}), 400
+        
+    if not is_valid_barcode(new_bc):
+        return jsonify({"error": "Invalid format: URL detected."}), 400
         
     user_filter = data.get("user")
     branch_filter = data.get("branch")

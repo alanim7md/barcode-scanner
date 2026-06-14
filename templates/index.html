@@ -946,6 +946,11 @@
             );
         }
 
+        function isValidBarcode(barcode) {
+            const urlPattern = /^(https?:\/\/|ftp:\/\/|www\.)|:\/\/(?!\/)|(\.com|\.net)([/#]|$)/i;
+            return !urlPattern.test(barcode.trim());
+        }
+
         // ===== INIT: Load settings → branches → sessions → summary =====
         async function initApp() {
             try {
@@ -1151,6 +1156,13 @@
             if (!branch) { showAlert('Please select a branch first.'); return; }
             if (!session_name) { showAlert('Please select a floor first.'); return; }
 
+            if (!isValidBarcode(barcode)) {
+                showAlert('Invalid format: URL detected.');
+                errorBeep();
+                triggerScanFlash('error');
+                return;
+            }
+
             let endpoint = '/scan';
             if (isDamaged) endpoint = '/damaged';
             else if (isManual || qty > 1) endpoint = '/manual';
@@ -1168,7 +1180,11 @@
                         throw new Error('Logged out');
                     }
                     if (res.ok) return res.json();
-                    throw new Error('Server error');
+                    return res.json().then(errData => {
+                        throw { status: res.status, data: errData };
+                    }).catch(() => {
+                        throw { status: res.status, message: 'Server error' };
+                    });
                 }).then(data => {
                     beep();
                     if (data.warning) {
@@ -1181,7 +1197,14 @@
                     loadSummary(barcode);
                     updateSyncStatus(true);
                 }).catch(err => {
-                    if (err.message !== 'Logged out') {
+                    if (err && err.status === 400) {
+                        const errMsg = (err.data && err.data.message) || 'Invalid barcode format.';
+                        showAlert(errMsg);
+                        errorBeep();
+                        triggerScanFlash('error');
+                    } else if (err && err.message === 'Logged out') {
+                        // Handled above
+                    } else {
                         pushLocal(barcode, qty, isDamaged, branch, session_name, isManual || qty > 1);
                         triggerScanFlash('offline');
                     }
@@ -1412,8 +1435,9 @@
         function loadSummary(highlightBarcode = null) {
             if (highlightBarcode) lastScannedBarcode = String(highlightBarcode).trim().toUpperCase();
             const session_name = getSession();
+            const branch = getBranch();
             if (!session_name) return;
-            fetch('/summary?session_name=' + encodeURIComponent(session_name))
+            fetch('/summary?session_name=' + encodeURIComponent(session_name) + '&branch=' + encodeURIComponent(branch))
                 .then(res => res.json())
                 .then(data => {
                     currentSummaryData = data;
@@ -1425,7 +1449,7 @@
             showConfirm(`Delete ALL scans for <strong>${escapeHTML(barcode)}</strong> in this floor?`, () => {
                 fetch('/user/delete_scan', {
                     method: 'DELETE', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ barcode, session_name: getSession() })
+                    body: JSON.stringify({ barcode, session_name: getSession(), branch: getBranch() })
                 }).then(() => loadSummary());
             });
         }
@@ -1481,7 +1505,7 @@
             if (!navigator.onLine) return;
             fetch('/undo', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ session_name: getSession() })
+                body: JSON.stringify({ session_name: getSession(), branch: getBranch() })
             }).then(r => r.json()).then(() => loadSummary());
         }
 
